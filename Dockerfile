@@ -14,5 +14,5 @@ COPY . .
 # Expõe a porta que o FastAPI usa
 EXPOSE 7860
 
-# Comando para rodar a API (O Hugging Face usa a porta 7860 por padrão)
+# Comando para rodar a API (O Hugging Face usa a porta 7860 por padrão).
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "7860"]
