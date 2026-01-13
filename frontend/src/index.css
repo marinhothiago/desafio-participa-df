@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DSGOV - Padrão Digital de Governo Brasileiro */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Gov.br Color Palette */
+    --govbr-blue-primary: 218 87% 39%;
+    --govbr-blue-dark: 218 90% 25%;
+    --govbr-blue-light: 218 80% 95%;
+    
+    --govbr-success: 120 100% 25%;
+    --govbr-success-light: 120 60% 95%;
+    
+    --govbr-danger: 0 100% 45%;
+    --govbr-danger-light: 0 80% 96%;
+    
+    --govbr-warning: 45 100% 50%;
+    --govbr-warning-light: 45 90% 95%;
+    
+    --govbr-gray-100: 210 20% 98%;
+    --govbr-gray-200: 210 15% 94%;
+    --govbr-gray-300: 210 12% 88%;
+    --govbr-gray-400: 210 10% 70%;
+    --govbr-gray-500: 210 8% 55%;
+    --govbr-gray-600: 210 10% 40%;
+    --govbr-gray-700: 210 12% 25%;
+    --govbr-gray-800: 210 15% 15%;
+    
+    /* Semantic Tokens */
+    --background: 210 20% 98%;
+    --foreground: 210 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 15% 15%;
+
+    --primary: 218 87% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 218 87% 39%;
+
+    --muted: 210 15% 94%;
+    --muted-foreground: 210 10% 40%;
+
+    --accent: 218 80% 95%;
+    --accent-foreground: 218 87% 39%;
+
+    --destructive: 0 100% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 120 100% 25%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 30 100% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 210 15% 88%;
+    --input: 210 15% 88%;
+    --ring: 218 87% 39%;
+
+    --radius: 0.375rem;
+
+    /* Chart Colors */
+    --chart-public: 120 100% 25%;
+    --chart-restricted: 0 100% 45%;
+    --chart-1: 218 87% 39%;
+    --chart-2: 218 70% 55%;
+    --chart-3: 218 60% 70%;
+    --chart-4: 218 50% 80%;
+
+    /* Sidebar */
+    --sidebar-background: 218 90% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 218 90% 25%;
+    --sidebar-accent: 218 80% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 218 70% 35%;
+    --sidebar-ring: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 210 15% 10%;
+    --foreground: 210 20% 98%;
+    --card: 210 15% 13%;
+    --card-foreground: 210 20% 98%;
+    --popover: 210 15% 13%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 218 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 18%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 210 12% 20%;
+    --muted-foreground: 210 10% 60%;
+    --accent: 218 70% 25%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 120 70% 40%;
+    --success-foreground: 0 0% 100%;
+    --border: 210 12% 22%;
+    --input: 210 12% 22%;
+    --ring: 218 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Roboto', sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .gov-card {
+    @apply bg-card rounded-lg border border-border shadow-sm p-6;
+  }
+
+  .gov-badge-success {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))];
+  }
+
+  .gov-badge-danger {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))];
+  }
+
+  .gov-badge-neutral {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-muted text-muted-foreground;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
