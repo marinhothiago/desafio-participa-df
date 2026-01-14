@@ -362,5 +362,7 @@ class PIIDetector:
         risco_map = {5: "CRÍTICO", 4: "ALTO", 3: "MODERADO", 0: "SEGURO"}
         
         # Normalizar confiança para 0-1 (max_score vai de 0 a 5)
-        confidence = float(max_score) / 5.0 if max_score > 0 else 0.0
+        # Para PÚBLICO (max_score=0): retorna 1.0 (100% de certeza que é seguro)
+        # Para PII (max_score>=3): retorna valor entre 0.6-1.0
+        confidence = float(max_score) / 5.0 if max_score > 0 else 1.0
         return is_pii, pii_relevantes, risco_map.get(max_score, "BAIXO"), confidence
