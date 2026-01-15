@@ -335,6 +335,210 @@ async def analyze(data):
 
 ---
 
+## 🧪 Guias de Teste - 3 Cenários de Execução
+
+### 📌 Resumo Executivo
+
+| Cenário | Tempo Setup | Dependências | Melhor Para | Comando |
+|---------|-----------|--------------|-----------|---------|
+| **LOCAL (Nativo)** | 5-10 min | Python 3.10, Node.js 18+, pip, npm | Desenvolvimento rápido | `npm run dev` + `uvicorn api.main:app --reload` |
+| **DOCKER (Local)** | 2-3 min | Docker + docker-compose | Ambiente isolado, sem deps | `docker-compose up` |
+| **ONLINE (Cloud)** | 0 min | Browser + internet | Demo sem instalação | Acesso direto ao link |
+
+---
+
+### 🔴 Cenário 1: EXECUÇÃO NATIVA (Local - npm + uvicorn)
+
+**Ideal para:** Desenvolvimento, debugging, avaliação rápida sem Docker
+
+#### Pré-requisitos:
+```bash
+✓ Python 3.10+  (verificar: python --version)
+✓ Node.js 18+   (verificar: node --version)
+✓ pip           (geralmente vem com Python)
+✓ npm           (geralmente vem com Node.js)
+```
+
+#### Passos:
+
+**1️⃣ Clonar o repositório:**
+```bash
+git clone https://github.com/marinhothiago/participa-df-pii.git
+cd participa-df-pii
+```
+
+**2️⃣ Iniciar Backend (Terminal 1):**
+```bash
+cd backend
+pip install -r requirements.txt          # Instalar dependências (primeira vez: 3-5 min)
+python -m uvicorn api.main:app --reload   # Servidor em http://localhost:8000
+```
+✅ Esperado: `Uvicorn running on http://127.0.0.1:8000`
+
+**3️⃣ Iniciar Frontend (Terminal 2):**
+```bash
+cd frontend
+npm install                               # Instalar dependências (primeira vez: 2-3 min)
+npm run dev                              # Dev server em http://localhost:8080
+```
+✅ Esperado: `Local: http://127.0.0.1:8080/desafio-participa-df/`
+
+**4️⃣ Testar:**
+- Abrir browser em `http://localhost:8080/desafio-participa-df/`
+- Submeter um texto com dados pessoais (ex: "Meu CPF é 123.456.789-09")
+- ✅ Esperado: Resposta local (<2 segundos) - backend local auto-detectado
+
+**Troubleshooting:**
+| Problema | Solução |
+|----------|---------|
+| `ModuleNotFoundError: No module named 'spacy'` | `pip install -r requirements.txt` novamente |
+| `Port 8000 already in use` | Mude porta: `uvicorn api.main:app --reload --port 8001` |
+| `Port 8080 already in use` | Npm usa porta alternativa automaticamente |
+| Frontend conecta em HuggingFace em vez de localhost | Aguarde 2s para autodetecção, recarregue a página |
+
+**Tempo Total:** ~15 minutos (primeira vez), ~1 minuto (próximas vezes)
+
+---
+
+### 🐳 Cenário 2: EXECUÇÃO COM DOCKER (Recomendado para Avaliação)
+
+**Ideal para:** Isolamento total, sem dependências globais, reprodutibilidade garantida
+
+#### Pré-requisitos:
+```bash
+✓ Docker      (verificar: docker --version)
+✓ Docker Compose (verificar: docker-compose --version)
+✓ Internet    (para baixar imagem ~800MB na primeira vez)
+```
+
+#### Passos:
+
+**1️⃣ Clonar o repositório:**
+```bash
+git clone https://github.com/marinhothiago/participa-df-pii.git
+cd participa-df-pii
+```
+
+**2️⃣ Iniciar com Docker Compose:**
+```bash
+docker-compose up
+```
+
+✅ Esperado (primeira vez):
+```
+Building backend-app
+[...] Sending build context to Docker daemon
+[...] Installing requirements
+[...] Downloading spaCy model pt_core_news_lg
+[...] Container backend-app Running
+
+Backend API on http://127.0.0.1:7860
+```
+
+**3️⃣ Testar:**
+- Abrir browser em `http://localhost:7860/docs` (Swagger API)
+- Ou acessar interface: `http://localhost:7860/` (se configurado)
+- Submeter teste via Swagger
+
+**Vantagens:**
+- ✅ Sem instalação de Python/Node localmente
+- ✅ Modelos de IA (spaCy, BERT) já pre-instalados na imagem
+- ✅ Ambiente exatamente igual ao HuggingFace Spaces
+- ✅ Isolamento perfeito (não afeta outro software)
+
+**Troubleshooting:**
+| Problema | Solução |
+|----------|---------|
+| `docker: command not found` | Instalar Docker Desktop: https://docker.com/download |
+| `ERROR: pull access denied` | Verificar conexão internet, tentar novamente |
+| `Port 7860 already in use` | Mude no docker-compose.yml: `"8001:8000"` |
+| Imagem muito grande | Normal (~2.5GB descompactado), primeiro build é mais lento |
+
+**Tempo Total:** ~5 minutos (primeira vez, download incluído), <30 segundos (próximas vezes)
+
+---
+
+### 🌐 Cenário 3: EXECUÇÃO ONLINE (Demo - Zero Setup)
+
+**Ideal para:** Demo rápida, sem instalação, compartilhar link
+
+#### Pré-requisitos:
+```bash
+✓ Browser moderno (Chrome, Firefox, Safari, Edge)
+✓ Conexão internet
+```
+
+#### Passos:
+
+**1️⃣ Acessar URL:**
+- Frontend: https://marinhothiago.github.io/desafio-participa-df/
+- Backend: https://marinhothiago-participa-df-pii.hf.space/
+
+**2️⃣ Usar imediatamente:**
+- Colar texto na interface
+- Clicar "Analisar"
+- Aguardar resposta (primeira requisição pode demorar 10-20s se backend estiver "dormindo")
+
+**Características:**
+- ✅ Zero instalação
+- ✅ Funciona em qualquer máquina com browser
+- ✅ Dados não são salvos no servidor
+- ⚠️ Primeira requisição pode demorar (cold start do HuggingFace Spaces)
+
+**Tempo Total:** <30 segundos
+
+---
+
+### 📊 Comparativo Detalhado
+
+```
+CENÁRIO 1: NATIVO
+├─ Setup: 15 min (primeira) + 1 min (próximas)
+├─ Performance: Ultra-rápido (modelo carregado em memória)
+├─ Debugging: Excelente (logs em tempo real, hot reload)
+└─ Custo: 0 (sua máquina)
+
+CENÁRIO 2: DOCKER ⭐ RECOMENDADO
+├─ Setup: 5 min (primeira, com download) + <30s (próximas)
+├─ Performance: Rápido (container isolado)
+├─ Isolamento: Perfeito (não afeta SO)
+├─ Reprodutibilidade: Garantida (mesma imagem para todos)
+└─ Custo: Espaço disco (~2.5GB)
+
+CENÁRIO 3: ONLINE
+├─ Setup: 0 min (apenas acesso link)
+├─ Performance: Variável (depende de latência + cold start HF)
+├─ Isolamento: N/A (servidor remoto)
+└─ Custo: 0 (hospedagem gratuita HuggingFace Spaces)
+```
+
+---
+
+### ✅ Validação de Sucesso
+
+Após escolher um cenário, você saberá que funcionou quando:
+
+**✅ Backend rodando:**
+```bash
+GET http://localhost:8000/health  (ou :7860 em Docker)
+Resposta esperada: {"status": "ok"}
+```
+
+**✅ Frontend conectado:**
+- Console do browser sem erros (F12 → Console)
+- Botão "Analisar" ativo (não desabilitado)
+- Indicador de status verde (ApiStatus component)
+
+**✅ Análise funcionando:**
+1. Cole texto: `"CPF: 123.456.789-09"`
+2. Clique "Analisar"
+3. Esperado em <2s: 
+   - Campo marcado como PII
+   - Risco: "CRÍTICO"
+   - Confiança: >0.95
+
+---
+
 ## 🛠️ Tecnologias
 
 - **Backend:** FastAPI, spaCy (NLP PT), Transformers (BERT), Python 3.10+

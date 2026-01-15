@@ -3,9 +3,44 @@
 // Camada de Serviços para API de Detecção
 // ============================================
 
-const API_BASE_URL = 'https://marinhothiago-participa-df-pii.hf.space';
+// URL da API - com detecção automática de backend local
+const PRODUCTION_API_URL = 'https://marinhothiago-participa-df-pii.hf.space';
+const LOCAL_API_URL = 'http://localhost:8000';
 const API_TIMEOUT = 15000; // 15 segundos (modelo de IA pode demorar)
 const MAX_RETRIES = 1; // Retry automático uma vez se falhar
+const LOCAL_DETECTION_TIMEOUT = 2000; // 2 segundos para detectar backend local
+
+// Detecção automática de backend local
+let API_BASE_URL = PRODUCTION_API_URL;
+let detectionAttempted = false;
+
+async function detectLocalBackend(): Promise<void> {
+  if (detectionAttempted) return;
+  detectionAttempted = true;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), LOCAL_DETECTION_TIMEOUT);
+    
+    const response = await fetch(`${LOCAL_API_URL}/health`, {
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      API_BASE_URL = LOCAL_API_URL;
+      console.log('✅ Backend local detectado! Usando http://localhost:8000');
+    }
+  } catch (error) {
+    // Fallback para produção (normal se backend local não está disponível)
+    console.log('ℹ️ Backend local não disponível, usando HuggingFace Spaces');
+  }
+}
+
+// Iniciar detecção ao carregar o módulo
+detectLocalBackend();
 
 // Interface para resposta da API /analyze (conforme documentação técnica)
 export interface AnalyzeResponse {
