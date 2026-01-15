@@ -1,9 +1,3 @@
-  **Backend atualizado em:** https://huggingface.co/spaces/marinhothiago/desafio-participa-df
-  **Backend:** https://marinhothiago-desafio-participa-df.hf.space/
-  **API Base:** https://marinhothiago-desafio-participa-df.hf.space/
-  **Docs Interativa:** https://marinhothiago-desafio-participa-df.hf.space/docs
-  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
-  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
 ---
 title: Participa DF - PII Detector
 emoji: 🛡️
@@ -20,6 +14,12 @@ pinned: false
 [![Licença](https://img.shields.io/badge/Licença-LGPD%20%2F%20LAI%20Compliant-blue)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
 [![Acurácia](https://img.shields.io/badge/Acurácia-112%2F112%20%28100%25%29-brightgreen)](./backend/README.md)
 ![Arquitetura](https://img.shields.io/badge/Arquitetura-Monorepo-orange)
+
+  **Frontend atualizado em:** https://marinhothiago.github.io/desafio-participa-df/
+  **Backend atualizado em:** https://huggingface.co/spaces/marinhothiago/desafio-participa-df
+  **API Base:** https://marinhothiago-desafio-participa-df.hf.space/
+  **Docs Interativa:** https://marinhothiago-desafio-participa-df.hf.space/docs
+  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
 
 ## 📋 Objetivo da Solução
 

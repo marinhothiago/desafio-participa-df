@@ -5,6 +5,12 @@ Interface React para análise de privacidade em pedidos de Lei de Acesso à Info
 
 **Versão:** 8.5 | **Status:** Produção ✅ | **Deploy:** GitHub Pages
 
+ **Frontend atualizado em:** https://marinhothiago.github.io/desafio-participa-df/
+  **Backend atualizado em:** https://huggingface.co/spaces/marinhothiago/desafio-participa-df
+  **API Base:** https://marinhothiago-desafio-participa-df.hf.space/
+  **Docs Interativa:** https://marinhothiago-desafio-participa-df.hf.space/docs
+  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
+
 ---
 
 ## 📋 Objetivo Frontend
