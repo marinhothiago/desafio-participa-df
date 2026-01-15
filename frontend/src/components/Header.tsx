@@ -1,28 +1,34 @@
 import { Shield, User } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export function Header() {
   return (
-    <header className="bg-[#1351B4] shadow-lg">
-      <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-10 py-4 flex items-center justify-between">
-        
-        {/* Logo e Título */}
-        <div className="flex items-center gap-4">
-          <Shield className="w-10 h-10 text-white flex-shrink-0" />
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-white leading-tight">
-              Desafio Participa DF – Conectando Governo e Cidadão
-            </h1>
-            <p className="text-sm text-blue-100 leading-tight">
-              Categoria Acesso à Informação: Módulo de Identificação de Dados Pessoais
-            </p>
+    <header className="bg-primary text-primary-foreground shadow-md">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Logo and Title */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-foreground/10 rounded-lg">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight">Desafio Participa DF – Conectando Governo e Cidadão</h1>
+              <p className="text-xs text-primary-foreground/70">Categoria Acesso à Informação: Módulo de Identificação de Dados Pessoais</p>
+            </div>
           </div>
-        </div>
 
-        {/* Servidor Button */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg cursor-pointer transition-colors flex-shrink-0 ml-6">
-          <span className="text-white font-medium text-sm">Servidor</span>
-          <span className="text-white font-bold text-xs">CGDF</span>
-          <User className="w-5 h-5 text-white" />
+          {/* User Avatar */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-medium">Servidor</p>
+              <p className="text-xs text-primary-foreground/70">CGDF</p>
+            </div>
+            <Avatar className="h-9 w-9 border-2 border-primary-foreground/20">
+              <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground text-sm">
+                <User className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </div>
     </header>
