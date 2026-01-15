@@ -87,10 +87,13 @@ projeto-participa-df/                   ← Raiz (você está aqui)
 │   └── tailwind.config.ts              ← Design system DSGOV (cores, fontes)
 │
 ├── .gitignore                          ← Arquivos ignorados do git
-├── STATUS_FINAL_v8.6.md                ← Documentação final e canônica
-├── GUIA_VALIDACAO_v8.6.md              ← Como testar e validar
-├── GUIA_HUGGINGFACE.md                 ← Deploy em nuvem (HuggingFace Spaces)
-└── GEMINI.md                           ← Contexto de IA (prompt)
+├── .dockerignore                       ← Arquivos ignorados em Docker
+├── AUDITORIA_CODIGO.md                 ← 📊 Auditoria completa do projeto (limpo!)
+├── DEPLOY_STRATEGY.md                  ← 📤 Estratégia de deploy (GitHub/HF/Pages)
+├── GUIA_AVALIADOR.md                   ← 🏆 Guia completo para avaliadores
+├── app.py                              ← ⚙️ Entry point para HuggingFace Spaces
+├── deploy-hf.sh                        ← 🚀 Script de deploy seletivo para HF
+└── github/workflows/                   ← 🔄 CI/CD (GitHub Actions)
 ```
 
 ---
