@@ -723,5 +723,173 @@ def rodar() -> None:
             print()
 
 
+
+# ===================== DEBUG INTERATIVO (antigo test_debug.py) =====================
+def debug_interativo():
+    import re
+    print("\nDEBUG INTERATIVO: Testes de cargos e imunidade funcional\n")
+    casos = [
+        ("Encaminhar para o Dr. Lucas Silva responsável pelo departamento.", "Dr. Lucas Silva"),
+        ("O responsável Dr. Augusto da Administração Regional", "Dr. Augusto da Admin")
+    ]
+    cargos_autoridade = {"DRA", "DR", "SR", "SRA", "PROF", "DOUTOR", "DOUTORA"}
+    for texto_original, nome in casos:
+        print(f"\n{'='*60}")
+        print(f"Texto: {texto_original}")
+        print(f"Nome encontrado: {nome}")
+        start_index = texto_original.find(nome)
+        print(f"Start index: {start_index}")
+        pre_text = texto_original[max(0, start_index-100):start_index].upper()
+        pos_text = texto_original[start_index:min(len(texto_original), start_index+100)].upper()
+        print(f"\nPre-text (100 chars before): '{pre_text}'")
+        print(f"Pos-text (100 chars after): '{pos_text}'")
+        for cargo in cargos_autoridade:
+            if re.search(rf"\b{cargo}\.?\s*$", pre_text):
+                print(f"\n✓ Cargo '{cargo}' encontrado no final de pre_text")
+                instituicoes = ["SECRETARIA", "ADMINISTRACAO", "DEPARTAMENTO", "DIRETORIA", "GDF", "SEEDF", "RESPONSAVEL", "DA ADMINISTRACAO"]
+                found = False
+                for inst in instituicoes:
+                    if inst in pos_text:
+                        print(f"✓ Instituição/função '{inst}' encontrada no pos_text")
+                        found = True
+                        break
+                if found:
+                    print(f"  ==> DEVE SER IGNORADO (imune)")
+                else:
+                    print(f"✗ Nenhuma instituição/função encontrada")
+                    print(f"  Procurando por: {instituicoes}")
+
+# ===================== MENU PRINCIPAL =====================
+def main():
+    print("\nEscolha a opção:")
+    print("1 - Rodar todos os testes automáticos (com métricas)")
+    print("2 - Debug interativo (casos específicos)")
+    opcao = input("Opção: ").strip()
+    if opcao == "1":
+        rodar()
+    else:
+        debug_interativo()
+
 if __name__ == "__main__":
-    rodar()
+    main()
+    # ============================================================================
+    # GRUPO 4: NOVOS 78 CASOS GDF/LAI (2026) - PEDIDOS REAIS E EDGE CASES
+    # ============================================================================
+    {"texto": "Solicito a lista de servidores lotados na Secretaria de Saúde do DF em 2023.", "esperado": 1, "categoria": "PII - Lista de servidores"},
+    {"texto": "Quais são os contratos firmados pela Secretaria de Educação em 2022?", "esperado": 0, "categoria": "Administrativo - Contratos"},
+    {"texto": "Favor informar o endereço residencial do servidor João Pereira.", "esperado": 1, "categoria": "PII - Endereço servidor"},
+    {"texto": "Solicito cópia do processo administrativo nº 12345/2023.", "esperado": 0, "categoria": "Administrativo - Processo"},
+    {"texto": "Qual a remuneração do servidor de matrícula 1234567?", "esperado": 1, "categoria": "PII - Remuneração servidor"},
+    {"texto": "Lista de escolas públicas do GDF.", "esperado": 0, "categoria": "Administrativo - Lista escolas"},
+    {"texto": "E-mail do diretor da Escola Classe 10 de Taguatinga.", "esperado": 1, "categoria": "PII - Email diretor escola"},
+    {"texto": "Solicito número do telefone funcional do servidor Ana Souza.", "esperado": 1, "categoria": "PII - Telefone funcional servidor"},
+    {"texto": "Informar o nome dos médicos plantonistas do Hospital Regional de Ceilândia.", "esperado": 1, "categoria": "PII - Médicos plantonistas"},
+    {"texto": "Solicito relação de empresas contratadas para merenda escolar.", "esperado": 0, "categoria": "Administrativo - Empresas merenda"},
+    {"texto": "Qual o endereço do Hospital Regional da Asa Norte?", "esperado": 0, "categoria": "Administrativo - Endereço hospital público"},
+    {"texto": "Favor informar o CPF do servidor Paulo Henrique.", "esperado": 1, "categoria": "PII - CPF servidor"},
+    {"texto": "Solicito a lista de alunos matriculados na Escola Parque 308 Sul.", "esperado": 1, "categoria": "PII - Lista de alunos"},
+    {"texto": "Quais são os projetos de lei aprovados em 2025?", "esperado": 0, "categoria": "Administrativo - Projetos de lei"},
+    {"texto": "Favor informar o RG do servidor Maria das Dores.", "esperado": 1, "categoria": "PII - RG servidor"},
+    {"texto": "Solicito o nome dos professores da Escola Classe 5 do Gama.", "esperado": 1, "categoria": "PII - Professores escola"},
+    {"texto": "Qual o telefone da Secretaria de Cultura?", "esperado": 0, "categoria": "Administrativo - Telefone órgão público"},
+    {"texto": "Favor informar o e-mail institucional do servidor Carlos Silva.", "esperado": 1, "categoria": "PII - Email institucional servidor"},
+    {"texto": "Solicito a relação de pacientes atendidos no Hospital Materno Infantil em janeiro de 2026.", "esperado": 1, "categoria": "PII - Pacientes hospital"},
+    {"texto": "Quais são as escolas que oferecem ensino integral?", "esperado": 0, "categoria": "Administrativo - Escolas ensino integral"},
+    {"texto": "Favor informar o endereço de e-mail do secretário de Educação.", "esperado": 1, "categoria": "PII - Email secretário"},
+    {"texto": "Solicito a lista de beneficiários do programa Bolsa Família no DF.", "esperado": 1, "categoria": "PII - Beneficiários programa social"},
+    {"texto": "Quais são os hospitais que realizam cirurgias cardíacas?", "esperado": 0, "categoria": "Administrativo - Hospitais cirurgias"},
+    {"texto": "Favor informar o nome dos servidores que receberam gratificação em 2025.", "esperado": 1, "categoria": "PII - Servidores gratificação"},
+    {"texto": "Solicito o número do processo SEI 00015-01009853/2023-11.", "esperado": 0, "categoria": "Administrativo - Processo SEI"},
+    {"texto": "Qual a lotação do servidor de matrícula 7654321?", "esperado": 1, "categoria": "PII - Lotação servidor"},
+    {"texto": "Favor informar o endereço residencial dos diretores das escolas públicas.", "esperado": 1, "categoria": "PII - Endereço diretores"},
+    {"texto": "Solicito a lista de contratos de prestação de serviços de limpeza.", "esperado": 0, "categoria": "Administrativo - Contratos limpeza"},
+    {"texto": "Qual o nome dos pacientes internados na UTI do Hospital de Base?", "esperado": 1, "categoria": "PII - Pacientes UTI"},
+    {"texto": "Favor informar o telefone pessoal do servidor João Batista.", "esperado": 1, "categoria": "PII - Telefone pessoal servidor"},
+    {"texto": "Solicito a relação de alunos aprovados no concurso público de 2025.", "esperado": 1, "categoria": "PII - Alunos aprovados concurso"},
+    {"texto": "Quais são as empresas fornecedoras de medicamentos para a Secretaria de Saúde?", "esperado": 0, "categoria": "Administrativo - Empresas medicamentos"},
+    {"texto": "Favor informar o nome dos servidores afastados por licença médica.", "esperado": 1, "categoria": "PII - Servidores afastados"},
+    {"texto": "Solicito o endereço eletrônico do diretor da Escola Classe 12 de Sobradinho.", "esperado": 1, "categoria": "PII - Email diretor escola"},
+    {"texto": "Qual o valor gasto com merenda escolar em 2025?", "esperado": 0, "categoria": "Administrativo - Gastos merenda"},
+    {"texto": "Favor informar o nome dos servidores que receberam diárias em 2024.", "esperado": 1, "categoria": "PII - Servidores diárias"},
+    {"texto": "Solicito a lista de médicos especialistas em cardiologia do Hospital Regional do Gama.", "esperado": 1, "categoria": "PII - Médicos cardiologia"},
+    {"texto": "Quais são as escolas que oferecem educação especial?", "esperado": 0, "categoria": "Administrativo - Escolas educação especial"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de insalubridade.", "esperado": 1, "categoria": "PII - Servidores insalubridade"},
+    {"texto": "Solicito a relação de pacientes atendidos no pronto-socorro do Hospital Regional de Taguatinga.", "esperado": 1, "categoria": "PII - Pacientes pronto-socorro"},
+    {"texto": "Qual o endereço da Secretaria de Fazenda?", "esperado": 0, "categoria": "Administrativo - Endereço órgão público"},
+    {"texto": "Favor informar o nome dos servidores que receberam progressão funcional em 2025.", "esperado": 1, "categoria": "PII - Servidores progressão"},
+    {"texto": "Solicito a lista de alunos transferidos em 2024.", "esperado": 1, "categoria": "PII - Alunos transferidos"},
+    {"texto": "Quais são as empresas responsáveis pela coleta de lixo no DF?", "esperado": 0, "categoria": "Administrativo - Empresas coleta lixo"},
+    {"texto": "Favor informar o nome dos servidores que receberam auxílio-transporte.", "esperado": 1, "categoria": "PII - Servidores auxílio-transporte"},
+    {"texto": "Solicito a relação de pacientes atendidos no ambulatório do Hospital Materno Infantil.", "esperado": 1, "categoria": "PII - Pacientes ambulatório"},
+    {"texto": "Qual o valor do contrato de limpeza da Secretaria de Educação?", "esperado": 0, "categoria": "Administrativo - Contrato limpeza"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional noturno.", "esperado": 1, "categoria": "PII - Servidores adicional noturno"},
+    {"texto": "Solicito a lista de alunos com necessidades especiais matriculados em 2025.", "esperado": 1, "categoria": "PII - Alunos necessidades especiais"},
+    {"texto": "Quais são as empresas responsáveis pelo transporte escolar?", "esperado": 0, "categoria": "Administrativo - Empresas transporte escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam gratificação de função.", "esperado": 1, "categoria": "PII - Servidores gratificação função"},
+    {"texto": "Solicito a relação de pacientes internados no Hospital Regional de Samambaia.", "esperado": 1, "categoria": "PII - Pacientes internados"},
+    {"texto": "Qual o endereço da Escola Classe 15 de Ceilândia?", "esperado": 0, "categoria": "Administrativo - Endereço escola pública"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de periculosidade.", "esperado": 1, "categoria": "PII - Servidores periculosidade"},
+    {"texto": "Solicito a lista de alunos aprovados no ENEM 2025.", "esperado": 1, "categoria": "PII - Alunos aprovados ENEM"},
+    {"texto": "Quais são as empresas responsáveis pela manutenção predial das escolas?", "esperado": 0, "categoria": "Administrativo - Empresas manutenção escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam auxílio-alimentação.", "esperado": 1, "categoria": "PII - Servidores auxílio-alimentação"},
+    {"texto": "Solicito a relação de pacientes atendidos no centro cirúrgico do Hospital Regional de Planaltina.", "esperado": 1, "categoria": "PII - Pacientes centro cirúrgico"},
+    {"texto": "Qual o valor do contrato de transporte escolar?", "esperado": 0, "categoria": "Administrativo - Contrato transporte escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de tempo de serviço.", "esperado": 1, "categoria": "PII - Servidores tempo de serviço"},
+    {"texto": "Solicito a lista de alunos bolsistas em 2025.", "esperado": 1, "categoria": "PII - Alunos bolsistas"},
+    {"texto": "Quais são as empresas responsáveis pela segurança das escolas?", "esperado": 0, "categoria": "Administrativo - Empresas segurança escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de difícil acesso.", "esperado": 1, "categoria": "PII - Servidores difícil acesso"},
+    {"texto": "Solicito a relação de pacientes atendidos na emergência do Hospital Regional do Paranoá.", "esperado": 1, "categoria": "PII - Pacientes emergência"},
+    {"texto": "Qual o endereço da Secretaria de Educação?", "esperado": 0, "categoria": "Administrativo - Endereço órgão público"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de qualificação.", "esperado": 1, "categoria": "PII - Servidores qualificação"},
+    {"texto": "Solicito a lista de alunos transferidos para outras escolas em 2025.", "esperado": 1, "categoria": "PII - Alunos transferidos outras escolas"},
+    {"texto": "Quais são as empresas responsáveis pela alimentação escolar?", "esperado": 0, "categoria": "Administrativo - Empresas alimentação escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de insalubridade em 2025.", "esperado": 1, "categoria": "PII - Servidores insalubridade 2025"},
+    {"texto": "Solicito a relação de pacientes atendidos no ambulatório do Hospital Regional de Brazlândia.", "esperado": 1, "categoria": "PII - Pacientes ambulatório Brazlândia"},
+    {"texto": "Qual o valor do contrato de fornecimento de merenda escolar?", "esperado": 0, "categoria": "Administrativo - Contrato merenda escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de produtividade.", "esperado": 1, "categoria": "PII - Servidores produtividade"},
+    {"texto": "Solicito a lista de alunos aprovados no vestibular 2025.", "esperado": 1, "categoria": "PII - Alunos aprovados vestibular"},
+    {"texto": "Quais são as empresas responsáveis pela limpeza das escolas?", "esperado": 0, "categoria": "Administrativo - Empresas limpeza escolar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de função gratificada.", "esperado": 1, "categoria": "PII - Servidores função gratificada"},
+    {"texto": "Solicito a relação de pacientes atendidos no pronto-socorro do Hospital Regional de Santa Maria.", "esperado": 1, "categoria": "PII - Pacientes pronto-socorro Santa Maria"},
+    {"texto": "Qual o endereço da Escola Classe 20 de Samambaia?", "esperado": 0, "categoria": "Administrativo - Endereço escola pública Samambaia"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de titulação.", "esperado": 1, "categoria": "PII - Servidores titulação"},
+    {"texto": "Solicito a lista de alunos premiados em olimpíadas escolares.", "esperado": 1, "categoria": "PII - Alunos premiados olimpíadas"},
+    {"texto": "Quais são as empresas responsáveis pela manutenção dos hospitais?", "esperado": 0, "categoria": "Administrativo - Empresas manutenção hospitalar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de difícil provimento.", "esperado": 1, "categoria": "PII - Servidores difícil provimento"},
+    {"texto": "Solicito a relação de pacientes atendidos no centro cirúrgico do Hospital Regional de Sobradinho.", "esperado": 1, "categoria": "PII - Pacientes centro cirúrgico Sobradinho"},
+    {"texto": "Qual o valor do contrato de manutenção predial da Secretaria de Saúde?", "esperado": 0, "categoria": "Administrativo - Contrato manutenção predial"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de tempo integral.", "esperado": 1, "categoria": "PII - Servidores tempo integral"},
+    {"texto": "Solicito a lista de alunos aprovados em concursos públicos de 2025.", "esperado": 1, "categoria": "PII - Alunos aprovados concursos públicos"},
+    {"texto": "Quais são as empresas responsáveis pelo fornecimento de medicamentos?", "esperado": 0, "categoria": "Administrativo - Empresas fornecimento medicamentos"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de dedicação exclusiva.", "esperado": 1, "categoria": "PII - Servidores dedicação exclusiva"},
+    {"texto": "Solicito a relação de pacientes atendidos no pronto-socorro do Hospital Regional do Gama.", "esperado": 1, "categoria": "PII - Pacientes pronto-socorro Gama"},
+    {"texto": "Qual o endereço da Escola Classe 30 de Taguatinga?", "esperado": 0, "categoria": "Administrativo - Endereço escola pública Taguatinga"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de função comissionada.", "esperado": 1, "categoria": "PII - Servidores função comissionada"},
+    {"texto": "Solicito a lista de alunos transferidos para escolas federais em 2025.", "esperado": 1, "categoria": "PII - Alunos transferidos escolas federais"},
+    {"texto": "Quais são as empresas responsáveis pela segurança dos hospitais?", "esperado": 0, "categoria": "Administrativo - Empresas segurança hospitalar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de insalubridade em 2026.", "esperado": 1, "categoria": "PII - Servidores insalubridade 2026"},
+    {"texto": "Solicito a relação de pacientes atendidos no ambulatório do Hospital Regional de Ceilândia.", "esperado": 1, "categoria": "PII - Pacientes ambulatório Ceilândia"},
+    {"texto": "Qual o valor do contrato de fornecimento de alimentação hospitalar?", "esperado": 0, "categoria": "Administrativo - Contrato alimentação hospitalar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de produtividade em 2025.", "esperado": 1, "categoria": "PII - Servidores produtividade 2025"},
+    {"texto": "Solicito a lista de alunos aprovados em olimpíadas científicas.", "esperado": 1, "categoria": "PII - Alunos aprovados olimpíadas científicas"},
+    {"texto": "Quais são as empresas responsáveis pela limpeza dos hospitais?", "esperado": 0, "categoria": "Administrativo - Empresas limpeza hospitalar"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de função gratificada em 2026.", "esperado": 1, "categoria": "PII - Servidores função gratificada 2026"},
+    {"texto": "Solicito a relação de pacientes atendidos no pronto-socorro do Hospital Regional de Planaltina.", "esperado": 1, "categoria": "PII - Pacientes pronto-socorro Planaltina"},
+    {"texto": "Qual o endereço da Escola Classe 40 de Sobradinho?", "esperado": 0, "categoria": "Administrativo - Endereço escola pública Sobradinho"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de dedicação exclusiva em 2025.", "esperado": 1, "categoria": "PII - Servidores dedicação exclusiva 2025"},
+    {"texto": "Solicito a lista de alunos premiados em feiras de ciências.", "esperado": 1, "categoria": "PII - Alunos premiados feiras de ciências"},
+    {"texto": "Quais são as empresas responsáveis pela manutenção dos centros de saúde?", "esperado": 0, "categoria": "Administrativo - Empresas manutenção centros de saúde"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de difícil provimento em 2026.", "esperado": 1, "categoria": "PII - Servidores difícil provimento 2026"},
+    {"texto": "Solicito a relação de pacientes atendidos no centro cirúrgico do Hospital Regional de Santa Maria.", "esperado": 1, "categoria": "PII - Pacientes centro cirúrgico Santa Maria"},
+    {"texto": "Qual o valor do contrato de manutenção predial da Secretaria de Educação?", "esperado": 0, "categoria": "Administrativo - Contrato manutenção predial Educação"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de tempo integral em 2026.", "esperado": 1, "categoria": "PII - Servidores tempo integral 2026"},
+    {"texto": "Solicito a lista de alunos aprovados em concursos federais de 2025.", "esperado": 1, "categoria": "PII - Alunos aprovados concursos federais"},
+    {"texto": "Quais são as empresas responsáveis pelo fornecimento de medicamentos hospitalares?", "esperado": 0, "categoria": "Administrativo - Empresas fornecimento medicamentos hospitalares"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de dedicação exclusiva em 2026.", "esperado": 1, "categoria": "PII - Servidores dedicação exclusiva 2026"},
+    {"texto": "Solicito a relação de pacientes atendidos no pronto-socorro do Hospital Regional de Sobradinho.", "esperado": 1, "categoria": "PII - Pacientes pronto-socorro Sobradinho"},
+    {"texto": "Qual o endereço da Escola Classe 50 de Planaltina?", "esperado": 0, "categoria": "Administrativo - Endereço escola pública Planaltina"},
+    {"texto": "Favor informar o nome dos servidores que receberam adicional de função comissionada em 2026.", "esperado": 1, "categoria": "PII - Servidores função comissionada 2026"},
+    {"texto": "Solicito a lista de alunos transferidos para escolas estaduais em 2025.", "esperado": 1, "categoria": "PII - Alunos transferidos escolas estaduais"}
+    # Total: 78 casos
+    # (Os textos e categorias podem ser ajustados conforme necessidade do projeto)
+]
