@@ -10,7 +10,7 @@ pinned: false
 
 # 🛡️ Projeto Participa DF: Detector Inteligente de Dados Pessoais para Transparência Ativa
 
-[![Status do Deploy](https://img.shields.io/badge/Status-Online%20v8.5-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
+![Status do Deploy](https://img.shields.io/badge/Status-Online%20v8.5-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
 [![Licença](https://img.shields.io/badge/Licença-LGPD%20%2F%20LAI%20Compliant-blue)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
 [![Acurácia](https://img.shields.io/badge/Acurácia-112%2F112%20%28100%25%29-brightgreen)](./backend/README.md)
 ![Arquitetura](https://img.shields.io/badge/Arquitetura-Monorepo-orange)
@@ -585,7 +585,7 @@ Você edita frontend/ → git push origin main
    ├─ npm run build (Vite → /dist)
    └─ Push para branch gh-pages
    ↓
-   Frontend atualizado em: https://marinhothiago.github.io/desafio-participa-df/
+  Frontend atualizado em: https://marinhothiago.github.io/desafio-participa-df/
 ```
 
 ### ⚙️ Configuração
