@@ -150,7 +150,7 @@ export function FileDropzone({ onFileSelect, accept = '.csv,.xlsx', disabled }: 
       )}
 
       <p className="text-xs text-muted-foreground text-center">
-        💡 Utilize o arquivo <code className="bg-muted px-1.5 py-0.5 rounded">AMOSTRA_e-SIC.xlsx</code> para testes ou baixe o exemplo CSV acima.
+        💡 Utilize o arquivo <code className="bg-muted px-1.5 py-0.5 rounded">AMOSTRA_e-SIC.xlsx</code> para testes
       </p>
     </div>
   );
