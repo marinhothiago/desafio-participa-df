@@ -7,18 +7,50 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ===== NODE E NPM =====
+node_modules/
+package-lock.json
+.npm
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ===== BUILD OUTPUTS =====
+dist/
+build/
+.next/
+out/
+
+# ===== DESENVOLVIMENTO =====
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# ===== EDITOR =====
+*.sublime-workspace
+*.sublime-project
+.history/
+
+# ===== TESTING =====
+.coverage
+coverage/
+.pytest_cache/
+
+# ===== SYSTEM =====
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# ===== IDE =====
+.vscode
+.idea/
+*.code-workspace
+
+# ===== MISC =====
+*.lock
+.cache/
