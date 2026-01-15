@@ -11,11 +11,11 @@ const MAX_RETRIES = 1; // Retry automático uma vez se falhar
 export interface AnalyzeResponse {
   classificacao: "PÚBLICO" | "NÃO PÚBLICO";
   risco: "SEGURO" | "BAIXO" | "MODERADO" | "ALTO" | "CRÍTICO";
-  confianca: number; // Ex: 0.99
+  confianca: number; // Ex: 0.99 (normalizado 0-1)
   detalhes: Array<{
     tipo: string; // Ex: "CPF"
     valor: string; // Ex: "123.456..."
-    conf: number;
+    confianca?: number; // ✅ Normalizado de "conf" para "confianca"
   }>;
 }
 
@@ -28,7 +28,7 @@ export interface Entity {
 export interface AnalysisDetail {
   tipo: string;
   valor: string;
-  conf?: number;
+  confianca?: number; // ✅ Campo corrigido
 }
 
 export interface AnalysisResult {
@@ -260,7 +260,7 @@ class ApiClient {
       detalhes: response.detalhes?.map(d => ({
         tipo: d.tipo,
         valor: d.valor,
-        conf: d.conf,
+        confianca: d.confianca ?? 0.95, // ✅ Normalizado de "conf"
       })) || [],
     };
   }
@@ -305,7 +305,7 @@ class ApiClient {
           entities: response.detalhes?.map(d => ({
             type: d.tipo,
             value: d.valor,
-            confidence: d.conf ?? 0.95,
+            confidence: d.confianca ?? 0.95, // ✅ Normalizado de "conf"
           })) || [],
         };
         

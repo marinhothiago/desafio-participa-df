@@ -24,7 +24,7 @@ Exemplo de uso:
         "id": "manifestacao_123",
         "classificacao": "NÃO PÚBLICO",
         "risco": "CRÍTICO",
-        "confianca": 5.0,
+        "confianca": 1.0,  # ✅ NORMALIZADO 0-1
         "detalhes": [{"tipo": "CPF", "valor": "123.456.789-09", ...}]
     }
 """
@@ -79,7 +79,7 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
             - id (str): ID da requisição (ou None)
             - classificacao (str): "NÃO PÚBLICO" ou "PÚBLICO"
             - risco (str): Nível de risco (SEGURO, MODERADO, ALTO, CRÍTICO)
-            - confianca (float): Score de confiança (0.0 a 5.0)
+            - confianca (float): Score de confiança normalizado (0.0 a 1.0) ✅ NORMALIZADO
             - detalhes (List[Dict]): Lista com detalhes de cada PII encontrado
     
     Exemplo de detalhes PII:
