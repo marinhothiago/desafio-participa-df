@@ -1,0 +1,61 @@
+name: Deploy Backend to HuggingFace Spaces
+
+# Gatilho: Qualquer push em /backend/
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-hf.yml'
+
+jobs:
+  deploy:
+    name: Deploy Backend to HF
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necessário para git subtree
+      
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+      
+      - name: Add HuggingFace remote
+        run: |
+          git remote add hf https://marinhothiago:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/marinhothiago/participa-df-pii
+      
+      - name: Create subtree split
+        run: |
+          echo "🔄 Criando subtree split de backend/"
+          git subtree split --prefix backend --branch hf-backend
+      
+      - name: Push to HuggingFace
+        run: |
+          echo "📤 Fazendo push para HuggingFace Spaces..."
+          git push hf hf-backend:main --force
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          git branch -D hf-backend 2>/dev/null || true
+      
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ Deploy bem-sucedido!"
+          echo "🔗 HuggingFace: https://huggingface.co/spaces/marinhothiago/participa-df-pii"
+      
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo "❌ Deploy falhou"
+          echo "💡 Dicas:"
+          echo "  1. Verificar se HF_TOKEN está configurado"
+          echo "  2. Verificar permissões no HuggingFace"
+          echo "  3. Verificar histórico do repositório"
+          exit 1

@@ -45,29 +45,45 @@ git push origin main
 
 ---
 
-### 2. **HuggingFace Spaces** (Backend Apenas)
+### 2. **HuggingFace Spaces** (Backend Apenas) ✅ IMPLEMENTADO
 
 **URL:** https://huggingface.co/spaces/marinhothiago/participa-df-pii
 
-**Conteúdo:**
-- `/backend/api/` - FastAPI app
-- `/backend/src/` - PII detection logic
-- `/backend/requirements.txt` - Python dependencies
-- `/backend/Dockerfile` - Container config
-- `/backend/README.md` - Backend docs
+**Conteúdo (APENAS):**
+- ✅ `/backend/api/` - FastAPI app
+- ✅ `/backend/src/` - PII detection logic
+- ✅ `/backend/requirements.txt` - Python dependencies
+- ✅ `/backend/Dockerfile` - Container config
+- ✅ `/backend/README.md` - Backend docs
+- ❌ NÃO inclui: `frontend/`, `.github/`, `node_modules/`, etc.
 
 **Push Command (Git Subtree):**
 ```bash
-git subtree push --prefix backend hf main
+./deploy-hf.sh              # Deploy normal
+./deploy-hf.sh --force      # Force push (limpa histórico)
 ```
 
-**Quando:** Após atualizar `/backend/`
-
-**Script Auxiliar:**
+**Como Funciona:**
 ```bash
-chmod +x deploy-hf.sh
-./deploy-hf.sh
+# Cria branch temporária com apenas /backend/
+git subtree split --prefix backend --branch hf-backend
+
+# Faz push dessa branch para HF
+git push hf hf-backend:main
+
+# Limpa branch temporária
+git branch -D hf-backend
 ```
+
+**Quando Usar:**
+- ✅ Deploy normal: Após atualizar `/backend/`
+- 🔴 Deploy com força: Se HF tiver histórico conflitante
+
+**Validações Automáticas:**
+- ✅ Verifica se é repositório git
+- ✅ Verifica se `/backend/` existe
+- ✅ Verifica remote 'hf' configurado
+- ✅ Valida que não há mudanças não commitadas
 
 ---
 
