@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { normalizeConfidence } from '@/components/ConfidenceBar';
 import { Download, FileSpreadsheet, FileJson, FileText, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,8 +19,7 @@ interface ExportButtonProps {
 export function ExportButton({ data, disabled = false }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
-  // Usa função global centralizada
-  import { normalizeConfidence } from '@/components/ConfidenceBar';
+
 
   const formatDataForExport = () => {
     return data.map((item, index) => {
