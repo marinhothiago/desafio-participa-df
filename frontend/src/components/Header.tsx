@@ -8,7 +8,7 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary-foreground/10 rounded-lg">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: '#00A65E1A' }}>
               <Shield className="w-6 h-6 text-[#00A65E]" />
             </div>
             <div>
