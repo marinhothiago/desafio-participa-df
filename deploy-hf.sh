@@ -59,7 +59,7 @@ fi
 # Verificar remotes
 if ! git remote get-url "$HF_REMOTE" >/dev/null 2>&1; then
     echo -e "${RED}❌ Erro: Remote 'hf' não configurado${NC}"
-    echo "Solução: git remote add hf https://huggingface.co/spaces/marinhothiago/participa-df-pii"
+    echo "Solução: git remote add hf https://huggingface.co/spaces/marinhothiago/desafio-participa-df"
     exit 1
 fi
 
@@ -122,7 +122,7 @@ echo -e "${GREEN}✅ DEPLOY BEM-SUCEDIDO!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "📍 Localização:"
-echo "   HuggingFace: https://huggingface.co/spaces/marinhothiago/participa-df-pii"
+echo "   HuggingFace: https://huggingface.co/spaces/marinhothiago/desafio-participa-df"
 echo ""
 echo "📋 Próximos passos:"
 echo "   1. Visitar a URL acima"

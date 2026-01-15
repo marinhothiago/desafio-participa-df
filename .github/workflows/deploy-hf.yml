@@ -27,7 +27,7 @@ jobs:
       
       - name: Add HuggingFace remote
         run: |
-          git remote add hf https://marinhothiago:${{ secrets.HUGGINGFACE }}@huggingface.co/spaces/marinhothiago/participa-df-pii
+          git remote add hf https://marinhothiago:${{ secrets.HUGGINGFACE }}@huggingface.co/spaces/marinhothiago/desafio-participa-df
       
       - name: Create subtree split
         run: |
@@ -48,7 +48,7 @@ jobs:
         if: success()
         run: |
           echo "✅ Deploy bem-sucedido!"
-          echo "🔗 HuggingFace: https://huggingface.co/spaces/marinhothiago/participa-df-pii"
+          echo "🔗 HuggingFace: https://huggingface.co/spaces/marinhothiago/desafio-participa-df"
       
       - name: Failure notification
         if: failure()

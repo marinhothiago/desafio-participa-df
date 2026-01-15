@@ -4,7 +4,7 @@
 // ============================================
 
 // URL da API - com detecção automática de backend local
-const PRODUCTION_API_URL = 'https://marinhothiago-participa-df-pii.hf.space';
+const PRODUCTION_API_URL = 'https://marinhothiago-desafio-participa-df.hf.space';
 const LOCAL_API_URL = 'http://localhost:8000';
 const API_TIMEOUT = 15000; // 15 segundos (modelo de IA pode demorar)
 const MAX_RETRIES = 1; // Retry automático uma vez se falhar

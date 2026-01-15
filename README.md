@@ -1,3 +1,9 @@
+  Backend atualizado em: https://huggingface.co/spaces/marinhothiago/desafio-participa-df
+  Backend: https://marinhothiago-desafio-participa-df.hf.space/
+  **API Base:** https://marinhothiago-desafio-participa-df.hf.space/
+  **Docs Interativa:** https://marinhothiago-desafio-participa-df.hf.space/docs
+  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
+  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
 ---
 title: Participa DF - PII Detector
 emoji: 🛡️
