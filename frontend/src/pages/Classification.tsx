@@ -359,7 +359,7 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FolderUp className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Processamento em Lote</h3>
+              <h3 className="text-lg font-semibold text-foreground">Classificação em Lote</h3>
             </div>
             <Button
               variant="outline"
@@ -398,7 +398,7 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Processar Arquivo
+                    Analisar Privacidade
                   </>
                 )}
               </Button>
