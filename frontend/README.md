@@ -390,7 +390,59 @@ npm run lint
 
 ---
 
-## 🔌 Integração com Backend
+## � Exibição da Confiança
+
+### Barra de Confiança
+
+O componente `ConfidenceBar` exibe a confiança como uma barra visual verde:
+
+```tsx
+// src/components/ConfidenceBar.tsx
+export function ConfidenceBar({ value, showLabel = true }: ConfidenceBarProps) {
+  const percentage = value * 100;  // Backend envia 0-1
+  
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div 
+          className="h-full rounded-full"
+          style={{ 
+            width: `${percentage}%`,
+            backgroundColor: 'hsl(120, 60%, 40%)'  // Verde
+          }}
+        />
+      </div>
+      {showLabel && <span>{percentage.toFixed(0)}%</span>}
+    </div>
+  );
+}
+```
+
+### Como a Confiança é Calculada
+
+O backend retorna valores entre **0.0 e 1.0** usando o sistema de **Confiança Composta**:
+
+```
+confiança_final = min(1.0, confiança_base × fator_contexto)
+```
+
+| Cenário | Confiança | Exibição |
+|---------|-----------|----------|
+| CPF com "Meu CPF:" | 1.0 | **100%** |
+| CPF sem contexto | 0.98 | **98%** |
+| Nome via BERT (score 0.87) | 0.87 | **87%** |
+| Nome via spaCy | 0.70 | **70%** |
+| Texto PÚBLICO (sem PII) | 1.0 | **100%** (certeza de segurança) |
+
+### Interpretação
+
+- **90-100%**: Alta confiança - PII confirmado ou texto seguro
+- **70-89%**: Confiança moderada - provavelmente PII
+- **< 70%**: Confiança baixa - verificar manualmente
+
+---
+
+## �🔌 Integração com Backend
 
 ### Detecção Automática
 

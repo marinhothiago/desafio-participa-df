@@ -12,9 +12,10 @@ pinned: false
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![spaCy](https://img.shields.io/badge/spaCy-3.8.0-09A3D5?logo=spacy)](https://spacy.io/)
-[![Versão](https://img.shields.io/badge/Versão-9.0-blue)](./src/detector.py)
+[![Versão](https://img.shields.io/badge/Versão-9.1-blue)](./src/detector.py)
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade LGPD/LAI em manifestações do Participa DF.
+> Agora com **sistema de confiança probabilística** baseado em calibração isotônica e combinação log-odds.
 
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
@@ -36,7 +37,8 @@ Detectar, classificar e avaliar o risco de vazamento de dados pessoais em textos
 ### Funcionalidades Principais
 
 - ✅ **Rastreabilidade Total:** Preserva o ID original do e-SIC em todo o fluxo
-- ✅ **Motor Híbrido v9.0:** Ensemble de Regex + BERT NER + spaCy + Regras de Negócio
+- ✅ **Motor Híbrido v9.1:** Ensemble de Regex + BERT NER + spaCy + Regras de Negócio
+- ✅ **Confiança Probabilística:** Calibração isotônica + combinação log-odds
 - ✅ **Três Formas de Uso:** API REST, Interface CLI (lote) e integração com Dashboard Web
 - ✅ **Validação de Documentos:** CPF, CNPJ, PIS, CNS com dígito verificador
 - ✅ **Contexto Brasília/GDF:** Imunidade funcional para servidores públicos em exercício
@@ -59,22 +61,34 @@ backend/
 │
 ├── src/
 │   ├── __init__.py           ← Marca como módulo Python
-│   ├── detector.py           ← Motor híbrido PII v9.0
-│   │                           (1016 linhas com comentários explicativos)
+│   ├── detector.py           ← Motor híbrido PII v9.1
+│   │                           (1400+ linhas com comentários explicativos)
 │   │                           - Classe PIIDetector: ensemble de detectores
 │   │                           - Classe ValidadorDocumentos: validação DV
 │   │                           - Regex patterns para 22 tipos de PII
 │   │                           - NER: BERT (primário) + spaCy (complementar)
 │   │                           - Regras de negócio (imunidade funcional)
+│   │                           - Método detect_extended() com confiança prob.
 │   │
-│   └── allow_list.py         ← Lista de termos seguros (não são PII)
-│                               - Órgãos do GDF (SEEDF, SESDF, DETRAN, etc)
-│                               - Regiões administrativas de Brasília
-│                               - Endereços administrativos (SQS, SQN, etc)
+│   ├── allow_list.py         ← Lista de termos seguros (não são PII)
+│   │                           - Órgãos do GDF (SEEDF, SESDF, DETRAN, etc)
+│   │                           - Regiões administrativas de Brasília
+│   │                           - Endereços administrativos (SQS, SQN, etc)
+│   │
+│   └── confidence/           ← NOVO: Módulo de confiança probabilística
+│       ├── __init__.py       ← Exports do módulo
+│       ├── types.py          ← PIIEntity, DocumentConfidence, SourceDetection
+│       ├── config.py         ← FN_RATES, FP_RATES, PESOS_LGPD, thresholds
+│       ├── validators.py     ← Validação DV (CPF, CNPJ, PIS, CNS, etc)
+│       ├── calibration.py    ← IsotonicCalibrator, CalibratorRegistry
+│       ├── combiners.py      ← ProbabilityCombiner, EntityAggregator
+│       └── calculator.py     ← PIIConfidenceCalculator (orquestrador)
 │
 ├── main_cli.py               ← CLI para processamento em lote
 │                               - Entrada: CSV/XLSX com coluna "Texto Mascarado"
 │                               - Saída: JSON + CSV + XLSX com cores
+│
+├── test_confidence.py        ← NOVO: Testes do sistema de confiança
 │
 ├── test_metrics.py           ← Suite de 100+ testes automatizados
 │                               - Casos seguros (não PII)
@@ -364,12 +378,67 @@ Texto de Entrada
 │                  ENSEMBLE OR + DEDUPLICAÇÃO                  │
 │  • Combina achados de todas as camadas                       │
 │  • Remove duplicatas priorizando maior peso                  │
-│  • Calcula risco máximo e confiança                          │
+│  • Calcula risco máximo e confiança composta                 │
 └──────────────────────────────────────────────────────────────┘
        │
        ▼
    Resultado Final
    (classificacao, risco, confianca, detalhes)
+```
+
+### Sistema de Confiança Composta
+
+A confiança de cada PII detectado é calculada dinamicamente:
+
+```
+confiança_final = min(1.0, confiança_base × fator_contexto)
+```
+
+#### Confiança Base por Método
+
+| Método | Tipos | Base | Justificativa |
+|--------|-------|------|---------------|
+| **Regex + DV** | CPF, PIS, CNS, CNH, Título Eleitor, CTPS | 0.98 | Validação matemática |
+| **Regex + Luhn** | Cartão Crédito | 0.95 | Algoritmo válido |
+| **Regex estrutural** | Email, Telefone, Placa, PIX | 0.85-0.95 | Padrão claro |
+| **Regex + contexto** | CEP, Data Nascimento | 0.70-0.75 | Depende de contexto |
+| **BERT NER** | Nomes | score do modelo | Retorna 0.75-0.99 |
+| **spaCy NER** | Nomes | 0.70 | Modelo complementar |
+| **Gatilho** | Nomes após "falar com" | 0.85 | Padrão linguístico |
+
+#### Fatores de Contexto
+
+| Fator | Ajuste | Exemplo |
+|-------|--------|---------|
+| Possessivo | +15% | "**Meu** CPF é..." |
+| Label explícito | +10% | "**CPF:** 529..." |
+| Verbo declarativo | +5% | "CPF **é** 529..." |
+| Gatilho de contato | +10% | "**falar com** João" |
+| Contexto de teste | -25% | "**exemplo**: 000..." |
+| Declarado fictício | -30% | "CPF **fictício**" |
+| Negação | -20% | "**não é** meu CPF" |
+| Institucional | -10% | "CPF **da empresa**" |
+
+#### Exemplos de Cálculo
+
+```python
+# Exemplo 1: CPF com possessivo e label
+texto = "Meu CPF: 529.982.247-25"
+base = 0.98  # DV válido
+fator = 1.0 + 0.15 (possessivo) + 0.10 (label) = 1.25
+confianca = min(1.0, 0.98 * 1.25) = 1.0  # Capped
+
+# Exemplo 2: CPF em contexto de exemplo
+texto = "exemplo de CPF: 529.982.247-25"
+base = 0.98
+fator = 1.0 - 0.25 (exemplo) = 0.75
+confianca = 0.98 * 0.75 = 0.74  # Baixa, pode ser filtrado
+
+# Exemplo 3: Nome detectado por BERT com gatilho
+texto = "falar com João Silva"
+base = 0.87  # Score do BERT
+fator = 1.0 + 0.10 (gatilho) = 1.10
+confianca = min(1.0, 0.87 * 1.10) = 0.96
 ```
 
 ### Tipos de PII Detectados
@@ -548,6 +617,130 @@ O frontend React se conecta automaticamente ao backend:
 // frontend/src/lib/api.ts
 const PRODUCTION_API_URL = 'https://marinhothiago-desafio-participa-df.hf.space';
 const LOCAL_API_URL = 'http://localhost:7860';
+```
+
+---
+
+## 🎯 Sistema de Confiança Probabilística (v9.1)
+
+O backend inclui um sistema sofisticado de cálculo de confiança baseado em práticas de produção de grandes empresas (Google, Microsoft, Meta) e bancos brasileiros.
+
+### Arquitetura do Módulo
+
+```
+backend/src/confidence/
+├── __init__.py        # Exports do módulo
+├── types.py           # Dataclasses (PIIEntity, DocumentConfidence)
+├── config.py          # Taxas FN/FP, pesos LGPD, thresholds
+├── validators.py      # Validação de dígitos verificadores
+├── calibration.py     # Calibração isotônica de scores
+├── combiners.py       # Combinação via Log-Odds (Naive Bayes)
+└── calculator.py      # Orquestrador principal
+```
+
+### Componentes Principais
+
+#### 1. Calibração de Scores (Isotonic Regression)
+
+Modelos neurais como BERT são frequentemente **overconfident** - retornam scores altos mesmo quando erram. A calibração isotônica corrige isso:
+
+```python
+# Score bruto 0.95 -> Score calibrado ~0.85
+# Score bruto 0.99 -> Score calibrado ~0.90
+```
+
+#### 2. Combinação via Log-Odds (Naive Bayes)
+
+Quando múltiplas fontes detectam a mesma entidade, combinamos via log-odds:
+
+$$
+\text{logit} = \log\frac{p_{\text{prior}}}{1 - p_{\text{prior}}} + \sum_i \log\frac{p_i}{FP_i}
+$$
+
+$$
+\text{confidence} = \frac{e^{\text{logit}}}{1 + e^{\text{logit}}}
+$$
+
+#### 3. Taxas de Erro por Fonte
+
+```python
+# False Negative Rates (quanto cada fonte PERDE)
+FN_RATES = {
+    "bert_ner": 0.008,      # BERT perde 0.8%
+    "spacy": 0.015,         # spaCy perde 1.5%
+    "regex": 0.003,         # Regex perde 0.3%
+    "dv_validation": 0.0001 # DV quase perfeito
+}
+
+# False Positive Rates (alarmes falsos)
+FP_RATES = {
+    "bert_ner": 0.02,       # 2% de FP
+    "spacy": 0.03,          # 3% de FP
+    "regex": 0.0002,        # Muito preciso
+    "dv_validation": 0.00001 # Quase impossível ser FP
+}
+```
+
+#### 4. Métricas de Documento
+
+- **`confidence_no_pii`**: P(não existe PII) quando nada detectado
+- **`confidence_all_found`**: P(encontramos todo PII) quando tem detecções
+- **`confidence_min_entity`**: Menor confiança entre entidades (elo mais fraco)
+
+### Novo Endpoint Extendido
+
+```python
+# Método detect_extended() retorna estrutura completa
+resultado = detector.detect_extended(texto)
+
+# Estrutura de resposta:
+{
+    "has_pii": True,
+    "classificacao": "NÃO PÚBLICO",
+    "risco": "CRÍTICO",
+    "confidence": {
+        "no_pii": 0.0,
+        "all_found": 0.9999,
+        "min_entity": 0.9850
+    },
+    "sources_used": ["bert_ner", "spacy", "regex"],
+    "entities": [
+        {
+            "tipo": "CPF",
+            "valor": "529.982.247-25",
+            "confianca": 0.9999,
+            "confidence_level": "very_high",
+            "sources": ["regex", "dv_validation"],
+            "dv_valid": True
+        }
+    ],
+    "total_entities": 1
+}
+```
+
+### Validação de Dígitos Verificadores
+
+O módulo valida automaticamente documentos brasileiros:
+
+| Documento | Algoritmo | Confiança se Válido |
+|-----------|-----------|---------------------|
+| CPF | Módulo 11 | 0.9999 |
+| CNPJ | Módulo 11 com pesos | 0.9999 |
+| PIS/NIT | Módulo 11 com pesos | 0.9999 |
+| CNS | Soma ponderada | 0.9999 |
+| Título Eleitor | DVs específicos por UF | 0.9999 |
+| Cartão Crédito | Luhn | 0.9999 |
+
+### Backward Compatibility
+
+O método `detect()` original continua funcionando:
+
+```python
+# API antiga (mantida)
+is_pii, findings, risco, conf = detector.detect(texto)
+
+# API nova (recomendada)
+resultado = detector.detect_extended(texto)
 ```
 
 ---

@@ -1,12 +1,14 @@
 # 🛡️ Participa DF - Detector Inteligente de Dados Pessoais
 
 [![Status](https://img.shields.io/badge/Status-Produção-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
-[![Versão](https://img.shields.io/badge/Versão-9.0-blue)](./backend/README.md)
+[![Versão](https://img.shields.io/badge/Versão-9.1-blue)](./backend/README.md)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
 [![Licença](https://img.shields.io/badge/Licença-LGPD%2FLAI-green)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
+> 
+> 🆕 **v9.1**: Sistema de confiança probabilística com **calibração isotônica** e **combinação log-odds (Naive Bayes)**.
 
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
@@ -57,12 +59,13 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │                 BACKEND (FastAPI + Python)                  │
 │           HuggingFace Spaces / Docker                       │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ Motor Híbrido de Detecção PII (v9.0 - 1016 linhas)     │ │
+│  │ Motor Híbrido de Detecção PII (v9.1 - 1500+ linhas)    │ │
 │  │                                                         │ │
 │  │ 1. REGEX + Validação DV (CPF, CNPJ, PIS, CNS, CNH)    │ │
 │  │ 2. BERT NER Multilíngue (detector primário de nomes)   │ │
 │  │ 3. spaCy pt_core_news_lg (NER complementar)            │ │
 │  │ 4. Regras de Negócio (imunidade funcional, contexto)   │ │
+│  │ 5. Confiança Probabilística (isotônico + log-odds)     │ │
 │  │                                                         │ │
 │  │ Estratégia: Ensemble OR (alta recall para LGPD)        │ │
 │  └────────────────────────────────────────────────────────┘ │
@@ -90,11 +93,19 @@ desafio-participa-df/
 │   │   └── main.py               ← FastAPI: endpoints /analyze e /health
 │   │
 │   ├── src/
-│   │   ├── detector.py           ← Motor híbrido PII (978 linhas, comentado)
-│   │   └── allow_list.py         ← Lista de termos seguros (GDF, órgãos)
+│   │   ├── detector.py           ← Motor híbrido PII v9.1 (1500+ linhas)
+│   │   ├── allow_list.py         ← Lista de termos seguros (GDF, órgãos)
+│   │   └── confidence/           ← 🆕 Módulo de confiança probabilística
+│   │       ├── types.py          ← Dataclasses: PIIEntity, DocumentConfidence
+│   │       ├── config.py         ← FN/FP rates, pesos LGPD, thresholds
+│   │       ├── validators.py     ← Validação DV (CPF, CNPJ, PIS, CNS)
+│   │       ├── calibration.py    ← Calibrador isotônico (sklearn)
+│   │       ├── combiners.py      ← Combinação log-odds (Naive Bayes)
+│   │       └── calculator.py     ← Orquestrador de confiança
 │   │
 │   ├── main_cli.py               ← CLI: processamento em lote via terminal
 │   ├── test_metrics.py           ← Suite de 100+ testes automatizados
+│   ├── test_confidence.py        ← Testes do sistema de confiança
 │   │
 │   └── data/
 │       ├── input/                ← Arquivos CSV/XLSX para processar
@@ -460,6 +471,99 @@ def _detectar_ner(self, texto: str) -> List[PIIFinding]:
 ```
 
 **Por que dois modelos?** A estratégia Ensemble OR garante que se o BERT perder um nome (ex: grafia incomum), o spaCy pode capturá-lo, e vice-versa. Isso maximiza recall, essencial para conformidade LGPD/LAI.
+
+#### 🆕 Sistema de Confiança Probabilística (v9.1)
+
+O novo sistema calcula confiança usando **Calibração Isotônica** + **Log-Odds (Naive Bayes)**:
+
+```
+P(PII|evidências) = calibração_isotônica(score_raw) → combinação_log_odds(fontes)
+```
+
+**Pipeline de Confiança:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. COLETA: Detecções de múltiplas fontes                   │
+│     • BERT NER → score 0.92, tipo="NOME"                   │
+│     • spaCy → score 0.85, tipo="NOME"                      │
+│     • Regex → match, tipo="CPF"                            │
+│     • DV Validation → válido (0.9999)                      │
+└─────────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  2. CALIBRAÇÃO: Isotônica (sklearn) ou conservadora         │
+│     • BERT 0.92 → calibrado 0.87 (ajuste por FN/FP rate)   │
+│     • spaCy 0.85 → calibrado 0.75                          │
+│     • Regex → probabilidade baseada em FP rate             │
+└─────────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  3. COMBINAÇÃO: Log-Odds (Naive Bayes)                      │
+│     log_odds = Σ log(P/(1-P)) por fonte                    │
+│     → Múltiplas fontes concordando = confiança maior       │
+│     → CPF (regex) + DV válido = confiança ~0.9999          │
+└─────────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│  4. MÉTRICAS DE DOCUMENTO                                   │
+│     • confidence_min_entity: menor confiança individual    │
+│     • confidence_all_found: P(encontramos todos os PIIs)   │
+│     • confidence_no_pii: P(texto não contém PII)           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Taxas FN/FP Calibradas por Fonte:**
+
+| Fonte | FN Rate | FP Rate | Justificativa |
+|-------|---------|---------|---------------|
+| BERT NER | 0.008 | 0.02 | Modelo multilíngue robusto |
+| spaCy | 0.015 | 0.03 | Modelo nativo PT complementar |
+| Regex | 0.003 | 0.0002 | Padrões determinísticos precisos |
+| DV Validation | 0.0001 | 0.00001 | Validação matemática (quase perfeita) |
+
+**Exemplos de Confiança Combinada:**
+
+| Cenário | Fontes | Confiança Final |
+|---------|--------|-----------------|
+| CPF válido (regex + DV) | regex + dv_validation | 0.9999 |
+| Nome detectado (BERT + spaCy) | bert_ner + spacy | 0.94 |
+| Telefone (apenas regex) | regex | 0.85 |
+| CPF inválido (falhou DV) | - | Descartado |
+
+**Confiança Base por Método (fallback):**
+
+| Categoria | Tipos | Base | Justificativa |
+|-----------|-------|------|---------------|
+| Regex + DV | CPF, PIS, CNS, CNH, Título | 0.98 | Validação matemática (Módulo 11) |
+| Regex + Luhn | Cartão Crédito | 0.95 | Algoritmo Luhn válido |
+| Regex Estrutural | Email, Telefone, Placa | 0.85-0.95 | Padrão claro, sem validação |
+| BERT NER | Nomes | score modelo | Retorna confiança própria (0.75-0.99) |
+| spaCy NER | Nomes | 0.70 | Modelo menor, complementar |
+| Gatilho | Nomes após "falar com" | 0.85 | Padrão linguístico forte |
+
+**Fatores de Contexto (Boost/Penalidade):**
+
+| Fator | Ajuste | Exemplo |
+|-------|--------|---------|
+| Possessivo ("meu", "minha") | +15% | "Meu CPF é..." → boost |
+| Label explícito ("CPF:") | +10% | "CPF: 529..." → boost |
+| Gatilho de contato | +10% | "falar com João" → boost |
+| Contexto de teste | -25% | "exemplo: 000..." → penalidade |
+| Declarado fictício | -30% | "CPF fictício..." → ignora |
+| Negação antes | -20% | "não é meu CPF" → penalidade |
+
+**Exemplos Práticos:**
+
+| Texto | Base | Fator | Final |
+|-------|------|-------|-------|
+| "Meu CPF: 529.982.247-25" | 0.98 | 1.25 | **1.00** |
+| "CPF 529.982.247-25" | 0.98 | 1.00 | **0.98** |
+| "exemplo CPF: 529..." | 0.98 | 0.75 | **ignorado** |
+| "falar com João Silva" | 0.85 | 1.10 | **0.94** |
 
 #### API (`backend/api/main.py`)
 

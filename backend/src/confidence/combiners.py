@@ -1,0 +1,326 @@
+"""
+Combinadores de probabilidades para ensemble de detecção.
+
+Implementa:
+- Combinação via Log-Odds (Naive Bayes)
+- Cálculo de confidence_no_pii
+- Cálculo de confidence_all_found
+"""
+
+import math
+from typing import List, Dict, Tuple, Optional
+import logging
+
+from .types import SourceDetection, DetectionSource
+from .config import FN_RATES, FP_RATES, PRIOR_PII
+
+logger = logging.getLogger(__name__)
+
+
+class ProbabilityCombiner:
+    """Combina probabilidades de múltiplas fontes via Log-Odds.
+    
+    A combinação via log-odds (Naive Bayes) é robusta quando as fontes
+    são razoavelmente independentes. Cada fonte contribui com sua
+    likelihood ratio para o odds final.
+    
+    Fórmula:
+        logit = log(prior_odds) + Σ log(p_fonte / fp_rate_fonte)
+        confidence = exp(logit) / (1 + exp(logit))
+    """
+    
+    def __init__(
+        self, 
+        fn_rates: Optional[Dict[str, float]] = None,
+        fp_rates: Optional[Dict[str, float]] = None,
+        prior: float = PRIOR_PII
+    ):
+        """Inicializa o combinador.
+        
+        Args:
+            fn_rates: Taxas de false negative por fonte
+            fp_rates: Taxas de false positive por fonte
+            prior: Probabilidade base de existir PII antes de ver evidência
+        """
+        self.fn_rates = fn_rates or FN_RATES
+        self.fp_rates = fp_rates or FP_RATES
+        self.prior = prior
+    
+    def combine_detections(
+        self, 
+        detections: List[SourceDetection],
+        prior: Optional[float] = None
+    ) -> float:
+        """Combina detecções de múltiplas fontes em confiança única.
+        
+        Args:
+            detections: Lista de detecções de diferentes fontes
+            prior: Prior específico (sobrescreve o default)
+            
+        Returns:
+            Confiança combinada (0-1)
+        """
+        if not detections:
+            return 0.0
+        
+        prior = prior or self.prior
+        prior = max(0.001, min(0.999, prior))  # Clamp
+        
+        # Começa com log-odds do prior
+        prior_odds = prior / (1 - prior)
+        log_odds = math.log(prior_odds)
+        
+        for detection in detections:
+            if not detection.is_positive:
+                continue  # Ignora detecções negativas
+            
+            # Score calibrado da fonte
+            p = detection.calibrated_score
+            p = max(0.0001, min(0.9999, p))  # Clamp para evitar log(0)
+            
+            # Taxa de FP da fonte
+            source_name = detection.source.value if isinstance(detection.source, DetectionSource) else str(detection.source)
+            fp_rate = self.fp_rates.get(source_name, 0.01)
+            fp_rate = max(0.00001, fp_rate)  # Evita divisão por zero
+            
+            # Likelihood ratio: P(observar | é PII) / P(observar | não é PII)
+            # P(observar | é PII) ≈ p (score calibrado)
+            # P(observar | não é PII) ≈ fp_rate
+            likelihood_ratio = p / fp_rate
+            
+            log_odds += math.log(likelihood_ratio)
+        
+        # Converte log-odds de volta para probabilidade
+        # Clamp para evitar overflow
+        log_odds = min(log_odds, 20)  # exp(20) ≈ 485 milhões
+        
+        final_odds = math.exp(log_odds)
+        confidence = final_odds / (1 + final_odds)
+        
+        return confidence
+    
+    def combine_by_source(
+        self, 
+        source_scores: Dict[str, float]
+    ) -> float:
+        """Combina scores de múltiplas fontes (interface simplificada).
+        
+        Args:
+            source_scores: Dict de {nome_fonte: score_calibrado}
+            
+        Returns:
+            Confiança combinada (0-1)
+        """
+        detections = []
+        for source, score in source_scores.items():
+            try:
+                source_enum = DetectionSource(source)
+            except ValueError:
+                source_enum = source
+            
+            detections.append(SourceDetection(
+                source=source_enum,
+                raw_score=score,
+                calibrated_score=score,
+                is_positive=True
+            ))
+        
+        return self.combine_detections(detections)
+    
+    def confidence_no_pii(
+        self, 
+        sources_used: List[str]
+    ) -> float:
+        """Calcula confiança de que NÃO existe PII no texto.
+        
+        Quando nenhuma fonte detecta nada, a probabilidade de que 
+        realmente não existe PII é:
+        
+            P(no PII) = 1 - P(todas as fontes erraram)
+            P(todas erraram) = Π fn_rate_i (produto das taxas de FN)
+        
+        Com ensemble de 4 fontes bem calibradas, chegamos a ~0.999999998
+        
+        Args:
+            sources_used: Lista de fontes que participaram da análise
+            
+        Returns:
+            Confiança de que não existe PII (0-1)
+        """
+        if not sources_used:
+            return 0.5  # Sem fontes, incerteza total
+        
+        # Probabilidade de TODAS as fontes terem perdido um PII real
+        p_miss_all = 1.0
+        
+        for source in sources_used:
+            fn_rate = self.fn_rates.get(source, 0.1)  # Default conservador
+            p_miss_all *= fn_rate
+        
+        # P(não existe PII) = 1 - P(perdemos algo)
+        # Mas também precisamos considerar o prior de existir PII
+        # P(no PII | nenhuma detecção) ∝ P(nenhuma detecção | no PII) * P(no PII)
+        
+        # P(nenhuma detecção | no PII) ≈ 1 - Σ fp_rate_i (aproximação)
+        p_no_detection_given_no_pii = 1.0
+        for source in sources_used:
+            fp_rate = self.fp_rates.get(source, 0.01)
+            p_no_detection_given_no_pii *= (1 - fp_rate)
+        
+        # P(nenhuma detecção | has PII) = Π fn_rate_i
+        p_no_detection_given_has_pii = p_miss_all
+        
+        # Bayes: P(no PII | nenhuma detecção)
+        prior_no_pii = 1 - self.prior
+        
+        numerator = p_no_detection_given_no_pii * prior_no_pii
+        denominator = (
+            p_no_detection_given_no_pii * prior_no_pii + 
+            p_no_detection_given_has_pii * self.prior
+        )
+        
+        if denominator == 0:
+            return 0.5
+        
+        confidence = numerator / denominator
+        
+        # Clamp para evitar 1.0 exato (nunca temos certeza absoluta)
+        return min(confidence, 0.9999999999)
+    
+    def confidence_all_found(
+        self, 
+        entity_confidences: List[float],
+        num_sources_agreed: int = 1
+    ) -> float:
+        """Calcula confiança de que encontramos TODOS os PIIs.
+        
+        Quando PIIs são detectados, queremos saber a probabilidade de
+        não ter perdido nenhum. Isso depende:
+        1. Da menor confiança entre entidades (elo mais fraco)
+        2. Do número de fontes que concordaram
+        
+        Args:
+            entity_confidences: Lista de confianças de cada entidade
+            num_sources_agreed: Número de fontes que concordaram
+            
+        Returns:
+            Confiança de ter encontrado tudo (0-1)
+        """
+        if not entity_confidences:
+            return 0.0
+        
+        # Confiança mínima entre entidades
+        min_conf = min(entity_confidences)
+        
+        # Média das confianças
+        avg_conf = sum(entity_confidences) / len(entity_confidences)
+        
+        # Boost por múltiplas fontes concordando
+        agreement_boost = 1.0 + (num_sources_agreed - 1) * 0.02
+        agreement_boost = min(agreement_boost, 1.1)  # Cap de 10%
+        
+        # Combina: 70% peso na mínima, 30% na média
+        # Mais conservador - priorizamos não perder nada
+        base_confidence = 0.7 * min_conf + 0.3 * avg_conf
+        
+        # Aplica boost de concordância
+        confidence = base_confidence * agreement_boost
+        
+        return min(confidence, 0.9999)
+
+
+class EntityAggregator:
+    """Agrega detecções de mesma entidade de diferentes fontes."""
+    
+    def __init__(self, combiner: Optional[ProbabilityCombiner] = None):
+        self.combiner = combiner or ProbabilityCombiner()
+    
+    def aggregate_by_position(
+        self, 
+        detections: List[Dict]
+    ) -> List[Dict]:
+        """Agrega detecções que se sobrepõem na mesma posição.
+        
+        Args:
+            detections: Lista de detecções com campos:
+                - start, end: posições
+                - source: fonte da detecção
+                - score: score da fonte
+                
+        Returns:
+            Lista de detecções agregadas
+        """
+        if not detections:
+            return []
+        
+        # Agrupa por sobreposição de posição
+        groups: List[List[Dict]] = []
+        
+        for det in sorted(detections, key=lambda x: x.get('start', 0)):
+            merged = False
+            for group in groups:
+                # Verifica se sobrepõe com algum do grupo
+                for existing in group:
+                    if self._overlaps(det, existing):
+                        group.append(det)
+                        merged = True
+                        break
+                if merged:
+                    break
+            
+            if not merged:
+                groups.append([det])
+        
+        # Combina cada grupo
+        aggregated = []
+        for group in groups:
+            if len(group) == 1:
+                aggregated.append(group[0])
+            else:
+                aggregated.append(self._merge_group(group))
+        
+        return aggregated
+    
+    def _overlaps(self, det1: Dict, det2: Dict) -> bool:
+        """Verifica se duas detecções se sobrepõem."""
+        start1, end1 = det1.get('start', 0), det1.get('end', 0)
+        start2, end2 = det2.get('start', 0), det2.get('end', 0)
+        
+        return not (end1 <= start2 or end2 <= start1)
+    
+    def _merge_group(self, group: List[Dict]) -> Dict:
+        """Merge de um grupo de detecções sobrepostas."""
+        # Pega a maior span
+        start = min(d.get('start', 0) for d in group)
+        end = max(d.get('end', 0) for d in group)
+        
+        # Coleta sources e scores
+        sources = []
+        source_scores = {}
+        
+        for det in group:
+            source = det.get('source', 'unknown')
+            score = det.get('score', 0.5)
+            
+            if source not in sources:
+                sources.append(source)
+                source_scores[source] = score
+            else:
+                # Se mesma fonte aparece 2x, pega o maior score
+                source_scores[source] = max(source_scores[source], score)
+        
+        # Combina scores
+        combined_conf = self.combiner.combine_by_source(source_scores)
+        
+        # Pega o valor mais longo/completo
+        best_det = max(group, key=lambda d: len(d.get('valor', '')))
+        
+        return {
+            'tipo': best_det.get('tipo'),
+            'valor': best_det.get('valor'),
+            'start': start,
+            'end': end,
+            'confianca': combined_conf,
+            'sources': sources,
+            'peso': best_det.get('peso', 3),
+        }

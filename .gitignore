@@ -4,6 +4,24 @@ Thumbs.db
 *.log
 .env
 .env.local
+.env.*.local
+
+# ===== PYTHON =====
+venv/
+.venv/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+.eggs/
+
+# ===== NODE.JS =====
+node_modules/
+.npm/
+.pnpm-store/
 
 # ===== VSCODE =====
 .vscode/

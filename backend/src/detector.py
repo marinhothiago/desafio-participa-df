@@ -1,13 +1,15 @@
 """Módulo de detecção de Informações Pessoais Identificáveis (PII).
 
-Versão: 9.0 - HACKATHON PARTICIPA-DF 2025
+Versão: 9.1 - HACKATHON PARTICIPA-DF 2025
 Abordagem: Ensemble híbrido com alta recall (estratégia OR)
+Confiança: Sistema probabilístico com calibração e log-odds
 
 Pipeline:
 1. Regras determinísticas (regex + validação DV) → 70% dos PIIs
 2. NER especializado (BERTimbau NER) → nomes e entidades
 3. spaCy como backup → cobertura adicional
 4. Ensemble OR → qualquer detector positivo = PII
+5. Cálculo probabilístico de confiança → calibração + log-odds
 """
 
 import re
@@ -17,6 +19,19 @@ from enum import Enum
 from functools import lru_cache
 import logging
 from text_unidecode import unidecode
+
+# Módulo de confiança probabilística
+try:
+    from .confidence import (
+        PIIConfidenceCalculator,
+        get_calculator,
+        DocumentConfidence as DocConf,
+        PESOS_LGPD as PESOS_LGPD_CONF
+    )
+    CONFIDENCE_MODULE_AVAILABLE = True
+except ImportError:
+    CONFIDENCE_MODULE_AVAILABLE = False
+    PIIConfidenceCalculator = None
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
@@ -180,16 +195,37 @@ class PIIDetector:
     Estratégia: Ensemble OR - qualquer detector positivo classifica como PII.
     Isso maximiza recall (não deixar escapar nenhum PII) às custas de alguns
     falsos positivos, que é a estratégia correta para LAI/LGPD.
+    
+    Confiança: Sistema probabilístico com:
+    - Calibração isotônica de scores de modelos
+    - Combinação via Log-Odds (Naive Bayes)
+    - Validação de DV como fonte adicional
     """
 
-    def __init__(self, usar_gpu: bool = True) -> None:
-        """Inicializa o detector com todos os modelos NLP."""
-        logger.info("🏆 [v9.0] VERSÃO HACKATHON - ENSEMBLE DE ALTA RECALL")
+    def __init__(self, usar_gpu: bool = True, use_probabilistic_confidence: bool = True) -> None:
+        """Inicializa o detector com todos os modelos NLP.
+        
+        Args:
+            usar_gpu: Se deve usar GPU para modelos (default: True)
+            use_probabilistic_confidence: Se deve usar sistema de confiança 
+                probabilística (default: True)
+        """
+        logger.info("🏆 [v9.1] VERSÃO HACKATHON - ENSEMBLE DE ALTA RECALL + CONFIANÇA PROBABILÍSTICA")
         
         self.validador = ValidadorDocumentos()
         self._inicializar_modelos(usar_gpu)
         self._inicializar_vocabularios()
         self._compilar_patterns()
+        
+        # Sistema de confiança probabilística
+        self.use_probabilistic_confidence = use_probabilistic_confidence and CONFIDENCE_MODULE_AVAILABLE
+        if self.use_probabilistic_confidence:
+            self.confidence_calculator = get_calculator()
+            logger.info("✅ Sistema de confiança probabilística ativado")
+        else:
+            self.confidence_calculator = None
+            if use_probabilistic_confidence and not CONFIDENCE_MODULE_AVAILABLE:
+                logger.warning("⚠️ Módulo de confiança não disponível, usando fallback")
     
     def _inicializar_modelos(self, usar_gpu: bool) -> None:
         """Carrega modelos NLP com fallback."""
@@ -258,6 +294,10 @@ class PIIDetector:
             # Termos comuns em LAI
             "CIDADAO", "CIDADA", "REQUERENTE", "SOLICITANTE", "INTERESSADO",
             "DENUNCIANTE", "RECLAMANTE", "MANIFESTANTE",
+            
+            # Falsos positivos de NER (palavras que parecem nomes mas não são)
+            "MEU CPF", "MINHA CNH", "MEU RG", "MEU TELEFONE", "MEU EMAIL",
+            "MEU ENDERECO", "MINHA IDENTIDADE", "MEU NOME", "MEU PIS",
             
             # Outros
             "LIGACOES", "TELEFONICAS", "MUDAS", "ILUMINACAO", "PUBLICA",
@@ -334,7 +374,7 @@ class PIIDetector:
             "MEU PASSAPORTE", "MEU TITULO", "MEU PIS", "MEU NIT"
         }
         
-        # Pesos por tipo de PII
+        # Pesos por tipo de PII (baseado em categorias LGPD)
         self.pesos_pii: Dict[str, int] = {
             # Crítico (5) - Identificação direta
             "CPF": 5, "RG": 5, "CNH": 5, "PASSAPORTE": 5,
@@ -349,6 +389,43 @@ class PIIDetector:
             # Moderado (3) - Identificação indireta
             "PLACA_VEICULO": 3, "CEP": 3,
             "DATA_NASCIMENTO": 3, "PROCESSO_CNJ": 3,
+        }
+        
+        # Confiança BASE por tipo de PII (baseado no método de detecção)
+        # Fórmula final: confianca = min(1.0, base * fator_contexto)
+        self.confianca_base: Dict[str, float] = {
+            # Regex + Validação DV (alta confiança)
+            "CPF": 0.98,              # DV Módulo 11
+            "PIS": 0.98,              # DV Módulo 11
+            "CNS": 0.98,              # DV específico
+            "CNH": 0.98,              # DV Módulo 11
+            "TITULO_ELEITOR": 0.98,   # DV específico
+            "CTPS": 0.98,             # DV Módulo 11
+            "CARTAO_CREDITO": 0.95,   # Luhn (pode ser gerado)
+            "CNPJ_PESSOAL": 0.90,     # DV + heurística MEI
+            
+            # Regex estrutural (sem DV)
+            "EMAIL_PESSOAL": 0.95,    # Domínio pessoal confirmado
+            "PROCESSO_CNJ": 0.90,     # Formato muito específico
+            "TELEFONE": 0.88,         # Pode ser comercial
+            "PLACA_VEICULO": 0.88,    # Formato bem definido
+            "PIX": 0.88,              # Chave identificável
+            "RG": 0.85,               # Formato varia por estado
+            "PASSAPORTE": 0.85,       # Formato menos padronizado
+            "ENDERECO_RESIDENCIAL": 0.85,
+            "CONTA_BANCARIA": 0.85,
+            "CERTIDAO": 0.85,
+            "REGISTRO_PROFISSIONAL": 0.85,
+            
+            # Regex com dependência de contexto
+            "CEP": 0.75,              # Só com contexto pessoal
+            "DATA_NASCIMENTO": 0.70,  # Muitas datas não são nascimento
+            
+            # NER
+            "NOME_BERT": 0.00,        # Usa score do modelo (placeholder)
+            "NOME_SPACY": 0.70,       # Modelo menor
+            "NOME_GATILHO": 0.85,     # Padrão linguístico forte
+            "NOME_CONTRA": 0.80,      # Padrão linguístico fraco
         }
     
     def _compilar_patterns(self) -> None:
@@ -581,13 +658,123 @@ class PIIDetector:
         
         return any(p in contexto for p in palavras_negativas)
     
+    def _calcular_fator_contexto(self, texto: str, inicio: int, fim: int, tipo: str) -> float:
+        """Calcula fator multiplicador de confiança baseado no contexto.
+        
+        Analisa o texto ao redor do achado para ajustar a confiança:
+        - Boosts: Possessivos, labels, gatilhos de contato
+        - Penalidades: Contexto de teste, negação, institucional
+        
+        Args:
+            texto: Texto completo sendo analisado
+            inicio: Posição inicial do achado
+            fim: Posição final do achado
+            tipo: Tipo de PII detectado
+            
+        Returns:
+            float: Multiplicador entre 0.6 (penalidade máxima) e 1.2 (boost máximo)
+        """
+        janela = 60  # caracteres de contexto
+        pre = self._normalizar(texto[max(0, inicio-janela):inicio])
+        pos = self._normalizar(texto[fim:min(len(texto), fim+janela)])
+        contexto_completo = pre + " " + pos
+        
+        fator = 1.0  # Neutro
+        
+        # === BOOSTS (aumentam confiança) ===
+        
+        # Possessivo imediato antes ("meu CPF", "minha identidade")
+        if re.search(r'\b(MEU|MINHA|MEUS|MINHAS)\s*:?\s*$', pre):
+            fator += 0.15
+        
+        # Label do tipo antes (ex: "CPF:", "Email:", "Tel:")
+        labels_por_tipo = {
+            "CPF": [r'CPF\s*:?\s*$', r'C\.?P\.?F\.?\s*:?\s*$'],
+            "EMAIL_PESSOAL": [r'E-?MAIL\s*:?\s*$', r'CORREIO\s*:?\s*$'],
+            "TELEFONE": [r'TEL\.?\s*:?\s*$', r'TELEFONE\s*:?\s*$', r'CELULAR\s*:?\s*$', r'FONE\s*:?\s*$'],
+            "RG": [r'RG\s*:?\s*$', r'IDENTIDADE\s*:?\s*$'],
+            "CNH": [r'CNH\s*:?\s*$', r'HABILITACAO\s*:?\s*$'],
+            "PIS": [r'PIS\s*:?\s*$', r'NIT\s*:?\s*$'],
+            "PASSAPORTE": [r'PASSAPORTE\s*:?\s*$'],
+            "CONTA_BANCARIA": [r'CONTA\s*:?\s*$', r'AGENCIA\s*:?\s*$'],
+        }
+        if tipo in labels_por_tipo:
+            for pattern in labels_por_tipo[tipo]:
+                if re.search(pattern, pre):
+                    fator += 0.10
+                    break
+        
+        # Verbo declarativo antes ("é", "são", "foi")
+        if re.search(r'\b(E|É|SAO|SÃO|FOI|FORAM|SERA|SERÁ)\s*:?\s*$', pre[-20:]):
+            fator += 0.05
+        
+        # Gatilho de contato pessoal antes (para NOME)
+        if tipo == "NOME":
+            for gatilho in self.gatilhos_contato:
+                if gatilho in pre:
+                    fator += 0.10
+                    break
+        
+        # === PENALIDADES (reduzem confiança) ===
+        
+        # Contexto de teste/exemplo
+        if re.search(r'\b(EXEMPLO|TESTE|FICTICIO|FICTÍCIO|FAKE|GENERICO|GENÉRICO|MODELO)\b', contexto_completo):
+            fator -= 0.25
+        
+        # Declarado inválido/falso
+        if re.search(r'\b(INVALIDO|INVÁLIDO|FALSO|ERRADO|INCORRETO)\b', contexto_completo):
+            fator -= 0.30
+        
+        # Negação antes ("não é meu CPF")
+        if re.search(r'\b(NAO|NÃO|NEM)\s+(E|É|ERA|FOI|SAO|SÃO)\s*$', pre):
+            fator -= 0.20
+        
+        # Contexto institucional (menos provável ser pessoal)
+        if re.search(r'\b(DA EMPRESA|DO ORGAO|DO ÓRGÃO|INSTITUCIONAL|CORPORATIVO|DA SECRETARIA)\b', contexto_completo):
+            fator -= 0.10
+        
+        # Muitos números próximos (pode ser tabela/lista, não PII isolado)
+        numeros_proximos = len(re.findall(r'\d{4,}', contexto_completo))
+        if numeros_proximos >= 4:
+            fator -= 0.15
+        
+        # Clamp entre 0.6 e 1.2
+        return max(0.6, min(1.2, fator))
+    
+    def _calcular_confianca(self, tipo: str, texto: str, inicio: int, fim: int, 
+                            score_modelo: float = None) -> float:
+        """Calcula confiança final: base * fator_contexto.
+        
+        Args:
+            tipo: Tipo de PII
+            texto: Texto completo
+            inicio: Posição inicial
+            fim: Posição final
+            score_modelo: Score do modelo NER (se aplicável)
+            
+        Returns:
+            float: Confiança final entre 0.0 e 1.0
+        """
+        # Base de confiança
+        if score_modelo is not None:
+            base = score_modelo  # BERT retorna seu próprio score
+        else:
+            base = self.confianca_base.get(tipo, 0.85)
+        
+        # Fator de contexto
+        fator = self._calcular_fator_contexto(texto, inicio, fim, tipo)
+        
+        # Confiança final (capped em 1.0)
+        return min(1.0, base * fator)
+    
     def _detectar_regex(self, texto: str) -> List[PIIFinding]:
-        """Detecção por regex com validação de dígito verificador."""
+        """Detecção por regex com validação de dígito verificador e confiança composta."""
         findings = []
         
         for tipo, pattern in self.patterns_compilados.items():
             for match in pattern.finditer(texto):
                 valor = match.group(1) if match.lastindex else match.group()
+                inicio, fim = match.start(), match.end()
                 
                 # Validação específica por tipo
                 if tipo == 'CPF':
@@ -595,163 +782,177 @@ class PIIDetector:
                         continue
                     if not self.validador.validar_cpf(valor):
                         continue
+                    confianca = self._calcular_confianca("CPF", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CPF", valor=valor, confianca=1.0,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="CPF", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CNPJ':
-                    # CNPJ de empresa não é PII, mas CNPJ de MEI pode ser
-                    # Por segurança, não marcamos CNPJ como PII por padrão
                     if not self.validador.validar_cnpj(valor):
                         continue
-                    # Só marca se tiver contexto de pessoa física
-                    contexto = texto[max(0, match.start()-50):match.end()+50].upper()
+                    # Só marca se tiver contexto de pessoa física (MEI)
+                    contexto = texto[max(0, inicio-50):fim+50].upper()
                     if any(p in contexto for p in ["MEU CNPJ", "MINHA EMPRESA", "SOU MEI", "MEI"]):
+                        confianca = self._calcular_confianca("CNPJ_PESSOAL", texto, inicio, fim)
                         findings.append(PIIFinding(
-                            tipo="CNPJ_PESSOAL", valor=valor, confianca=0.8,
-                            peso=4, inicio=match.start(), fim=match.end()
+                            tipo="CNPJ_PESSOAL", valor=valor, confianca=confianca,
+                            peso=4, inicio=inicio, fim=fim
                         ))
                 
                 elif tipo == 'PIS':
                     if not self.validador.validar_pis(valor):
                         continue
+                    confianca = self._calcular_confianca("PIS", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="PIS", valor=valor, confianca=1.0,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="PIS", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CNS':
                     if not self.validador.validar_cns(valor):
                         continue
+                    confianca = self._calcular_confianca("CNS", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CNS", valor=valor, confianca=1.0,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="CNS", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'EMAIL_PESSOAL':
-                    # Ignora emails institucionais
                     email_lower = valor.lower()
                     if any(d in email_lower for d in ['.gov.br', '.org.br', '.edu.br', 'empresa-df']):
                         continue
+                    confianca = self._calcular_confianca("EMAIL_PESSOAL", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="EMAIL_PESSOAL", valor=valor, confianca=1.0,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="EMAIL_PESSOAL", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo in ['CELULAR', 'TELEFONE_FIXO', 'TELEFONE_DDI']:
-                    # Reconstrói o número
                     if tipo == 'TELEFONE_DDI':
-                        # Verifica se é institucional
-                        ctx = texto[max(0, match.start()-50):match.start()].lower()
+                        ctx = texto[max(0, inicio-50):inicio].lower()
                         if 'institucional' in ctx:
                             continue
-                    
+                    confianca = self._calcular_confianca("TELEFONE", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="TELEFONE", valor=valor, confianca=0.9,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="TELEFONE", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'RG':
+                    confianca = self._calcular_confianca("RG", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="RG", valor=valor, confianca=1.0,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="RG", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CNH':
+                    confianca = self._calcular_confianca("CNH", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CNH", valor=valor, confianca=1.0,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="CNH", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'PASSAPORTE':
+                    confianca = self._calcular_confianca("PASSAPORTE", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="PASSAPORTE", valor=valor, confianca=0.95,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="PASSAPORTE", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'ENDERECO_RESIDENCIAL':
+                    confianca = self._calcular_confianca("ENDERECO_RESIDENCIAL", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="ENDERECO_RESIDENCIAL", valor=valor, confianca=0.9,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="ENDERECO_RESIDENCIAL", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'PLACA_VEICULO':
+                    confianca = self._calcular_confianca("PLACA_VEICULO", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="PLACA_VEICULO", valor=valor, confianca=0.9,
-                        peso=3, inicio=match.start(), fim=match.end()
+                        tipo="PLACA_VEICULO", valor=valor, confianca=confianca,
+                        peso=3, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CONTA_BANCARIA':
+                    confianca = self._calcular_confianca("CONTA_BANCARIA", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CONTA_BANCARIA", valor=valor, confianca=0.95,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="CONTA_BANCARIA", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'PIX_UUID':
+                    confianca = self._calcular_confianca("PIX", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="PIX", valor=valor, confianca=0.95,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="PIX", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CARTAO_CREDITO':
-                    # Valida com algoritmo de Luhn seria ideal
+                    confianca = self._calcular_confianca("CARTAO_CREDITO", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CARTAO_CREDITO", valor=valor, confianca=0.85,
-                        peso=4, inicio=match.start(), fim=match.end()
+                        tipo="CARTAO_CREDITO", valor=valor, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'DATA_NASCIMENTO':
+                    confianca = self._calcular_confianca("DATA_NASCIMENTO", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="DATA_NASCIMENTO", valor=valor, confianca=0.85,
-                        peso=3, inicio=match.start(), fim=match.end()
+                        tipo="DATA_NASCIMENTO", valor=valor, confianca=confianca,
+                        peso=3, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'TITULO_ELEITOR':
                     if not self.validador.validar_titulo_eleitor(valor):
                         continue
+                    confianca = self._calcular_confianca("TITULO_ELEITOR", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="TITULO_ELEITOR", valor=valor, confianca=0.95,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="TITULO_ELEITOR", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CTPS':
+                    confianca = self._calcular_confianca("CTPS", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CTPS", valor=valor, confianca=0.95,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="CTPS", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CERTIDAO':
+                    confianca = self._calcular_confianca("CERTIDAO", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="CERTIDAO", valor=valor, confianca=0.90,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="CERTIDAO", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'REGISTRO_PROFISSIONAL':
+                    confianca = self._calcular_confianca("REGISTRO_PROFISSIONAL", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="REGISTRO_PROFISSIONAL", valor=valor, confianca=0.90,
-                        peso=5, inicio=match.start(), fim=match.end()
+                        tipo="REGISTRO_PROFISSIONAL", valor=valor, confianca=confianca,
+                        peso=5, inicio=inicio, fim=fim
                     ))
                 
                 elif tipo == 'CEP':
                     # CEP só é PII se estiver em contexto de endereço pessoal
-                    contexto = texto[max(0, match.start()-50):match.end()+50].upper()
+                    contexto = texto[max(0, inicio-50):fim+50].upper()
                     if any(p in contexto for p in ["MORO", "RESIDO", "MINHA CASA", "MEU ENDERECO"]):
+                        confianca = self._calcular_confianca("CEP", texto, inicio, fim)
                         findings.append(PIIFinding(
-                            tipo="CEP", valor=valor, confianca=0.80,
-                            peso=3, inicio=match.start(), fim=match.end()
+                            tipo="CEP", valor=valor, confianca=confianca,
+                            peso=3, inicio=inicio, fim=fim
                         ))
                 
                 elif tipo == 'PROCESSO_CNJ':
+                    confianca = self._calcular_confianca("PROCESSO_CNJ", texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="PROCESSO_CNJ", valor=valor, confianca=0.95,
-                        peso=3, inicio=match.start(), fim=match.end()
+                        tipo="PROCESSO_CNJ", valor=valor, confianca=confianca,
+                        peso=3, inicio=inicio, fim=fim
                     ))
         
         return findings
     
     def _extrair_nomes_gatilho(self, texto: str) -> List[PIIFinding]:
-        """Extrai nomes após gatilhos de contato (sempre PII)."""
+        """Extrai nomes após gatilhos de contato (sempre PII) com confiança composta."""
         findings = []
         texto_upper = self._normalizar(texto)
         
@@ -780,9 +981,16 @@ class PIIDetector:
                 if len(nome) <= 3:
                     continue
                 
+                inicio = idx + match.start()
+                fim = idx + match.end()
+                # Usa base NOME_GATILHO (0.85) com fator de contexto
+                confianca = self._calcular_confianca("NOME", texto, inicio, fim)
+                # Boost adicional porque tem gatilho (já é forte indicador)
+                confianca = min(1.0, confianca * 1.05)
+                
                 findings.append(PIIFinding(
-                    tipo="NOME", valor=nome, confianca=0.95,
-                    peso=4, inicio=idx + match.start(), fim=idx + match.end()
+                    tipo="NOME", valor=nome, confianca=confianca,
+                    peso=4, inicio=inicio, fim=fim
                 ))
         
         # Nomes após "contra" (reclamação contra Pedro)
@@ -796,9 +1004,16 @@ class PIIDetector:
                 nome_upper = self._normalizar(nome)
                 
                 if len(nome) > 3 and nome_upper not in self.blocklist_total:
+                    inicio = idx
+                    fim = idx + len(nome)
+                    # Base menor para "contra" (0.80)
+                    base = self.confianca_base.get("NOME_CONTRA", 0.80)
+                    fator = self._calcular_fator_contexto(texto, inicio, fim, "NOME")
+                    confianca = min(1.0, base * fator)
+                    
                     findings.append(PIIFinding(
-                        tipo="NOME", valor=nome, confianca=0.85,
-                        peso=4, inicio=idx, fim=idx + len(nome)
+                        tipo="NOME", valor=nome, confianca=confianca,
+                        peso=4, inicio=inicio, fim=fim
                     ))
         
         return findings
@@ -836,11 +1051,11 @@ class PIIDetector:
         return False
     
     def _detectar_ner(self, texto: str) -> List[PIIFinding]:
-        """Detecção de nomes usando modelos NER (BERT e spaCy)."""
+        """Detecção de nomes usando modelos NER (BERT e spaCy) com confiança composta."""
         findings = []
         threshold = 0.75
         
-        # BERT NER
+        # BERT NER (primário)
         if self.nlp_bert:
             try:
                 entidades = self.nlp_bert(texto)
@@ -862,15 +1077,21 @@ class PIIDetector:
                         if self._deve_ignorar_nome(texto, ent['start']):
                             continue
                         
+                        inicio, fim = ent['start'], ent['end']
+                        # BERT: usa score do modelo como base, aplica fator de contexto
+                        score_bert = float(ent['score'])
+                        fator = self._calcular_fator_contexto(texto, inicio, fim, "NOME")
+                        confianca = min(1.0, score_bert * fator)
+                        
                         findings.append(PIIFinding(
                             tipo="NOME", valor=palavra,
-                            confianca=float(ent['score']), peso=4,
-                            inicio=ent['start'], fim=ent['end']
+                            confianca=confianca, peso=4,
+                            inicio=inicio, fim=fim
                         ))
             except Exception as e:
                 logger.warning(f"Erro no BERT NER: {e}")
         
-        # spaCy NER (backup)
+        # spaCy NER (complementar)
         if self.nlp_spacy:
             try:
                 doc = self.nlp_spacy(texto)
@@ -890,10 +1111,16 @@ class PIIDetector:
                     
                     # Evita duplicatas com BERT
                     if not any(f.valor.lower() == ent.text.lower() for f in findings):
+                        inicio, fim = ent.start_char, ent.end_char
+                        # spaCy: usa base fixa (0.70), aplica fator de contexto
+                        base = self.confianca_base.get("NOME_SPACY", 0.70)
+                        fator = self._calcular_fator_contexto(texto, inicio, fim, "NOME")
+                        confianca = min(1.0, base * fator)
+                        
                         findings.append(PIIFinding(
                             tipo="NOME", valor=ent.text,
-                            confianca=0.80, peso=4,
-                            inicio=ent.start_char, fim=ent.end_char
+                            confianca=confianca, peso=4,
+                            inicio=inicio, fim=fim
                         ))
             except Exception as e:
                 logger.warning(f"Erro no spaCy: {e}")
@@ -901,10 +1128,13 @@ class PIIDetector:
         return findings
     
     def detect(self, text: str) -> Tuple[bool, List[Dict], str, float]:
-        """Detecta PII no texto usando ensemble de alta recall.
+        """Detecta PII no texto usando ensemble de alta recall + confiança probabilística.
         
         Estratégia: OR - qualquer detector positivo = PII
         Isso maximiza recall para conformidade LAI/LGPD.
+        
+        Confiança: Usa sistema probabilístico com calibração isotônica e 
+        combinação via Log-Odds quando disponível.
         
         Args:
             text: Texto a ser analisado
@@ -919,6 +1149,110 @@ class PIIDetector:
         if not text or not text.strip():
             return False, [], "SEGURO", 1.0
         
+        # === USA SISTEMA PROBABILÍSTICO SE DISPONÍVEL ===
+        if self.use_probabilistic_confidence and self.confidence_calculator:
+            return self._detect_with_probabilistic_confidence(text)
+        
+        # === FALLBACK: SISTEMA LEGADO ===
+        return self._detect_legacy(text)
+    
+    def _detect_with_probabilistic_confidence(self, text: str) -> Tuple[bool, List[Dict], str, float]:
+        """Detecção com sistema de confiança probabilística.
+        
+        Usa calibração isotônica + combinação log-odds para calcular
+        confiança de cada entidade e métricas de documento.
+        """
+        # Coleta fontes usadas
+        sources_used = []
+        if self.nlp_bert:
+            sources_used.append("bert_ner")
+        if self.nlp_spacy:
+            sources_used.append("spacy")
+        sources_used.append("regex")
+        
+        # === ENSEMBLE DE DETECÇÃO COM RASTREAMENTO DE FONTE ===
+        all_raw_detections: List[Dict] = []
+        
+        # 1. Regex com validação de DV
+        regex_findings = self._detectar_regex(text)
+        for f in regex_findings:
+            all_raw_detections.append({
+                "tipo": f.tipo,
+                "valor": f.valor,
+                "start": f.inicio,
+                "end": f.fim,
+                "source": "regex",
+                "score": f.confianca,
+                "peso": f.peso
+            })
+        
+        # 2. Nomes após gatilhos
+        gatilho_findings = self._extrair_nomes_gatilho(text)
+        for f in gatilho_findings:
+            all_raw_detections.append({
+                "tipo": f.tipo,
+                "valor": f.valor,
+                "start": f.inicio,
+                "end": f.fim,
+                "source": "gatilho",
+                "score": f.confianca,
+                "peso": f.peso
+            })
+        
+        # 3. NER (BERT + spaCy) - rastreia separadamente
+        if self.nlp_bert:
+            bert_findings = self._detectar_ner_bert_only(text)
+            for f in bert_findings:
+                all_raw_detections.append({
+                    "tipo": f.tipo,
+                    "valor": f.valor,
+                    "start": f.inicio,
+                    "end": f.fim,
+                    "source": "bert_ner",
+                    "score": f.confianca,
+                    "peso": f.peso
+                })
+        
+        if self.nlp_spacy:
+            spacy_findings = self._detectar_ner_spacy_only(text)
+            for f in spacy_findings:
+                all_raw_detections.append({
+                    "tipo": f.tipo,
+                    "valor": f.valor,
+                    "start": f.inicio,
+                    "end": f.fim,
+                    "source": "spacy",
+                    "score": f.confianca,
+                    "peso": f.peso
+                })
+        
+        # Usa calculador probabilístico
+        doc_confidence = self.confidence_calculator.process_raw_detections(
+            raw_detections=all_raw_detections,
+            sources_used=sources_used,
+            text=text
+        )
+        
+        # Converte para formato de retorno legado
+        if not doc_confidence.has_pii:
+            return False, [], "SEGURO", doc_confidence.confidence_no_pii
+        
+        # Extrai findings no formato esperado
+        findings_dict = []
+        for entity in doc_confidence.entities:
+            findings_dict.append({
+                "tipo": entity.tipo,
+                "valor": entity.valor,
+                "confianca": entity.confianca
+            })
+        
+        # Confiança do documento = confidence_all_found (ou min_entity como fallback)
+        doc_conf = doc_confidence.confidence_all_found or doc_confidence.confidence_min_entity or 0.9
+        
+        return True, findings_dict, doc_confidence.risco, doc_conf
+    
+    def _detect_legacy(self, text: str) -> Tuple[bool, List[Dict], str, float]:
+        """Sistema de detecção legado (fallback quando módulo probabilístico indisponível)."""
         # === ENSEMBLE DE DETECÇÃO ===
         all_findings: List[PIIFinding] = []
         
@@ -982,13 +1316,230 @@ class PIIDetector:
         ]
         
         return True, findings_dict, nivel_risco, max_confianca
+    
+    def detect_extended(self, text: str) -> Dict:
+        """Detecta PII com métricas de confiança probabilística extendidas.
+        
+        Retorna informações adicionais sobre confiança:
+        - confidence_no_pii: P(não existe PII) quando nada detectado
+        - confidence_all_found: P(encontramos todo PII) quando tem detecções
+        - confidence_min_entity: Menor confiança entre entidades
+        
+        Args:
+            text: Texto a ser analisado
+            
+        Returns:
+            Dict com estrutura:
+            {
+                "has_pii": bool,
+                "classificacao": "PÚBLICO" ou "NÃO PÚBLICO",
+                "risco": "CRÍTICO"/"ALTO"/"MODERADO"/"BAIXO"/"SEGURO",
+                "confidence": {
+                    "no_pii": float (0-1),
+                    "all_found": float ou None,
+                    "min_entity": float ou None
+                },
+                "sources_used": ["bert_ner", "spacy", "regex", ...],
+                "entities": [{"tipo", "valor", "confianca", ...}, ...],
+                "total_entities": int
+            }
+        """
+        if not text or not text.strip():
+            return {
+                "has_pii": False,
+                "classificacao": "PÚBLICO",
+                "risco": "SEGURO",
+                "confidence": {
+                    "no_pii": 0.9999999999,
+                    "all_found": None,
+                    "min_entity": None
+                },
+                "sources_used": [],
+                "entities": [],
+                "total_entities": 0
+            }
+        
+        # Coleta fontes usadas
+        sources_used = []
+        if self.nlp_bert:
+            sources_used.append("bert_ner")
+        if self.nlp_spacy:
+            sources_used.append("spacy")
+        sources_used.append("regex")  # Sempre disponível
+        
+        # Se módulo de confiança não disponível, usa detect() e converte
+        if not self.use_probabilistic_confidence:
+            is_pii, findings, nivel_risco, conf = self.detect(text)
+            return {
+                "has_pii": is_pii,
+                "classificacao": "NÃO PÚBLICO" if is_pii else "PÚBLICO",
+                "risco": nivel_risco,
+                "confidence": {
+                    "no_pii": 1.0 - conf if not is_pii else 0.0,
+                    "all_found": conf if is_pii else None,
+                    "min_entity": conf if is_pii else None
+                },
+                "sources_used": sources_used,
+                "entities": findings,
+                "total_entities": len(findings)
+            }
+        
+        # === ENSEMBLE DE DETECÇÃO COM RASTREAMENTO DE FONTE ===
+        all_raw_detections: List[Dict] = []
+        
+        # 1. Regex com validação de DV
+        regex_findings = self._detectar_regex(text)
+        for f in regex_findings:
+            all_raw_detections.append({
+                "tipo": f.tipo,
+                "valor": f.valor,
+                "start": f.inicio,
+                "end": f.fim,
+                "source": "regex",
+                "score": f.confianca,
+                "peso": f.peso
+            })
+        
+        # 2. Nomes após gatilhos
+        gatilho_findings = self._extrair_nomes_gatilho(text)
+        for f in gatilho_findings:
+            all_raw_detections.append({
+                "tipo": f.tipo,
+                "valor": f.valor,
+                "start": f.inicio,
+                "end": f.fim,
+                "source": "gatilho",
+                "score": f.confianca,
+                "peso": f.peso
+            })
+        
+        # 3. NER (BERT + spaCy) - precisa rastrear separadamente
+        if self.nlp_bert:
+            bert_findings = self._detectar_ner_bert_only(text)
+            for f in bert_findings:
+                all_raw_detections.append({
+                    "tipo": f.tipo,
+                    "valor": f.valor,
+                    "start": f.inicio,
+                    "end": f.fim,
+                    "source": "bert_ner",
+                    "score": f.confianca,
+                    "peso": f.peso
+                })
+        
+        if self.nlp_spacy:
+            spacy_findings = self._detectar_ner_spacy_only(text)
+            for f in spacy_findings:
+                all_raw_detections.append({
+                    "tipo": f.tipo,
+                    "valor": f.valor,
+                    "start": f.inicio,
+                    "end": f.fim,
+                    "source": "spacy",
+                    "score": f.confianca,
+                    "peso": f.peso
+                })
+        
+        # Usa calculador probabilístico
+        doc_confidence = self.confidence_calculator.process_raw_detections(
+            raw_detections=all_raw_detections,
+            sources_used=sources_used,
+            text=text
+        )
+        
+        return doc_confidence.to_dict()
+    
+    def _detectar_ner_bert_only(self, texto: str) -> List[PIIFinding]:
+        """Detecta apenas com BERT NER (para rastreamento de fonte)."""
+        findings = []
+        
+        if not self.nlp_bert:
+            return findings
+        
+        try:
+            # Trunca texto se necessário (BERT tem limite de tokens)
+            texto_truncado = texto[:4096] if len(texto) > 4096 else texto
+            
+            resultados = self.nlp_bert(texto_truncado)
+            for ent in resultados:
+                if ent['entity_group'] != 'PER':
+                    continue
+                
+                nome = ent['word']
+                score = ent['score']
+                
+                # Filtros
+                if len(nome) <= 3:
+                    continue
+                if " " not in nome:
+                    continue
+                if self._eh_lixo(nome):
+                    continue
+                if self._deve_ignorar_nome(texto, ent['start']):
+                    continue
+                
+                inicio, fim = ent['start'], ent['end']
+                
+                findings.append(PIIFinding(
+                    tipo="NOME", valor=nome,
+                    confianca=score, peso=4,
+                    inicio=inicio, fim=fim
+                ))
+        except Exception as e:
+            logger.warning(f"Erro no BERT NER: {e}")
+        
+        return findings
+    
+    def _detectar_ner_spacy_only(self, texto: str) -> List[PIIFinding]:
+        """Detecta apenas com spaCy NER (para rastreamento de fonte)."""
+        findings = []
+        
+        if not self.nlp_spacy:
+            return findings
+        
+        try:
+            doc = self.nlp_spacy(texto)
+            for ent in doc.ents:
+                if ent.label_ != 'PER':
+                    continue
+                
+                # Filtros
+                if len(ent.text) <= 3:
+                    continue
+                if " " not in ent.text:
+                    continue
+                if self._eh_lixo(ent.text):
+                    continue
+                if self._deve_ignorar_nome(texto, ent.start_char):
+                    continue
+                
+                inicio, fim = ent.start_char, ent.end_char
+                base = self.confianca_base.get("NOME_SPACY", 0.70)
+                fator = self._calcular_fator_contexto(texto, inicio, fim, "NOME")
+                confianca = min(1.0, base * fator)
+                
+                findings.append(PIIFinding(
+                    tipo="NOME", valor=ent.text,
+                    confianca=confianca, peso=4,
+                    inicio=inicio, fim=fim
+                ))
+        except Exception as e:
+            logger.warning(f"Erro no spaCy: {e}")
+        
+        return findings
 
 
 # === FUNÇÃO DE CONVENIÊNCIA ===
 
-def criar_detector(usar_gpu: bool = True) -> PIIDetector:
-    """Factory function para criar detector configurado."""
-    return PIIDetector(usar_gpu=usar_gpu)
+def criar_detector(usar_gpu: bool = True, use_probabilistic_confidence: bool = True) -> PIIDetector:
+    """Factory function para criar detector configurado.
+    
+    Args:
+        usar_gpu: Se deve usar GPU para modelos (default: True)
+        use_probabilistic_confidence: Se deve usar sistema de confiança 
+            probabilística (default: True)
+    """
+    return PIIDetector(usar_gpu=usar_gpu, use_probabilistic_confidence=use_probabilistic_confidence)
 
 
 # === TESTE RÁPIDO ===
