@@ -1,0 +1,18 @@
+# Dependências
+node_modules/
+npm-debug.log*
+
+# Build (não precisa no container de build)
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Outros
+*.md
+.env*

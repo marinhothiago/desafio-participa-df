@@ -6,17 +6,22 @@ interface RiskDistributionChartProps {
 }
 
 export function RiskDistributionChart({ distribution }: RiskDistributionChartProps) {
+  // Defensive: fallback if distribution is missing or malformed
+  const safeDist = distribution && typeof distribution === 'object' ? distribution : {
+    critical: 0, high: 0, moderate: 0, low: 0, safe: 0
+  };
+  const safeNumber = (v: any) => (typeof v === 'number' && !isNaN(v) ? v : 0);
   const data = [
-    { name: 'Crítico', value: distribution.critical, color: getRiskColor('critical') },
-    { name: 'Alto', value: distribution.high, color: getRiskColor('high') },
-    { name: 'Moderado', value: distribution.moderate, color: getRiskColor('moderate') },
-    { name: 'Baixo', value: distribution.low, color: getRiskColor('low') },
-    { name: 'Seguro', value: distribution.safe, color: getRiskColor('safe') },
+    { name: 'Crítico', value: safeNumber(safeDist.critical), color: getRiskColor('critical') },
+    { name: 'Alto', value: safeNumber(safeDist.high), color: getRiskColor('high') },
+    { name: 'Moderado', value: safeNumber(safeDist.moderate), color: getRiskColor('moderate') },
+    { name: 'Baixo', value: safeNumber(safeDist.low), color: getRiskColor('low') },
+    { name: 'Seguro', value: safeNumber(safeDist.safe), color: getRiskColor('safe') },
   ].filter(item => item.value > 0);
 
-  const total = distribution.critical + distribution.high + distribution.moderate + distribution.low + distribution.safe;
+  const total = safeNumber(safeDist.critical) + safeNumber(safeDist.high) + safeNumber(safeDist.moderate) + safeNumber(safeDist.low) + safeNumber(safeDist.safe);
 
-  if (total === 0) {
+  if (!distribution || total === 0) {
     return (
       <div className="gov-card animate-slide-up h-full">
         <h3 className="text-lg font-semibold text-foreground mb-4">Distribuição de Nível de Risco</h3>
@@ -27,20 +32,29 @@ export function RiskDistributionChart({ distribution }: RiskDistributionChartPro
     );
   }
 
+  // Animation state to trigger donut animation after mount
+  const [animate, setAnimate] = React.useState(false);
+  React.useEffect(() => {
+    setAnimate(true);
+  }, [distribution]);
+
   return (
     <div className="gov-card animate-slide-up h-full flex flex-col">
       <h3 className="text-lg font-semibold text-foreground mb-4">Distribuição de Nível de Risco</h3>
-      <div className="flex-1 min-h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 20, right: 80, bottom: 40, left: 80 }}>
+      <div className="flex-1 min-h-[320px] max-h-[420px] flex items-center justify-center">
+        <ResponsiveContainer width={340} height={340}>
+          <PieChart margin={{ top: 20, right: 40, bottom: 40, left: 40 }}>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius="30%"
-              outerRadius="50%"
+              innerRadius={70}
+              outerRadius={120}
               paddingAngle={2}
               dataKey="value"
+              isAnimationActive={animate}
+              animationDuration={900}
+              animationBegin={0}
               label={({ name, percent, cx, cy, midAngle, outerRadius }) => {
                 const RADIAN = Math.PI / 180;
                 const radius = outerRadius * 1.5;
@@ -53,7 +67,7 @@ export function RiskDistributionChart({ distribution }: RiskDistributionChartPro
                     fill="hsl(var(--foreground))"
                     textAnchor={x > cx ? 'start' : 'end'}
                     dominantBaseline="central"
-                    fontSize={11}
+                    fontSize={13}
                     fontWeight={500}
                   >
                     {`${name}: ${(percent * 100).toFixed(0)}%`}

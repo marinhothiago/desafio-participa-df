@@ -14,53 +14,18 @@ interface RiskThermometerProps {
 }
 
 export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
-  // Ordem fixa para o termômetro (do mais crítico ao mais seguro)
+  // Defensive: fallback if distribution or total is missing or malformed
+  const safeDist = distribution && typeof distribution === 'object' ? distribution : {
+    critical: 0, high: 0, moderate: 0, low: 0, safe: 0
+  };
+  const safeNumber = (v: any) => (typeof v === 'number' && !isNaN(v) ? v : 0);
+  const safeTotal = safeNumber(total);
   const allLevels = [
-    { 
-      key: 'critical' as const, 
-      label: 'Crítico', 
-      range: 'Risco máximo',
-      icon: ShieldX,
-      bgClass: 'bg-red-800',
-      textClass: 'text-red-800',
-      count: distribution.critical 
-    },
-    { 
-      key: 'high' as const, 
-      label: 'Alto', 
-      range: 'Risco elevado',
-      icon: AlertTriangle,
-      bgClass: 'bg-red-400',
-      textClass: 'text-red-500',
-      count: distribution.high 
-    },
-    { 
-      key: 'moderate' as const, 
-      label: 'Moderado', 
-      range: 'Risco médio',
-      icon: AlertCircle,
-      bgClass: 'bg-yellow-500',
-      textClass: 'text-yellow-600',
-      count: distribution.moderate 
-    },
-    { 
-      key: 'low' as const, 
-      label: 'Baixo', 
-      range: 'Risco baixo',
-      icon: Shield,
-      bgClass: 'bg-blue-500',
-      textClass: 'text-blue-600',
-      count: distribution.low 
-    },
-    { 
-      key: 'safe' as const, 
-      label: 'Seguro', 
-      range: 'Sem risco',
-      icon: CheckCircle,
-      bgClass: 'bg-green-600',
-      textClass: 'text-green-600',
-      count: distribution.safe 
-    },
+    { key: 'critical' as const, label: 'Crítico', range: 'Risco máximo', icon: ShieldX, bgClass: 'bg-red-800', textClass: 'text-red-800', count: safeNumber(safeDist.critical) },
+    { key: 'high' as const, label: 'Alto', range: 'Risco elevado', icon: AlertTriangle, bgClass: 'bg-red-400', textClass: 'text-red-500', count: safeNumber(safeDist.high) },
+    { key: 'moderate' as const, label: 'Moderado', range: 'Risco médio', icon: AlertCircle, bgClass: 'bg-yellow-500', textClass: 'text-yellow-600', count: safeNumber(safeDist.moderate) },
+    { key: 'low' as const, label: 'Baixo', range: 'Risco baixo', icon: Shield, bgClass: 'bg-blue-500', textClass: 'text-blue-600', count: safeNumber(safeDist.low) },
+    { key: 'safe' as const, label: 'Seguro', range: 'Sem risco', icon: CheckCircle, bgClass: 'bg-green-600', textClass: 'text-green-600', count: safeNumber(safeDist.safe) },
   ];
 
   // Ordenar por quantidade (maior para menor) para exibição na legenda
@@ -70,9 +35,27 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
   const reversedLevels = [...sortedLevels].reverse();
 
   const getPercentage = (count: number) => {
-    if (total === 0) return 0;
-    return (count / total) * 100;
+    if (safeTotal === 0) return 0;
+    return (count / safeTotal) * 100;
   };
+
+  // Fallback: if all values are zero, show empty state
+  if (!distribution || safeTotal === 0) {
+    return (
+      <div className="gov-card animate-slide-up h-full flex flex-col items-center justify-center">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Termômetro de Risco</h3>
+        <div className="h-32 flex items-center justify-center text-muted-foreground">
+          <p>Nenhum dado disponível</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Animation state to trigger thermometer bar fill after mount
+  const [animate, setAnimate] = React.useState(false);
+  React.useEffect(() => {
+    setAnimate(true);
+  }, [distribution, total]);
 
   return (
     <div className="gov-card animate-slide-up h-full flex flex-col">
@@ -90,15 +73,14 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
               {reversedLevels.map((level) => {
                 const percentage = getPercentage(level.count);
                 if (level.count === 0) return null;
-                
                 return (
                   <Tooltip key={level.key}>
                     <TooltipTrigger asChild>
                       <div
-                        className={cn(level.bgClass, 'transition-all duration-500 cursor-pointer hover:opacity-80')}
-                        style={{ 
-                          width: `${percentage}%`,
-                          minWidth: '4px'
+                        className={cn(level.bgClass, 'transition-all duration-700 cursor-pointer hover:opacity-80')}
+                        style={{
+                          width: animate ? `${percentage}%` : '0%',
+                          minWidth: animate ? '4px' : '0px',
                         }}
                       />
                     </TooltipTrigger>
@@ -123,15 +105,14 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
                 {reversedLevels.map((level) => {
                   const percentage = getPercentage(level.count);
                   if (level.count === 0) return null;
-                  
                   return (
                     <div
                       key={level.key}
                       className="text-center truncate"
-                      style={{ width: `${percentage}%`, minWidth: '20px' }}
+                      style={{ width: animate ? `${percentage}%` : '0%', minWidth: animate ? '20px' : '0px' }}
                     >
                       <span className={cn('text-xs font-medium', level.textClass)}>
-                        {percentage.toFixed(0)}%
+                        {animate ? percentage.toFixed(0) : ''}%
                       </span>
                     </div>
                   );
@@ -147,7 +128,6 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
           {sortedLevels.map((level) => {
             const Icon = level.icon;
             const percentage = getPercentage(level.count);
-            
             return (
               <div key={level.key} className="flex items-center gap-2">
                 <div className={cn(
@@ -174,9 +154,9 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
                   </div>
                   {/* Barra de progresso */}
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1">
-                    <div 
-                      className={cn(level.bgClass, 'h-full rounded-full transition-all duration-500')}
-                      style={{ width: `${percentage}%` }}
+                    <div
+                      className={cn(level.bgClass, 'h-full rounded-full transition-all duration-700')}
+                      style={{ width: animate ? `${percentage}%` : '0%' }}
                     />
                   </div>
                 </div>

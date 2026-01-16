@@ -65,9 +65,9 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="px-6 py-4 bg-white border-b border-gray-200">
+      <div>
         <h2 className="text-2xl font-bold text-foreground">Dashboard de Análise</h2>
         <p className="text-muted-foreground">
           Métricas em tempo real e análise de desempenho do sistema de identificação de dados pessoais

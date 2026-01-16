@@ -1,0 +1,58 @@
+# ===========================================
+# Participa DF - Full Stack Docker Compose
+# Frontend (React) + Backend (FastAPI)
+# ===========================================
+name: desafio-participa-df
+
+services:
+  # =========================================
+  # BACKEND - API FastAPI + NLP
+  # =========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: desafio-participa-df-backend
+    container_name: desafio-participa-df-backend
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - PORT=7860
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - participa-network
+
+  # =========================================
+  # FRONTEND - React + Vite + nginx
+  # =========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: desafio-participa-df-frontend
+    container_name: desafio-participa-df-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - participa-network
+
+# =========================================
+# NETWORK
+# =========================================
+networks:
+  participa-network:
+    name: desafio-participa-df-network
+    driver: bridge

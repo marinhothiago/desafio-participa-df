@@ -8,8 +8,8 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: '#00A65E1A' }}>
-              <Shield className="w-6 h-6 text-[#00A65E]" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: '#E3ECFA' }}>
+              <Shield className="w-6 h-6 text-[#1351B4]" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight">Desafio Participa DF – Conectando Governo e Cidadão</h1>

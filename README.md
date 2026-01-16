@@ -1,277 +1,351 @@
+# 🛡️ Participa DF - Detector Inteligente de Dados Pessoais
+
+[![Status](https://img.shields.io/badge/Status-Produção-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
+[![Versão](https://img.shields.io/badge/Versão-9.0-blue)](./backend/README.md)
+[![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
+[![Licença](https://img.shields.io/badge/Licença-LGPD%2FLAI-green)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
+
+> **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
+
+| 🌐 **Links de Produção** | URL |
+|--------------------------|-----|
+| Frontend (Dashboard) | https://marinhothiago.github.io/desafio-participa-df/ |
+| Backend (API) | https://marinhothiago-desafio-participa-df.hf.space/ |
+| Documentação da API | https://marinhothiago-desafio-participa-df.hf.space/docs |
+| Health Check | https://marinhothiago-desafio-participa-df.hf.space/health |
+
 ---
-title: Participa DF - PII Detector
-emoji: 🛡️
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_file: app.py
-pinned: false
----
-
-# 🛡️ Projeto Participa DF: Detector Inteligente de Dados Pessoais para Transparência Ativa
-
-![Status do Deploy](https://img.shields.io/badge/Status-Online%20v8.5-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
-[![Licença](https://img.shields.io/badge/Licença-LGPD%20%2F%20LAI%20Compliant-blue)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
-[![Acurácia](https://img.shields.io/badge/Acurácia-112%2F112%20%28100%25%29-brightgreen)](./backend/README.md)
-![Arquitetura](https://img.shields.io/badge/Arquitetura-Monorepo-orange)
-
-  **Frontend atualizado em:** https://marinhothiago.github.io/desafio-participa-df/
-  **Backend atualizado em:** https://huggingface.co/spaces/marinhothiago/desafio-participa-df
-  **API Base:** https://marinhothiago-desafio-participa-df.hf.space/
-  **Docs Interativa:** https://marinhothiago-desafio-participa-df.hf.space/docs
-  **Health Check:** https://marinhothiago-desafio-participa-df.hf.space/health
 
 ## 📋 Objetivo da Solução
 
-Detector híbrido de Informações Pessoais Identificáveis (PII) que classifica e avalia o risco de vazamento de dados pessoais em textos de manifestações públicas, garantindo:
-- **Transparência Ativa (LAI):** Publicação responsável de pedidos de acesso à informação
-- **Conformidade LGPD:** Proteção rigorosa da privacidade do cidadão
-- **Rastreabilidade:** Preservação do ID original do e-SIC para auditoria
+O **Participa DF - PII Detector** é um sistema completo para **detectar, classificar e avaliar o risco de vazamento de dados pessoais** em textos de manifestações públicas do Governo do Distrito Federal.
 
-### 🎯 Resultado Esperado
+### Problema Resolvido
 
-O Governo do Distrito Federal pode publicizar manifestações de cidadãos sem expor dados sensíveis (CPF, RG, Telefone, Email, Endereço Residencial, etc.), automaticamente e em tempo real.
+O GDF precisa publicar manifestações de cidadãos em transparência ativa (LAI) sem violar a privacidade garantida pela LGPD. Este sistema automatiza a detecção de:
 
----
+- **CPF, RG, CNH, Passaporte, PIS, CNS** (documentos de identificação)
+- **Email, Telefone, Celular** (dados de contato)
+- **Endereços residenciais, CEP** (localização)
+- **Nomes pessoais** (com análise de contexto)
+- **Dados bancários, PIX, Cartão de Crédito** (informações financeiras)
+- **Placas de veículos, Processos judiciais** (outros identificadores)
 
-## 📁 Estrutura do Monorepo e Função de Cada Arquivo
+### Resultado
 
-O projeto é organizado em **componentes independentes mas integrados**:
-
-```
-projeto-participa-df/                   ← Raiz (você está aqui)
-├── README.md                           ← ESTE ARQUIVO (Overview completo)
-│
-├── backend/                            ← Motor de IA (Python + FastAPI)
-│   ├── README.md                       ← Guia técnico backend detalhado
-│   ├── requirements.txt                ← Dependências Python (pip)
-│   ├── Dockerfile                      ← Deploy em container (HuggingFace)
-│   ├── api/
-│   │   └── main.py                     ← FastAPI server: POST /analyze, GET /health
-│   ├── src/
-│   │   ├── detector.py                 ← Motor híbrido de PII (368 linhas, comentado)
-│   │   └── allow_list.py               ← Dicionário de exceções (termos GDF)
-│   ├── data/
-│   │   ├── input/                      ← Arquivos Excel/CSV para processar em lote
-│   │   └── output/                     ← Resultados em JSON/CSV
-│   ├── main_cli.py                     ← CLI: processar lotes via terminal
-│   ├── test_metrics.py                 ← Suite de 112 testes automatizados
-│   └── test_debug.py                   ← Debug interativo
-│
-├── frontend/                           ← Interface React (Node.js + Vite)
-│   ├── README.md                       ← Guia técnico frontend detalhado
-│   ├── package.json                    ← Dependências JavaScript (npm)
-│   ├── vite.config.ts                  ← Configuração de build
-│   ├── index.html                      ← Arquivo HTML principal
-│   ├── src/
-│   │   ├── main.tsx                    ← Arquivo principal (entry point)
-│   │   ├── App.tsx                     ← Componente raiz com roteamento
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx           ← Página inicial com KPIs
-│   │   │   ├── Classification.tsx      ← Análise individual + processamento lote
-│   │   │   ├── Documentation.tsx       ← Guia de uso no próprio app
-│   │   │   └── NotFound.tsx            ← Página 404
-│   │   ├── components/                 ← Componentes reutilizáveis
-│   │   │   ├── ui/                     ← Shadcn UI components (buttons, cards, etc)
-│   │   │   ├── Header.tsx              ← Cabeçalho com logo DSGOV
-│   │   │   ├── KPICard.tsx             ← Cards de métricas
-│   │   │   ├── ConfidenceBar.tsx       ← Barra visual de confiança (0-100%)
-│   │   │   ├── ResultsTable.tsx        ← Tabela de resultados com paginação
-│   │   │   └── ... (15+ componentes)   ← Outros componentes especializados
-│   │   ├── lib/
-│   │   │   ├── api.ts                  ← Cliente HTTP integrado com backend
-│   │   │   ├── fileParser.ts           ← Parser de CSV/XLSX para batch
-│   │   │   └── utils.ts                ← Utilitários (masks, formatação, etc)
-│   │   ├── contexts/
-│   │   │   └── AnalysisContext.tsx     ← State management (histórico de análises)
-│   │   └── hooks/
-│   │       └── use-toast.ts            ← Notificações do sistema
-│   ├── public/
-│   │   ├── favicon.svg                 ← Ícone 🟢🟡🔵 (cores da bandeira)
-│   │   ├── robots.txt                  ← SEO para mecanismos de busca
-│   │   └── data/                       ← Dados de exemplo
-│   └── tailwind.config.ts              ← Design system DSGOV (cores, fontes)
-│
-├── .gitignore                          ← Arquivos ignorados do git
-├── .dockerignore                       ← Arquivos ignorados em Docker
-├── AUDITORIA_CODIGO.md                 ← 📊 Auditoria completa do projeto (limpo!)
-├── DEPLOY_STRATEGY.md                  ← 📤 Estratégia de deploy (GitHub/HF/Pages)
-├── GUIA_AVALIADOR.md                   ← 🏆 Guia completo para avaliadores
-├── app.py                              ← ⚙️ Entry point para HuggingFace Spaces
-├── deploy-hf.sh                        ← 🚀 Script de deploy seletivo para HF
-└── github/workflows/                   ← 🔄 CI/CD (GitHub Actions)
-```
+Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBLICO"** (contém PII), com nível de risco (CRÍTICO, ALTO, MODERADO, BAIXO, SEGURO) e score de confiança normalizado (0-1).
 
 ---
 
-## 🏗️ Arquitetura Técnica do Sistema
+## 🏗️ Arquitetura do Sistema
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                  FRONTEND (React + Vite)                    │
-│              GitHub Pages (Static Hosting)                  │
+│              GitHub Pages / Docker (nginx)                  │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ • Dashboard com KPIs em tempo real                      │ │\n│  │ • Análise individual: texto → detalhes de PII          │ │\n│  │ • Processamento em lote: CSV/XLSX → Relatório         │ │\n│  │ • Design System DSGOV (Padrão Federal Brasileiro)      │ │\n│  └────────────────────────────────────────────────────────┘ │\n└────────────────┬──────────────────────────────────────────────┘\n                 │\n                 │ HTTP POST /analyze\n                 │ { text: string }\n                 │\n                 ↓\n┌─────────────────────────────────────────────────────────────┐\n│                 BACKEND (FastAPI + Docker)                 │\n│           Hugging Face Spaces (Cloud Hosting)              │\n│  ┌────────────────────────────────────────────────────────┐ │\n│  │ Motor Híbrido de Detecção PII (detector.py)            │ │\n│  │ 368 linhas com comentários explicativos                 │ │\n│  │                                                         │ │\n│  │ 1. REGEX PATTERNS (Estruturado)                        │ │\n│  │    → CPF: 123.456.789-09                               │ │\n│  │    → RG, CNH, Passaporte, Email, Telefone             │ │\n│  │                                                         │ │\n│  │ 2. NLP SPACY (Português pt_core_news_lg)               │ │\n│  │    → Reconhecimento de entidades nomeadas (NER)        │ │\n│  │    → Endereços, Órgãos, Pessoas                        │ │\n│  │                                                         │ │\n│  │ 3. BERT (Transformers)                                 │ │\n│  │    → Classificação de nomes pessoais                   │ │\n│  │    → Alta precisão com contexto                        │ │\n│  │                                                         │ │\n│  │ 4. REGRAS DE NEGÓCIO (Brasília + LGPD)                │ │\n│  │    → Imunidade funcional de servidores públicos        │ │\n│  │    → Contexto administrativo vs residencial            │ │\n│  │    → Deduplicação de achados                           │ │\n│  │                                                         │ │\n│  │ OUTPUT: {                                              │ │\n│  │   \"classificacao\": \"NÃO PÚBLICO\" | \"PÚBLICO\",         │ │\n│  │   \"risco\": \"CRÍTICO\" | \"ALTO\" | \"MODERADO\" | \"SEGURO\",│ │\n│  │   \"confianca\": 0.0-1.0 (normalizado),                 │ │\n│  │   \"detalhes\": [                                        │ │\n│  │     { \"tipo\": \"CPF\", \"valor\": \"123.***.***-09\" }      │ │\n│  │   ]                                                     │ │\n│  │ }                                                       │ │\n│  └────────────────────────────────────────────────────────┘ │\n└─────────────────────────────────────────────────────────────┘\n```
-
+│  │ • Dashboard com métricas em tempo real                 │ │
+│  │ • Análise individual de textos                         │ │
+│  │ • Processamento em lote (CSV/XLSX)                     │ │
+│  │ • Design System DSGOV (Gov.br)                         │ │
+│  └────────────────────────────────────────────────────────┘ │
+└────────────────────────┬────────────────────────────────────┘
+                         │ HTTP POST /analyze
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 BACKEND (FastAPI + Python)                  │
+│           HuggingFace Spaces / Docker                       │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Motor Híbrido de Detecção PII (v9.0 - 978 linhas)      │ │
+│  │                                                         │ │
+│  │ 1. REGEX + Validação DV (CPF, CNPJ, PIS, CNS, CNH)    │ │
+│  │ 2. BERT NER Multilíngue (Davlan/bert-base-ner-hrl)    │ │
+│  │ 3. spaCy pt_core_news_lg (NER backup)                  │ │
+│  │ 4. Regras de Negócio (imunidade funcional, contexto)   │ │
+│  │                                                         │ │
+│  │ Estratégia: Ensemble OR (alta recall para LGPD)        │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 1️⃣ INSTRUÇÕES DE INSTALAÇÃO E DEPENDÊNCIAS (4 PONTOS)
+## 📁 Estrutura do Projeto e Função de Cada Arquivo
 
-### 1.1 Pré-requisitos (1 ponto)
-
-Antes de começar, instale os seguintes softwares:
-
-| Componente | Versão Mínima | Como Instalar |
-|-----------|---------------|---------------|
-| **Python** | 3.10+ | [python.org](https://www.python.org/downloads/) |
-| **Node.js** | 18.0+ | [nodejs.org](https://nodejs.org/) |
-| **npm** (incluído) | 9.0+ | Automático com Node.js |
-| **Git** | Qualquer | [git-scm.com](https://git-scm.com/) |
-
-**Verificar instalação:**
-```bash
-python --version        # Esperado: Python 3.10+
-node --version          # Esperado: v18.0+
-npm --version           # Esperado: 9.0+
+```
+desafio-participa-df/
+│
+├── README.md                     ← ESTE ARQUIVO: Visão geral do projeto
+├── docker-compose.yml            ← Orquestração: backend + frontend
+├── app.py                        ← Entry point para HuggingFace Spaces
+├── deploy-hf.sh                  ← Script de deploy para HuggingFace
+│
+├── backend/                      ← 🐍 MOTOR DE IA (Python + FastAPI)
+│   ├── README.md                 ← Documentação técnica do backend
+│   ├── requirements.txt          ← Dependências Python (pip install)
+│   ├── Dockerfile                ← Container para deploy
+│   │
+│   ├── api/
+│   │   └── main.py               ← FastAPI: endpoints /analyze e /health
+│   │
+│   ├── src/
+│   │   ├── detector.py           ← Motor híbrido PII (978 linhas, comentado)
+│   │   └── allow_list.py         ← Lista de termos seguros (GDF, órgãos)
+│   │
+│   ├── main_cli.py               ← CLI: processamento em lote via terminal
+│   ├── test_metrics.py           ← Suite de 100+ testes automatizados
+│   │
+│   └── data/
+│       ├── input/                ← Arquivos CSV/XLSX para processar
+│       └── output/               ← Relatórios gerados (JSON, CSV, XLSX)
+│
+└── frontend/                     ← ⚛️ INTERFACE WEB (React + TypeScript)
+    ├── README.md                 ← Documentação técnica do frontend
+    ├── package.json              ← Dependências Node.js (npm install)
+    ├── Dockerfile                ← Container com nginx
+    ├── vite.config.ts            ← Configuração de build (Vite)
+    ├── tailwind.config.ts        ← Design System DSGOV
+    │
+    ├── src/
+    │   ├── main.tsx              ← Entry point React
+    │   ├── App.tsx               ← Roteamento e layout
+    │   │
+    │   ├── pages/
+    │   │   ├── Dashboard.tsx     ← Página inicial com KPIs
+    │   │   ├── Classification.tsx← Análise individual + lote
+    │   │   ├── Documentation.tsx ← Guia de uso integrado
+    │   │   └── NotFound.tsx      ← Página 404
+    │   │
+    │   ├── components/           ← Componentes reutilizáveis (20+)
+    │   │   ├── ui/               ← Shadcn UI (buttons, cards, etc)
+    │   │   ├── Header.tsx        ← Cabeçalho DSGOV
+    │   │   ├── KPICard.tsx       ← Cards de métricas
+    │   │   ├── ResultsTable.tsx  ← Tabela de resultados
+    │   │   ├── FileDropzone.tsx  ← Upload drag & drop
+    │   │   ├── ConfidenceBar.tsx ← Barra visual de confiança
+    │   │   ├── RiskThermometer.tsx ← Termômetro de risco
+    │   │   └── ...
+    │   │
+    │   ├── lib/
+    │   │   ├── api.ts            ← Cliente HTTP para backend
+    │   │   ├── fileParser.ts     ← Parser de CSV/XLSX
+    │   │   └── utils.ts          ← Funções utilitárias
+    │   │
+    │   ├── contexts/
+    │   │   └── AnalysisContext.tsx ← Estado global (histórico)
+    │   │
+    │   └── hooks/
+    │       └── use-toast.ts      ← Notificações
+    │
+    └── public/
+        ├── robots.txt            ← SEO
+        └── 404.html              ← Fallback SPA
 ```
 
-### 1.2 Gerenciamento de Pacotes (2 pontos)
+---
+
+## 1️⃣ INSTRUÇÕES DE INSTALAÇÃO E DEPENDÊNCIAS
+
+### 1.1 Pré-requisitos
+
+| Software | Versão Mínima | Verificar Instalação | Como Instalar |
+|----------|---------------|---------------------|---------------|
+| **Python** | 3.10+ | `python --version` | [python.org](https://www.python.org/downloads/) |
+| **Node.js** | 18.0+ | `node --version` | [nodejs.org](https://nodejs.org/) |
+| **npm** | 9.0+ | `npm --version` | Incluído com Node.js |
+| **Git** | 2.0+ | `git --version` | [git-scm.com](https://git-scm.com/) |
+| **Docker** (opcional) | 20.0+ | `docker --version` | [docker.com](https://www.docker.com/) |
+
+### 1.2 Arquivos de Gerenciamento de Pacotes
 
 O projeto utiliza **dois** sistemas de dependências:
 
 #### Backend: `backend/requirements.txt`
-```
-fastapi==0.104.1
-uvicorn==0.24.0
-spacy==3.7.2
-transformers==4.35.2
-torch==2.1.0
-pandas==2.1.3
-openpyxl==3.10.10
+
+```txt
+# Framework Web
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9
+
+# NLP Core
+spacy==3.8.0
+transformers==4.41.2
+sentencepiece==0.1.99
+accelerate>=0.21.0
+
+# Processamento de Dados
+pandas==2.2.1
+openpyxl==3.1.2
 text-unidecode==1.3
+
+# PyTorch CPU (instalado separadamente)
+# torch==2.1.0+cpu
 ```
 
 #### Frontend: `frontend/package.json`
+
 ```json
 {
   "dependencies": {
-    "react": "^18.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1",
+    "typescript": "^5.8.3",
     "vite": "^5.4.19",
-    "typescript": "^5.3.3",
-    "tailwindcss": "^3.3.6",
-    "recharts": "^2.10.3"
+    "tailwindcss": "^3.4.17",
+    "@tanstack/react-query": "^5.83.0",
+    "recharts": "^2.15.4",
+    "lucide-react": "^0.462.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76"
   }
 }
 ```
 
-### 1.3 Configuração do Ambiente (Passo a Passo Exato) - 1 ponto
+### 1.3 Instalação Completa (Passo a Passo)
 
-#### PASSO 1: Clone o Repositório
-```bash
-git clone https://github.com/marinhothiago/participa-df-pii.git
-cd participa-df-pii
-```
+#### Opção A: Instalação Manual (Desenvolvimento)
 
-#### PASSO 2: Configure o Backend (Python)
 ```bash
+# 1. Clone o repositório
+git clone https://github.com/marinhothiago/desafio-participa-df.git
+cd desafio-participa-df
+
+# ========== BACKEND ==========
 cd backend
 
-# Crie ambiente virtual
+# 2. Crie ambiente virtual Python
 python -m venv venv
 
-# Ative o ambiente
-# ▼ Windows
+# 3. Ative o ambiente virtual
+# Windows:
 venv\Scripts\activate
-# ▼ Linux/Mac
+# Linux/Mac:
 source venv/bin/activate
 
-# Instale TODAS as dependências
+# 4. Instale PyTorch CPU (antes das outras dependências)
+pip install torch==2.1.0+cpu --index-url https://download.pytorch.org/whl/cpu
+
+# 5. Instale todas as dependências do backend
 pip install -r requirements.txt
 
-# Baixe o modelo de linguagem
+# 6. Baixe o modelo spaCy para português (obrigatório)
 python -m spacy download pt_core_news_lg
 
-# Retorne à raiz
-cd ..
-```
+# ========== FRONTEND ==========
+cd ../frontend
 
-#### PASSO 3: Configure o Frontend (Node.js)
-```bash
-cd frontend
-
-# Instale dependências
+# 7. Instale dependências do frontend
 npm install
-
-# Retorne à raiz
-cd ..
 ```
 
-✅ **Instalação concluída!**
+#### Opção B: Docker Compose (Produção - Recomendado)
+
+```bash
+# Clone o repositório
+git clone https://github.com/marinhothiago/desafio-participa-df.git
+cd desafio-participa-df
+
+# Suba todos os serviços (backend + frontend)
+docker-compose up -d
+
+# Verifique se está rodando
+docker-compose ps
+```
 
 ---
 
-## 2️⃣ INSTRUÇÕES DE EXECUÇÃO (3 PONTOS)
+## 2️⃣ INSTRUÇÕES DE EXECUÇÃO
 
-### 2.1 Comandos Exatos para Executar (2 pontos)
+### 2.1 Execução Local (Desenvolvimento)
 
-Abra **DOIS terminais** side-by-side:
+Abra **dois terminais** side-by-side:
 
 #### Terminal 1: Backend (Motor de IA)
+
 ```bash
 cd backend
 
-# Ative ambiente
+# Ative o ambiente virtual (se não estiver ativo)
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Inicie o servidor FastAPI
+uvicorn api.main:app --host 0.0.0.0 --port 7860 --reload
+```
+
+**Endpoints disponíveis:**
+- API: http://localhost:7860
+- Documentação Swagger: http://localhost:7860/docs
+- Health Check: http://localhost:7860/health
+
+#### Terminal 2: Frontend (Interface)
+
+```bash
+cd frontend
+
+# Inicie o servidor de desenvolvimento
+npm run dev
+```
+
+**Acesse:** http://localhost:8080
+
+#### CLI: Processamento em Lote
+
+```bash
+cd backend
+
+# Ative o ambiente virtual
 # Windows: venv\Scripts\activate
 # Linux/Mac: source venv/bin/activate
 
-# Inicie servidor
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Você verá:
-# ℹ️ Uvicorn running on http://0.0.0.0:8000
-# ℹ️ Press CTRL+C to quit
+# Processe um arquivo CSV ou XLSX
+python main_cli.py --input data/input/manifestacoes.xlsx --output data/output/resultado
 ```
 
-#### Terminal 2: Frontend (Interface)
+**Saídas geradas:**
+- `resultado.json` - Dados estruturados
+- `resultado.csv` - Planilha simples
+- `resultado.xlsx` - Excel com formatação de cores
+
+### 2.2 Execução com Docker
+
 ```bash
-cd frontend
+# Suba os serviços
+docker-compose up -d
 
-# Inicie desenvolvimento
-npm run dev
+# Acompanhe os logs
+docker-compose logs -f
 
-# Você verá:
-# ➜  Local:   http://localhost:8080/desafio-participa-df/
+# Pare os serviços
+docker-compose down
 ```
 
-#### Acesse a Aplicação
-Abra: **http://localhost:8080/desafio-participa-df/**
+**Portas:**
+- Backend: http://localhost:7860
+- Frontend: http://localhost:3000
 
----
+### 2.3 Formato de Dados
 
-### 2.2 Formato de Dados Esperado (Entrada e Saída) - 1 ponto
+#### Entrada (POST /analyze)
 
-#### Entrada (Input)
-
-**A) Texto Individual:**
 ```json
-POST /analyze
-Content-Type: application/json
-
 {
-  "text": "Meu CPF é 123.456.789-09 e telefone (11) 99999-9999",
+  "text": "Meu CPF é 123.456.789-09 e preciso de ajuda.",
   "id": "manifestacao_001"
 }
 ```
 
-**B) Arquivo CSV/XLSX (Lote):**
-```
-ID                | Texto
-MAN-2024-001      | Cidadão solicita informações sobre...
-MAN-2024-002      | Reclamação regarding service...
-```
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `text` | string | ✅ Sim | Texto a ser analisado |
+| `id` | string | ❌ Não | ID para rastreabilidade (preservado na saída) |
 
-#### Saída (Output)
+#### Saída
 
 ```json
 {
@@ -282,363 +356,211 @@ MAN-2024-002      | Reclamação regarding service...
   "detalhes": [
     {
       "tipo": "CPF",
-      "valor": "123.***.***-09",
+      "valor": "123.456.789-09",
       "confianca": 1.0
-    },
-    {
-      "tipo": "TELEFONE",
-      "valor": "(11) 9****-9999",
-      "confianca": 0.95
     }
   ]
 }
 ```
 
-**Campos:**
-- `classificacao`: "NÃO PÚBLICO" (contém PII) | "PÚBLICO" (seguro)
-- `risco`: "CRÍTICO" > "ALTO" > "MODERADO" > "SEGURO"
-- `confianca`: 0.0-1.0 (certeza do modelo)
+| Campo | Tipo | Valores Possíveis | Descrição |
+|-------|------|-------------------|-----------|
+| `id` | string | qualquer | ID da requisição (preservado) |
+| `classificacao` | string | "PÚBLICO", "NÃO PÚBLICO" | Se pode ou não publicar |
+| `risco` | string | SEGURO, BAIXO, MODERADO, ALTO, CRÍTICO | Nível de severidade |
+| `confianca` | float | 0.0 a 1.0 | Score de certeza do modelo |
+| `detalhes` | array | lista de objetos | PIIs encontrados com tipo e valor |
+
+#### Formato de Arquivo em Lote (CSV/XLSX)
+
+O arquivo deve conter uma coluna chamada `Texto Mascarado` (ou `text`) e opcionalmente `ID`:
+
+```csv
+ID,Texto Mascarado
+man_001,"Solicito informações sobre minha situação cadastral."
+man_002,"Meu CPF é 123.456.789-09 e preciso de ajuda urgente."
+man_003,"Email para contato: joao.silva@gmail.com"
+```
 
 ---
 
-## 3️⃣ CLAREZA E ORGANIZAÇÃO (3 PONTOS)
+## 3️⃣ CLAREZA E ORGANIZAÇÃO
 
-### 3.1 README Principal (Este Arquivo) - 1 ponto
+### 3.1 Código Fonte Comentado
 
-✅ Descreve objetivo da solução  
-✅ Mostra estrutura completa de arquivos  
-✅ Explica função de cada componente  
-✅ Instruções de instalação, configuração, execução  
+O código-fonte possui comentários detalhados em trechos complexos. Exemplos:
 
-### 3.2 Código-Fonte com Comentários - 1 ponto
+#### Motor Principal (`backend/src/detector.py` - 978 linhas)
 
-**Backend:** [src/detector.py](./backend/src/detector.py) - 368 linhas com:
 ```python
-"""Módulo de detecção de PII com híbrido (Regex + NLP + BERT + Regras)."""
-# Comentários explicando lógica de:
-# - Normalização de confiança
-# - Regras de imunidade funcional
-# - Deduplicação inteligente
+class PIIDetector:
+    """Detector híbrido de PII com ensemble de alta recall.
+    
+    Estratégia: Ensemble OR - qualquer detector positivo classifica como PII.
+    Isso maximiza recall (não deixar escapar nenhum PII) às custas de alguns
+    falsos positivos, que é a estratégia correta para LAI/LGPD.
+    """
+
+    def detect(self, text: str) -> Tuple[bool, List[Dict], str, float]:
+        """Detecta PII no texto usando ensemble de alta recall.
+        
+        Args:
+            text: Texto a ser analisado
+            
+        Returns:
+            Tuple contendo:
+            - is_pii (bool): True se contém PII
+            - findings (List[Dict]): Lista de PIIs encontrados
+            - nivel_risco (str): CRITICO, ALTO, MODERADO, BAIXO ou SEGURO
+            - confianca (float): Score de confiança 0-1
+        """
+        # 1. Regex com validação de DV (mais preciso para documentos)
+        regex_findings = self._detectar_regex(text)
+        
+        # 2. Nomes após gatilhos de contato (sempre PII)
+        gatilho_findings = self._extrair_nomes_gatilho(text)
+        
+        # 3. NER com BERT + spaCy (nomes e entidades)
+        ner_findings = self._detectar_ner(text)
+        
+        # Ensemble OR: combina todos os achados com deduplicação
+        # ...
 ```
 
-**API:** [api/main.py](./backend/api/main.py) - Comentários detalhados:
+#### API (`backend/api/main.py`)
+
 ```python
 @app.post("/analyze")
-async def analyze(data):
-    """Análise completa com contexto Brasília/GDF."""
-    # Explicação de cada etapa do processamento
+async def analyze(data: Dict[str, Optional[str]]) -> Dict:
+    """Analisa texto para detecção de PII com contexto Brasília/GDF.
+    
+    Realiza detecção híbrida usando:
+    - Regex: Padrões estruturados (CPF, Email, Telefone, RG, CNH)
+    - NLP: Reconhecimento de entidades com spaCy + BERT
+    - Regras de Negócio: Contexto de Brasília, imunidade funcional (LAI)
+    
+    Classificações de Risco:
+        - CRÍTICO (5): CPF, RG, CNH (identificação direta)
+        - ALTO (4): Email privado, Telefone, Nome, Endereço
+        - MODERADO (3): Entidade nomeada genérica
+        - SEGURO (0): Sem PII detectado
+    """
 ```
 
-**Frontend:** [src/lib/api.ts](./frontend/src/lib/api.ts) - Tipos bem documentados:
-```typescript
-// Interfaces explicadas com comentários
-// Mapeamento de resposta da API
-// Tratamento de erros específicos
-```
+### 3.2 Estrutura Lógica do Projeto
 
-### 3.3 Estrutura de Arquivos Lógica - 1 ponto
+| Pasta | Responsabilidade |
+|-------|------------------|
+| `backend/api/` | Endpoints HTTP (FastAPI) |
+| `backend/src/` | Lógica de negócio (detector PII) |
+| `backend/data/` | Entrada/saída de arquivos |
+| `frontend/src/pages/` | Páginas da aplicação |
+| `frontend/src/components/` | Componentes reutilizáveis |
+| `frontend/src/lib/` | Utilitários e cliente API |
+| `frontend/src/contexts/` | Estado global (React Context) |
 
-✅ **Separação clara:**
-- `/backend` - Lógica IA apenas
-- `/frontend` - Interface apenas
-- `/data` - Entrada/saída isolada
+### 3.3 Tecnologias Utilizadas
 
-✅ **Modularização:**
-- `detector.py` = uma responsabilidade
-- `allow_list.py` = exceções fácil de atualizar
-- Componentes React com props claras
+#### Backend (Motor de IA)
 
-✅ **Configuração centralizada:**
-- `requirements.txt` / `package.json`
-- `Dockerfile` / `vite.config.ts`
+| Tecnologia | Versão | Função |
+|------------|--------|--------|
+| Python | 3.10+ | Linguagem principal |
+| FastAPI | 0.110.0 | Framework web assíncrono |
+| spaCy | 3.8.0 | NLP para português (pt_core_news_lg) |
+| Transformers | 4.41.2 | BERT NER multilíngue (Davlan/bert-base-multilingual-cased-ner-hrl) |
+| PyTorch | 2.1.0 | Deep learning (CPU) |
+| Pandas | 2.2.1 | Processamento de dados tabulares |
+
+#### Frontend (Interface)
+
+| Tecnologia | Versão | Função |
+|------------|--------|--------|
+| React | 18.3.1 | Biblioteca UI |
+| TypeScript | 5.8.3 | Tipagem estática |
+| Vite | 5.4.19 | Build tool ultra-rápido |
+| TailwindCSS | 3.4.17 | Estilização (Design DSGOV) |
+| Shadcn/UI | latest | Componentes acessíveis |
+| Recharts | 2.15.4 | Gráficos e visualizações |
+| React Query | 5.83.0 | Cache e estado de requisições |
+| XLSX | 0.18.5 | Parser de arquivos Excel |
 
 ---
 
-## 🧪 Guias de Teste - 3 Cenários de Execução
+## 🧪 Testes
 
-### 📌 Resumo Executivo
-
-| Cenário | Tempo Setup | Dependências | Melhor Para | Comando |
-|---------|-----------|--------------|-----------|---------|
-| **LOCAL (Nativo)** | 5-10 min | Python 3.10, Node.js 18+, pip, npm | Desenvolvimento rápido | `npm run dev` + `uvicorn api.main:app --reload` |
-| **DOCKER (Local)** | 2-3 min | Docker + docker-compose | Ambiente isolado, sem deps | `docker-compose up` |
-| **ONLINE (Cloud)** | 0 min | Browser + internet | Demo sem instalação | Acesso direto ao link |
-
----
-
-### 🔴 Cenário 1: EXECUÇÃO NATIVA (Local - npm + uvicorn)
-
-**Ideal para:** Desenvolvimento, debugging, avaliação rápida sem Docker
-
-#### Pré-requisitos:
-```bash
-✓ Python 3.10+  (verificar: python --version)
-✓ Node.js 18+   (verificar: node --version)
-✓ pip           (geralmente vem com Python)
-✓ npm           (geralmente vem com Node.js)
-```
-
-#### Passos:
-
-**1️⃣ Clonar o repositório:**
-```bash
-git clone https://github.com/marinhothiago/participa-df-pii.git
-cd participa-df-pii
-```
-
-**2️⃣ Iniciar Backend (Terminal 1):**
 ```bash
 cd backend
-pip install -r requirements.txt          # Instalar dependências (primeira vez: 3-5 min)
-python -m uvicorn api.main:app --reload   # Servidor em http://localhost:8000
-```
-✅ Esperado: `Uvicorn running on http://127.0.0.1:8000`
 
-**3️⃣ Iniciar Frontend (Terminal 2):**
+# Ative o ambiente virtual
+# Windows: venv\Scripts\activate
+# Linux/Mac: source venv/bin/activate
+
+# Execute a suite de testes (100+ casos)
+python test_metrics.py
+```
+
+O arquivo `test_metrics.py` contém **100+ casos de teste** cobrindo:
+- ✅ Situações seguras (não PII) - textos administrativos
+- ✅ PII clássico (CPF, Email, Telefone, RG, CNH)
+- ✅ Edge cases e contexto específico de Brasília/GDF
+- ✅ Imunidade funcional de servidores públicos (LAI)
+- ✅ Gatilhos de contato que anulam imunidade
+
+---
+
+## 📊 Níveis de Risco
+
+| Nível | Peso | Tipos de PII | Ação Recomendada |
+|-------|------|--------------|------------------|
+| 🔴 **CRÍTICO** | 5 | CPF, RG, CNH, Passaporte, PIS, CNS | ❌ Não publicar |
+| 🟠 **ALTO** | 4 | Email, Telefone, Endereço, Nome completo | ❌ Não publicar |
+| 🟡 **MODERADO** | 3 | Nome por IA, Placa veículo | ⚠️ Revisar manualmente |
+| 🔵 **BAIXO** | 2 | Nome parcial, Data nascimento | ⚠️ Revisar contexto |
+| 🟢 **SEGURO** | 0 | Nenhum PII detectado | ✅ Pode publicar |
+
+---
+
+## 🚀 Deploy
+
+### Backend → HuggingFace Spaces
+
+O backend é deployado automaticamente em HuggingFace Spaces via Docker.
+
+```bash
+# Deploy manual
+./deploy-hf.sh
+```
+
+### Frontend → GitHub Pages
+
 ```bash
 cd frontend
-npm install                               # Instalar dependências (primeira vez: 2-3 min)
-npm run dev                              # Dev server em http://localhost:8080
-```
-✅ Esperado: `Local: http://127.0.0.1:8080/desafio-participa-df/`
 
-**4️⃣ Testar:**
-- Abrir browser em `http://localhost:8080/desafio-participa-df/`
-- Submeter um texto com dados pessoais (ex: "Meu CPF é 123.456.789-09")
-- ✅ Esperado: Resposta local (<2 segundos) - backend local auto-detectado
+# Build de produção
+npm run build
 
-**Troubleshooting:**
-| Problema | Solução |
-|----------|---------|
-| `ModuleNotFoundError: No module named 'spacy'` | `pip install -r requirements.txt` novamente |
-| `Port 8000 already in use` | Mude porta: `uvicorn api.main:app --reload --port 8001` |
-| `Port 8080 already in use` | Npm usa porta alternativa automaticamente |
-| Frontend conecta em HuggingFace em vez de localhost | Aguarde 2s para autodetecção, recarregue a página |
-
-**Tempo Total:** ~15 minutos (primeira vez), ~1 minuto (próximas vezes)
-
----
-
-### 🐳 Cenário 2: EXECUÇÃO COM DOCKER (Recomendado para Avaliação)
-
-**Ideal para:** Isolamento total, sem dependências globais, reprodutibilidade garantida
-
-#### Pré-requisitos:
-```bash
-✓ Docker      (verificar: docker --version)
-✓ Docker Compose (verificar: docker-compose --version)
-✓ Internet    (para baixar imagem ~800MB na primeira vez)
-```
-
-#### Passos:
-
-**1️⃣ Clonar o repositório:**
-```bash
-git clone https://github.com/marinhothiago/participa-df-pii.git
-cd participa-df-pii
-```
-
-**2️⃣ Iniciar com Docker Compose:**
-```bash
-docker-compose up
-```
-
-✅ Esperado (primeira vez):
-```
-Building backend-app
-[...] Sending build context to Docker daemon
-[...] Installing requirements
-[...] Downloading spaCy model pt_core_news_lg
-[...] Container backend-app Running
-
-Backend API on http://127.0.0.1:7860
-```
-
-**3️⃣ Testar:**
-- Abrir browser em `http://localhost:7860/docs` (Swagger API)
-- Ou acessar interface: `http://localhost:7860/` (se configurado)
-- Submeter teste via Swagger
-
-**Vantagens:**
-- ✅ Sem instalação de Python/Node localmente
-- ✅ Modelos de IA (spaCy, BERT) já pre-instalados na imagem
-- ✅ Ambiente exatamente igual ao HuggingFace Spaces
-- ✅ Isolamento perfeito (não afeta outro software)
-
-**Troubleshooting:**
-| Problema | Solução |
-|----------|---------|
-| `docker: command not found` | Instalar Docker Desktop: https://docker.com/download |
-| `ERROR: pull access denied` | Verificar conexão internet, tentar novamente |
-| `Port 7860 already in use` | Mude no docker-compose.yml: `"8001:8000"` |
-| Imagem muito grande | Normal (~2.5GB descompactado), primeiro build é mais lento |
-
-**Tempo Total:** ~5 minutos (primeira vez, download incluído), <30 segundos (próximas vezes)
-
----
-
-### 🌐 Cenário 3: EXECUÇÃO ONLINE (Demo - Zero Setup)
-
-**Ideal para:** Demo rápida, sem instalação, compartilhar link
-
-#### Pré-requisitos:
-```bash
-✓ Browser moderno (Chrome, Firefox, Safari, Edge)
-✓ Conexão internet
-```
-
-#### Passos:
-
-**1️⃣ Acessar URL:**
-- Frontend: https://marinhothiago.github.io/desafio-participa-df/
-- Backend: https://marinhothiago-participa-df-pii.hf.space/
-
-**2️⃣ Usar imediatamente:**
-- Colar texto na interface
-- Clicar "Analisar"
-- Aguardar resposta (primeira requisição pode demorar 10-20s se backend estiver "dormindo")
-
-**Características:**
-- ✅ Zero instalação
-- ✅ Funciona em qualquer máquina com browser
-- ✅ Dados não são salvos no servidor
-- ⚠️ Primeira requisição pode demorar (cold start do HuggingFace Spaces)
-
-**Tempo Total:** <30 segundos
-
----
-
-### 📊 Comparativo Detalhado
-
-```
-CENÁRIO 1: NATIVO
-├─ Setup: 15 min (primeira) + 1 min (próximas)
-├─ Performance: Ultra-rápido (modelo carregado em memória)
-├─ Debugging: Excelente (logs em tempo real, hot reload)
-└─ Custo: 0 (sua máquina)
-
-CENÁRIO 2: DOCKER ⭐ RECOMENDADO
-├─ Setup: 5 min (primeira, com download) + <30s (próximas)
-├─ Performance: Rápido (container isolado)
-├─ Isolamento: Perfeito (não afeta SO)
-├─ Reprodutibilidade: Garantida (mesma imagem para todos)
-└─ Custo: Espaço disco (~2.5GB)
-
-CENÁRIO 3: ONLINE
-├─ Setup: 0 min (apenas acesso link)
-├─ Performance: Variável (depende de latência + cold start HF)
-├─ Isolamento: N/A (servidor remoto)
-└─ Custo: 0 (hospedagem gratuita HuggingFace Spaces)
+# Deploy (via GitHub Actions automático)
+git push origin main
 ```
 
 ---
 
-### ✅ Validação de Sucesso
+## 📚 Documentação Detalhada
 
-Após escolher um cenário, você saberá que funcionou quando:
-
-**✅ Backend rodando:**
-```bash
-GET http://localhost:8000/health  (ou :7860 em Docker)
-Resposta esperada: {"status": "ok"}
-```
-
-**✅ Frontend conectado:**
-- Console do browser sem erros (F12 → Console)
-- Botão "Analisar" ativo (não desabilitado)
-- Indicador de status verde (ApiStatus component)
-
-**✅ Análise funcionando:**
-1. Cole texto: `"CPF: 123.456.789-09"`
-2. Clique "Analisar"
-3. Esperado em <2s: 
-   - Campo marcado como PII
-   - Risco: "CRÍTICO"
-   - Confiança: >0.95
+- **Backend (Motor de IA):** [backend/README.md](backend/README.md)
+- **Frontend (Interface):** [frontend/README.md](frontend/README.md)
 
 ---
 
----
+## 👥 Equipe
 
-## 🚀 Deploy Automático (CI/CD com GitHub Actions)
-
-O projeto implementa **deploy seletivo e automático** para cada componente:
-
-### 📤 Backend → HuggingFace Spaces
-
-**Gatilho:** Qualquer `git push` que modifique `/backend/**`
-
-```
-Você edita backend/ → git push origin main
-   ↓
-   GitHub Actions dispara deploy-hf.yml
-   ├─ Git subtree split (isola apenas backend/)
-   ├─ Autentica com secrets.HUGGINGFACE
-   └─ Push para HuggingFace Spaces
-   ↓
-   Backend atualizado em: https://huggingface.co/spaces/marinhothiago/participa-df-pii
-```
-
-### 🎨 Frontend → GitHub Pages
-
-**Gatilho:** Qualquer `git push` que modifique `/frontend/**`
-
-```
-Você edita frontend/ → git push origin main
-   ↓
-   GitHub Actions dispara deploy.yml
-   ├─ npm install
-   ├─ npm run build (Vite → /dist)
-   └─ Push para branch gh-pages
-   ↓
-  Frontend atualizado em: https://marinhothiago.github.io/desafio-participa-df/
-```
-
-### ⚙️ Configuração
-
-**Secret necessária:** `HUGGINGFACE` (token HF)
-
-1. GitHub Repo → Settings → Secrets and variables → Actions
-2. New repository secret
-3. Name: `HUGGINGFACE`
-4. Value: Token de https://huggingface.co/settings/tokens
-
-### 📊 Usar
-
-```bash
-# Atualizar backend
-git add backend/ && git commit -m "fix: detector" && git push origin main
-# ✅ HuggingFace atualizado em 5-10 min
-
-# Atualizar frontend
-git add frontend/ && git commit -m "feat: novo gráfico" && git push origin main
-# ✅ GitHub Pages atualizado em 3-5 min
-
-# Atualizar ambos
-git add . && git commit -m "feat: end-to-end" && git push origin main
-# ✅ Ambas rodam em paralelo
-```
-
-### 🔍 Monitorar
-
-- GitHub Actions: https://github.com/marinhothiago/desafio-participa-df/actions
-- Backend: https://marinhothiago-participa-df-pii.hf.space/
-- Frontend: https://marinhothiago.github.io/desafio-participa-df/
+Desenvolvido para o **Hackathon Participa DF 2025** em conformidade com:
+- **LGPD** - Lei Geral de Proteção de Dados (Lei nº 13.709/2018)
+- **LAI** - Lei de Acesso à Informação (Lei nº 12.527/2011)
 
 ---
 
-## 🛠️ Tecnologias
+## 📄 Licença
 
-- **Backend:** FastAPI, spaCy (NLP PT), Transformers (BERT), Python 3.10+
-- **Frontend:** React 18, Vite, Tailwind CSS, Shadcn/UI, Recharts
-- **Deploy:** Docker (HuggingFace), GitHub Pages
-- **CI/CD:** GitHub Actions (workflows automáticos)
-
-- **Processamento Efêmero:** Nenhum dado pessoal é armazenado no banco de dados após a análise
-- **Anonimização em Lote:** Capacidade de processar grandes volumes de arquivos CSV/XLSX preservando o ID original para auditoria
-
----
-
-## 👨‍💻 Desenvolvedor
-
-Thiago Marinho - Desenvolvido para o Desafio Participa-DF (Hackathon CGDF)
+Este projeto está em conformidade com as diretrizes de transparência pública do Governo do Distrito Federal.

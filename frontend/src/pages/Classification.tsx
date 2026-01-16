@@ -205,7 +205,7 @@ export function Classification() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Classificação de Pedidos LAI</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6 mt-12">Classificação de Pedidos LAI</h2>
         <p className="text-muted-foreground">Identifique dados pessoais em pedidos de Lei de Acesso à Informação</p>
       </div>
 

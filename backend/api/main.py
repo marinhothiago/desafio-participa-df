@@ -35,15 +35,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import sys
 
-# Adiciona o diretório src ao path para importação de módulos locais
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Adiciona o diretório backend ao path para importação de módulos locais
+# O arquivo está em backend/api/main.py, então subimos um nível para backend/
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
 from src.detector import PIIDetector
 
 # Inicializa aplicação FastAPI
 app = FastAPI(
     title="Participa DF - PII Detector API",
     description="API para detecção de Informações Pessoais Identificáveis em textos segundo LGPD/LAI",
-    version="8.5"
+    version="9.0"
 )
 
 # Configuração CORS: Permite requisições de qualquer origem (necessário para frontend React/Vite)
@@ -130,7 +132,7 @@ async def health() -> Dict[str, str]:
     Returns:
         Dict com:
             - status (str): "healthy" se tudo funcionando
-            - version (str): Versão do detector (v8.5)
+            - version (str): Versão do detector (v9.0)
     
     HTTP Status Codes:
         - 200: API operacional
@@ -138,5 +140,5 @@ async def health() -> Dict[str, str]:
     """
     return {
         "status": "healthy",
-        "version": "8.5"
+        "version": "9.0"
     }

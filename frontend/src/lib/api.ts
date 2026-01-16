@@ -5,7 +5,7 @@
 
 // URL da API - com detecção automática de backend local
 const PRODUCTION_API_URL = 'https://marinhothiago-desafio-participa-df.hf.space';
-const LOCAL_API_URL = 'http://localhost:8000';
+const LOCAL_API_URL = 'http://localhost:7860'; // Porta padrão do backend (HuggingFace Spaces)
 const API_TIMEOUT = 15000; // 15 segundos (modelo de IA pode demorar)
 const MAX_RETRIES = 1; // Retry automático uma vez se falhar
 const LOCAL_DETECTION_TIMEOUT = 2000; // 2 segundos para detectar backend local
@@ -31,7 +31,7 @@ async function detectLocalBackend(): Promise<void> {
     
     if (response.ok) {
       API_BASE_URL = LOCAL_API_URL;
-      console.log('✅ Backend local detectado! Usando http://localhost:8000');
+      console.log(`✅ Backend local detectado! Usando ${LOCAL_API_URL}`);
     }
   } catch (error) {
     // Fallback para produção (normal se backend local não está disponível)
@@ -50,7 +50,7 @@ export interface AnalyzeResponse {
   detalhes: Array<{
     tipo: string; // Ex: "CPF"
     valor: string; // Ex: "123.456..."
-    confianca?: number; // ✅ Normalizado de "conf" para "confianca"
+    confianca: number; // ✅ Normalizado de "conf" para "confianca"
   }>;
 }
 

@@ -1,24 +1,48 @@
-# Ignora ambiente virtual local
+# ===========================================
+# Participa DF - Docker Ignore
+# ===========================================
+
+# Ambiente virtual local
 venv/
+.venv/
+env/
+.env/
+
+# Git
 .git/
-__pycache__/
-data/output/
-.ipynb_checkpoints/
-
-# Ignora Git
-.git
 .gitignore
+.gitattributes
 
-# Ignora dados e caches
+# Cache Python
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 pip-log.txt
 pip-delete-this-directory.txt
-.cache
-data/
-outputs/
-resultados/
-AMOSTRA_e-SIC.xlsx
-resultado_hackathon.xlsx
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Dados de saída (não incluir no container)
+data/output/*
+!data/output/.gitkeep
+
+# Arquivos de teste/desenvolvimento
+*.xlsx
+*.csv
+test_*.py
+tests/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker (não incluir compose no build)
+docker-compose*.yml

@@ -1,38 +1,63 @@
-# 1. Base leve
+# ===========================================
+# Participa DF - Backend Dockerfile
+# Versão 9.0 - Otimizado para NER em Português
+# ===========================================
+
+# 1. Base Python 3.10 (compatível com spaCy 3.8 e torch 2.1)
 FROM python:3.10-slim
 
-# 2. Variáveis de ambiente
+# 2. Variáveis de ambiente para otimização
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# 3. Instala dependências do sistema e limpa cache na mesma camada (CRÍTICO PARA REDUZIR TAMANHO)
-RUN apt-get update && apt-get install -y \
+# 3. Instala dependências do sistema (mínimas)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 WORKDIR /app
 
-# 4. Copia requirements
+# 4. Copia apenas requirements primeiro (cache de camadas Docker)
 COPY requirements.txt .
 
-# 5. Instalação UNIFICADA para economizar camadas e espaço
-# A flag --no-cache-dir é essencial para não salvar o cache do pip (~800MB)
-RUN sed -i '/torch/d' requirements.txt && \
-    pip install --no-cache-dir torch==2.1.0+cpu torchvision==0.16.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir https://github.com/explosion/spacy-models/releases/download/pt_core_news_lg-3.8.0/pt_core_news_lg-3.8.0-py3-none-any.whl
+# 5. Instalação de dependências em ordem otimizada
+# 5.1 PyTorch CPU (antes do resto para cache)
+RUN pip install --no-cache-dir \
+    torch==2.1.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
 
-# 6. Pré-download do BERT (NeuralMind)
-# Isso garante que o modelo esteja dentro da imagem, mas sem cache extra
-RUN python -c "from transformers import pipeline; pipeline('ner', model='neuralmind/bert-large-portuguese-cased')"
+# 5.2 Dependências do requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# 7. Copia código
+# 5.3 Modelo spaCy para português (grande)
+RUN pip install --no-cache-dir \
+    https://github.com/explosion/spacy-models/releases/download/pt_core_news_lg-3.8.0/pt_core_news_lg-3.8.0-py3-none-any.whl
+
+# 6. Pré-download do modelo BERT NER multilíngue
+# Modelo treinado para NER em 10+ idiomas incluindo português
+# Labels: PER (pessoas), ORG (organizações), LOC (locais), DATE (datas)
+RUN python -c "\
+from transformers import pipeline; \
+print('📥 Baixando modelo BERT NER multilíngue...'); \
+pipeline('ner', model='Davlan/bert-base-multilingual-cased-ner-hrl', aggregation_strategy='simple'); \
+print('✅ Modelo NER pronto!')"
+
+# 7. Copia código da aplicação
 COPY . .
 
-# 8. Permissões
-RUN mkdir -p /app/data/output && chmod -R 777 /app/data
+# 8. Cria diretórios de dados com permissões
+RUN mkdir -p /app/data/input /app/data/output && chmod -R 777 /app/data
 
+# 9. Porta da aplicação (HuggingFace Spaces usa 7860)
 EXPOSE 7860
 
+# 10. Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:7860/health || exit 1
+
+# 11. Comando de inicialização
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "7860"]
