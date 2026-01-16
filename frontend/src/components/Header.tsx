@@ -1,5 +1,4 @@
-import { Shield, User } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Shield, Github } from 'lucide-react';
 
 export function Header() {
   return (
@@ -17,18 +16,17 @@ export function Header() {
             </div>
           </div>
 
-          {/* User Avatar */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium">Servidor</p>
-              <p className="text-xs text-primary-foreground/70">CGDF</p>
-            </div>
-            <Avatar className="h-9 w-9 border-2 border-primary-foreground/20">
-              <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground text-sm">
-                <User className="w-4 h-4" />
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          {/* GitHub Link */}
+          <a
+            href="https://github.com/marinhothiago/desafio-participa-df"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary-foreground/10 transition-colors"
+            title="Ver código no GitHub"
+          >
+            <Github className="w-5 h-5" />
+            <span className="hidden sm:inline text-sm font-medium">GitHub</span>
+          </a>
         </div>
       </div>
     </header>

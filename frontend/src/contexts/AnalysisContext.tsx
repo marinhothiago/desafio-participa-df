@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { type AnalysisResult, type BatchResult } from '@/lib/api';
+import { type AnalysisResult, type BatchResult, api } from '@/lib/api';
 
 export interface AnalysisHistoryItem {
   id: string;
@@ -56,7 +56,6 @@ interface AnalysisContextType {
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
 
-const COUNTERS_STORAGE_KEY = 'participa_df_counters';
 const VISIT_SESSION_KEY = 'participa_df_visited';
 
 // Converte o risco da API para o nível interno
@@ -112,50 +111,52 @@ export function getRiskBgClass(riskLevel: 'critical' | 'high' | 'moderate' | 'lo
   }
 }
 
-function loadCounters(): GlobalCounters {
-  try {
-    const stored = localStorage.getItem(COUNTERS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Error loading counters:', e);
-  }
-  return { siteVisits: 0, totalClassificationRequests: 0 };
-}
-
-function saveCounters(counters: GlobalCounters): void {
-  try {
-    localStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify(counters));
-  } catch (e) {
-    console.error('Error saving counters:', e);
-  }
-}
-
 export function AnalysisProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
-  const [counters, setCounters] = useState<GlobalCounters>(loadCounters);
+  const [counters, setCounters] = useState<GlobalCounters>({ siteVisits: 0, totalClassificationRequests: 0 });
   const [requestCounter, setRequestCounter] = useState(1);
 
-  // Increment visit counter on mount (once per session)
+  // Carregar contadores do backend e registrar visita (uma vez por sessão)
   useEffect(() => {
-    const hasVisited = sessionStorage.getItem(VISIT_SESSION_KEY);
-    if (!hasVisited) {
-      sessionStorage.setItem(VISIT_SESSION_KEY, 'true');
-      setCounters(prev => {
-        const updated = { ...prev, siteVisits: prev.siteVisits + 1 };
-        saveCounters(updated);
-        return updated;
+    const loadGlobalStats = async () => {
+      // Buscar stats atuais do backend
+      const stats = await api.getStats();
+      setCounters({
+        siteVisits: stats.site_visits,
+        totalClassificationRequests: stats.classification_requests,
       });
-    }
+      
+      // Registrar visita uma vez por sessão
+      const hasVisited = sessionStorage.getItem(VISIT_SESSION_KEY);
+      if (!hasVisited) {
+        sessionStorage.setItem(VISIT_SESSION_KEY, 'true');
+        await api.registerVisit();
+        // Atualizar contador local após registrar
+        setCounters(prev => ({ ...prev, siteVisits: prev.siteVisits + 1 }));
+      }
+    };
+    
+    loadGlobalStats();
+    
+    // Atualizar stats a cada 30 segundos para refletir outras sessões
+    const interval = setInterval(async () => {
+      const stats = await api.getStats();
+      setCounters({
+        siteVisits: stats.site_visits,
+        totalClassificationRequests: stats.classification_requests,
+      });
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
+  // Função para atualizar o contador de requisições após análise
+  // Agora apenas atualiza o estado local pois o backend já incrementa automaticamente
   const incrementClassificationRequests = useCallback((count: number = 1) => {
-    setCounters(prev => {
-      const updated = { ...prev, totalClassificationRequests: prev.totalClassificationRequests + count };
-      saveCounters(updated);
-      return updated;
-    });
+    setCounters(prev => ({
+      ...prev,
+      totalClassificationRequests: prev.totalClassificationRequests + count,
+    }));
   }, []);
 
   const calculateMetrics = useCallback((historyItems: AnalysisHistoryItem[]): SessionMetrics => {

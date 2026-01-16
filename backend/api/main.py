@@ -34,12 +34,47 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import sys
+import json
+import threading
+from datetime import datetime
 
 # Adiciona o diretório backend ao path para importação de módulos locais
 # O arquivo está em backend/api/main.py, então subimos um nível para backend/
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 from src.detector import PIIDetector
+
+# === SISTEMA DE CONTADORES GLOBAIS ===
+STATS_FILE = os.path.join(backend_dir, "data", "stats.json")
+stats_lock = threading.Lock()
+
+def load_stats() -> Dict:
+    """Carrega estatísticas do arquivo JSON."""
+    try:
+        if os.path.exists(STATS_FILE):
+            with open(STATS_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Erro ao carregar stats: {e}")
+    return {"site_visits": 0, "classification_requests": 0, "last_updated": None}
+
+def save_stats(stats: Dict) -> None:
+    """Salva estatísticas no arquivo JSON com lock para concorrência."""
+    try:
+        stats["last_updated"] = datetime.now().isoformat()
+        os.makedirs(os.path.dirname(STATS_FILE), exist_ok=True)
+        with open(STATS_FILE, 'w') as f:
+            json.dump(stats, f, indent=2)
+    except Exception as e:
+        print(f"Erro ao salvar stats: {e}")
+
+def increment_stat(key: str, amount: int = 1) -> Dict:
+    """Incrementa uma estatística de forma thread-safe."""
+    with stats_lock:
+        stats = load_stats()
+        stats[key] = stats.get(key, 0) + amount
+        save_stats(stats)
+        return stats
 
 # Inicializa aplicação FastAPI
 app = FastAPI(
@@ -113,6 +148,9 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
     # Executa detecção usando detector híbrido
     has_pii, findings, risco, confianca = detector.detect(text)
     
+    # Incrementa contador de requisições (global)
+    increment_stat("classification_requests")
+    
     # Retorna resultado em formato padronizado
     return {
         "id": request_id,
@@ -121,6 +159,31 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
         "confianca": confianca,
         "detalhes": findings
     }
+
+
+@app.get("/stats")
+async def get_stats() -> Dict:
+    """Retorna estatísticas globais de uso da API.
+    
+    Returns:
+        Dict com:
+            - site_visits (int): Total de visitas ao site
+            - classification_requests (int): Total de textos analisados
+            - last_updated (str): Data/hora da última atualização
+    """
+    return load_stats()
+
+
+@app.post("/stats/visit")
+async def register_visit() -> Dict:
+    """Registra uma nova visita ao site.
+    
+    Deve ser chamado uma vez por sessão do usuário.
+    
+    Returns:
+        Dict com estatísticas atualizadas
+    """
+    return increment_stat("site_visits")
 
 
 @app.get("/health")

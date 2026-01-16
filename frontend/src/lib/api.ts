@@ -370,6 +370,46 @@ class ApiClient {
     
     return results;
   }
+
+  // === ESTATÍSTICAS GLOBAIS ===
+  
+  async getStats(): Promise<{ site_visits: number; classification_requests: number; last_updated: string | null }> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${API_BASE_URL}/stats`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Erro ao buscar stats:', error);
+    }
+    return { site_visits: 0, classification_requests: 0, last_updated: null };
+  }
+
+  async registerVisit(): Promise<void> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      await fetch(`${API_BASE_URL}/stats/visit`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      clearTimeout(timeoutId);
+    } catch (error) {
+      console.error('Erro ao registrar visita:', error);
+    }
+  }
 }
 
 export const api = new ApiClient();
