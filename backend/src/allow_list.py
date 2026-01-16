@@ -372,6 +372,7 @@ CONFIANCA_BASE: Dict[str, float] = {
     "EMAIL_PESSOAL": 0.95,
     "PROCESSO_CNJ": 0.90,
     "TELEFONE": 0.88,
+    "TELEFONE_INTERNACIONAL": 0.90,  # DDI de outros países (+1, +351, +54, etc.)
     "PLACA_VEICULO": 0.88,
     "PIX": 0.88,
     "RG": 0.85,

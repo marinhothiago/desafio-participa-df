@@ -522,9 +522,16 @@ class PIIDetector:
                 re.IGNORECASE
             ),
             
-            # Telefone com DDI: +55 XX XXXXX-XXXX
+            # Telefone com DDI Brasil: +55 XX XXXXX-XXXX
             'TELEFONE_DDI': re.compile(
                 r'(\+55[\s\-]?\(?\d{2}\)?[\s\-]?9?\d{4}[\s\-]?\d{4})',
+                re.IGNORECASE
+            ),
+            
+            # Telefone internacional (outros países)
+            # +1 (EUA/Canadá), +351 (Portugal), +54 (Argentina), +34 (Espanha), etc.
+            'TELEFONE_INTERNACIONAL': re.compile(
+                r'(\+(?!55)\d{1,3}[\s\-]?\(?\d{1,4}\)?[\s\-]?\d{3,4}[\s\-]?\d{3,4})',
                 re.IGNORECASE
             ),
             
@@ -962,7 +969,7 @@ class PIIDetector:
                         peso=4, inicio=inicio, fim=fim
                     ))
                 
-                elif tipo in ['CELULAR', 'TELEFONE_FIXO', 'TELEFONE_DDI', 'TELEFONE_DDD_ESPACO']:
+                elif tipo in ['CELULAR', 'TELEFONE_FIXO', 'TELEFONE_DDI', 'TELEFONE_DDD_ESPACO', 'TELEFONE_INTERNACIONAL']:
                     # Verificar contexto institucional
                     ctx_antes = texto[max(0, inicio-80):inicio].lower()
                     ctx_depois = texto[fim:min(len(texto), fim+30)].lower()
@@ -987,9 +994,11 @@ class PIIDetector:
                     if is_institucional:
                         continue
                     
-                    confianca = self._calcular_confianca("TELEFONE", texto, inicio, fim)
+                    # Telefone internacional tem tipo específico
+                    tipo_final = "TELEFONE_INTERNACIONAL" if tipo == 'TELEFONE_INTERNACIONAL' else "TELEFONE"
+                    confianca = self._calcular_confianca(tipo_final, texto, inicio, fim)
                     findings.append(PIIFinding(
-                        tipo="TELEFONE", valor=valor, confianca=confianca,
+                        tipo=tipo_final, valor=valor, confianca=confianca,
                         peso=4, inicio=inicio, fim=fim
                     ))
                 

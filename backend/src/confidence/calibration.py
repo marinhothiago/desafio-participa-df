@@ -52,7 +52,7 @@ class IsotonicCalibrator:
             return
         
         try:
-            from sklearn.isotonic import IsotonicRegression
+            from sklearn.isotonic import IsotonicRegression  # type: ignore
             
             self._sklearn_model = IsotonicRegression(
                 out_of_bounds='clip',
