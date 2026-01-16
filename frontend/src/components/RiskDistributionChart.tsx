@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { RiskDistribution, getRiskLabel, getRiskColor } from '@/contexts/AnalysisContext';
 
@@ -33,8 +34,8 @@ export function RiskDistributionChart({ distribution }: RiskDistributionChartPro
   }
 
   // Animation state to trigger donut animation after mount
-  const [animate, setAnimate] = React.useState(false);
-  React.useEffect(() => {
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
     setAnimate(true);
   }, [distribution]);
 

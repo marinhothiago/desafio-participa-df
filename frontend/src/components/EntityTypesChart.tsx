@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface EntityType {
@@ -19,8 +20,8 @@ export function EntityTypesChart({ data }: EntityTypesChartProps) {
   ];
 
   // Animation state to trigger bar animation after mount
-  const [animate, setAnimate] = React.useState(false);
-  React.useEffect(() => {
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
     setAnimate(true);
   }, [data]);
 

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Thermometer, AlertTriangle, AlertCircle, CheckCircle, ShieldX, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RiskDistribution, getRiskLabel, getRiskBgClass } from '@/contexts/AnalysisContext';
@@ -52,8 +53,8 @@ export function RiskThermometer({ distribution, total }: RiskThermometerProps) {
   }
 
   // Animation state to trigger thermometer bar fill after mount
-  const [animate, setAnimate] = React.useState(false);
-  React.useEffect(() => {
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
     setAnimate(true);
   }, [distribution, total]);
 
