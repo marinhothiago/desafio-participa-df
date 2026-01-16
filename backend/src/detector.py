@@ -1,6 +1,6 @@
 """Módulo de detecção de Informações Pessoais Identificáveis (PII).
 
-Versão: 9.2 - HACKATHON PARTICIPA-DF 2025
+Versão: 9.3 - HACKATHON PARTICIPA-DF 2025
 Abordagem: Ensemble híbrido com alta recall (estratégia OR)
 Confiança: Sistema probabilístico com calibração e log-odds
 
@@ -11,6 +11,9 @@ Pipeline:
 4. spaCy como backup → cobertura adicional
 5. Ensemble OR → qualquer detector positivo = PII
 6. Cálculo probabilístico de confiança → calibração + log-odds
+
+Correções v9.3:
+- Regex de placa de veículo agora exclui padrões comuns (ANO, SEI, REF, ART, LEI)
 """
 
 import re
@@ -275,7 +278,7 @@ class PIIDetector:
             use_probabilistic_confidence: Se deve usar sistema de confiança 
                 probabilística (default: True)
         """
-        logger.info("🏆 [v9.2] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA")
+        logger.info("🏆 [v9.3] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA")
         
         self.validador = ValidadorDocumentos()
         self._inicializar_modelos(usar_gpu)
@@ -709,9 +712,11 @@ class PIIDetector:
             ),
             
             # Placa de veículo (Mercosul e antiga)
+            # Excluímos padrões comuns que não são placas: ANO, SEI, REF, ART, LEI, DEC, etc.
             'PLACA_VEICULO': re.compile(
-                r'\b([A-Z]{3}[\-\s]?\d[A-Z0-9]\d{2}|'  # Mercosul: AAA0A00
-                r'[A-Z]{3}[\-\s]?\d{4})\b',            # Antiga: AAA-0000
+                r'(?<!\b(?:ANO|SEI|REF|ART|LEI|DEC|CAP|INC|PAR|SUS|SÃO)[ \-])'  # Negative lookbehind
+                r'\b((?!ANO|SEI|REF|ART|LEI|DEC|CAP|INC|PAR|SUS|SÃO)[A-Z]{3}[\-]?\d[A-Z0-9]\d{2}|'  # Mercosul
+                r'(?!ANO|SEI|REF|ART|LEI|DEC|CAP|INC|PAR|SUS|SÃO)[A-Z]{3}[\-]?\d{4})\b',  # Antiga
                 re.IGNORECASE
             ),
             

@@ -45,7 +45,7 @@ from src.detector import PIIDetector
 app = FastAPI(
     title="Participa DF - PII Detector API",
     description="API para detecção de Informações Pessoais Identificáveis em textos segundo LGPD/LAI",
-    version="9.2"
+    version="9.3"
 )
 
 # Configuração CORS: Permite requisições de qualquer origem (necessário para frontend React/Vite)
