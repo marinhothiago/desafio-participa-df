@@ -1,6 +1,6 @@
 """Módulo de detecção de Informações Pessoais Identificáveis (PII).
 
-Versão: 9.3 - HACKATHON PARTICIPA-DF 2025
+Versão: 9.4 - HACKATHON PARTICIPA-DF 2025
 Abordagem: Ensemble híbrido com alta recall (estratégia OR)
 Confiança: Sistema probabilístico com calibração e log-odds
 
@@ -14,6 +14,11 @@ Pipeline:
 
 Correções v9.3:
 - Regex de placa de veículo agora exclui padrões comuns (ANO, SEI, REF, ART, LEI)
+
+Correções v9.4:
+- Integração com allow_list.py expandida
+- Melhoria na filtragem de falsos positivos de NER
+- Novos termos: leis, lugares, organizações, termos técnicos
 """
 
 import re
@@ -23,6 +28,33 @@ from enum import Enum
 from functools import lru_cache
 import logging
 from text_unidecode import unidecode
+
+# Módulo de allow_list (termos seguros que não são PII)
+try:
+    from .allow_list import (
+        BLOCKLIST_TOTAL,
+        TERMOS_SEGUROS,
+        BLOCK_IF_CONTAINS,
+        INDICADORES_SERVIDOR,
+        CARGOS_AUTORIDADE,
+        GATILHOS_CONTATO,
+        CONTEXTOS_PII,
+        PESOS_PII,
+        CONFIANCA_BASE,
+    )
+    ALLOW_LIST_AVAILABLE = True
+except ImportError:
+    # Fallback mínimo se allow_list não estiver disponível
+    BLOCKLIST_TOTAL = set()
+    TERMOS_SEGUROS = set()
+    BLOCK_IF_CONTAINS = []
+    INDICADORES_SERVIDOR = set()
+    CARGOS_AUTORIDADE = set()
+    GATILHOS_CONTATO = set()
+    CONTEXTOS_PII = set()
+    PESOS_PII = {}
+    CONFIANCA_BASE = {}
+    ALLOW_LIST_AVAILABLE = False
 
 # Módulo de confiança probabilística
 try:
@@ -278,7 +310,7 @@ class PIIDetector:
             use_probabilistic_confidence: Se deve usar sistema de confiança 
                 probabilística (default: True)
         """
-        logger.info("🏆 [v9.3] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA")
+        logger.info("🏆 [v9.4] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA")
         
         self.validador = ValidadorDocumentos()
         self._inicializar_modelos(usar_gpu)
@@ -353,182 +385,30 @@ class PIIDetector:
             logger.warning(f"⚠️ NuNER não disponível: {e}. Continuando sem modelo pt-BR especializado.")
     
     def _inicializar_vocabularios(self) -> None:
-        """Inicializa todos os vocabulários e listas de contexto."""
+        """Inicializa todos os vocabulários e listas de contexto.
         
-        # Palavras que NUNCA são PII
-        self.blocklist_total: Set[str] = {
-            # Saudações e formalidades
-            "AGRADECO", "ATENCIOSAMENTE", "CORDIALMENTE", "RESPEITOSAMENTE",
-            "BOM DIA", "BOA TARDE", "BOA NOITE", "PREZADOS", "PREZADO", "PREZADA",
-            
-            # Ações administrativas
-            "SOLICITO", "INFORMO", "ENCAMINHO", "DESPACHO", "PROCESSO", "AUTOS",
-            "REQUERIMENTO", "PROTOCOLO", "MANIFESTACAO", "DEMANDA",
-            
-            # Tratamentos
-            "DRA", "DR", "SR", "SRA", "PROF", "PROFESSOR", "PROFESSORA",
-            "DOUTOR", "DOUTORA", "EXCELENTISSIMO", "EXCELENTISSIMA",
-            
-            # Estrutura organizacional
-            "SECRETARIA", "DEPARTAMENTO", "DIRETORIA", "GERENCIA", "COORDENACAO",
-            "SUPERINTENDENCIA", "SUBSECRETARIA", "ASSESSORIA", "GABINETE",
-            
-            # Termos comuns em LAI
-            "CIDADAO", "CIDADA", "REQUERENTE", "SOLICITANTE", "INTERESSADO",
-            "DENUNCIANTE", "RECLAMANTE", "MANIFESTANTE",
-            
-            # Falsos positivos de NER (palavras que parecem nomes mas não são)
-            "MEU CPF", "MINHA CNH", "MEU RG", "MEU TELEFONE", "MEU EMAIL",
-            "MEU ENDERECO", "MINHA IDENTIDADE", "MEU NOME", "MEU PIS",
-            
-            # Outros
-            "LIGACOES", "TELEFONICAS", "MUDAS", "ILUMINACAO", "PUBLICA",
-            "OUVIDORIA", "RECLAMACAO", "DENUNCIA", "ELOGIO", "SUGESTAO",
-            "JANEIRO", "FEVEREIRO", "MARCO", "ABRIL", "MAIO", "JUNHO",
-            "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO",
-            
-            # Instituições públicas (NÃO são nomes de pessoas!)
-            "ESCOLA", "ESCOLA CLASSE", "ESCOLA PARQUE", "CENTRO DE ENSINO",
-            "CENTRO EDUCACIONAL", "CEF", "CEM", "CED", "EC", "EP",
-            "HOSPITAL", "HOSPITAL REGIONAL", "HOSPITAL MATERNO", "HOSPITAL DE BASE",
-            "UBS", "UPA", "CENTRO DE SAUDE", "UNIDADE BASICA",
-            "DELEGACIA", "BATALHAO", "CORPO DE BOMBEIROS", "QUARTEL",
-            "CLASSE", "REGIONAL", "MATERNO", "INFANTIL", "BASE"
-        }
+        Todas as listas são importadas do módulo allow_list.py que é a
+        ÚNICA FONTE DE VERDADE para configurações de termos.
+        """
         
-        # Termos institucionais/públicos do GDF - EXPANDIDO
-        self.termos_seguros: Set[str] = {
-            # Órgãos do GDF
-            "GDF", "PMDF", "PCDF", "CBMDF", "SEEDF", "SESDF", "SSP", "DETRAN",
-            "BRB", "NOVACAP", "CGDF", "CLDF", "TCDF", "DODF", "SEI", "TERRACAP",
-            "CAESB", "NEOENERGIA", "CEB", "METRÔ-DF", "METRO DF", "DFTRANS",
-            "AGEFIS", "ADASA", "CODHAB", "EMATER", "FAPDF", "INESP",
-            
-            # Regiões Administrativas
-            "BRASILIA", "PLANO PILOTO", "GAMA", "TAGUATINGA", "BRAZLANDIA",
-            "SOBRADINHO", "PLANALTINA", "PARANOA", "NUCLEO BANDEIRANTE",
-            "CEILANDIA", "GUARA", "CRUZEIRO", "SAMAMBAIA", "SANTA MARIA",
-            "SAO SEBASTIAO", "RECANTO DAS EMAS", "LAGO SUL", "LAGO NORTE",
-            "CANDANGOLANDIA", "RIACHO FUNDO", "SUDOESTE", "OCTOGONAL",
-            "VARJAO", "PARK WAY", "SCIA", "ESTRUTURAL", "JARDIM BOTANICO",
-            "ITAPOA", "SIA", "VICENTE PIRES", "FERCAL", "SOL NASCENTE",
-            "POR DO SOL", "ARNIQUEIRA", "AGUAS CLARAS",
-            
-            # Endereços administrativos de Brasília
-            "ASA SUL", "ASA NORTE", "EIXO MONUMENTAL", "ESPLANADA DOS MINISTERIOS",
-            "W3", "L2", "SQS", "SQN", "SRES", "SHIS", "SHIN", "SHLN", "SGAS", "SGAN",
-            "SRTVS", "SRTVN", "SCN", "SCS", "SBS", "SBN", "SDN", "SDS",
-            
-            # Tribunais e órgãos federais em Brasília
-            "STF", "STJ", "TST", "TSE", "STM", "TJDFT", "TRF1", "TRT10",
-            "MPF", "MPDFT", "DPU", "AGU", "CGU", "TCU", "SENADO", "CAMARA"
-        }
+        # Importa listas do allow_list.py (centralizado)
+        self.blocklist_total: Set[str] = BLOCKLIST_TOTAL.copy()
+        self.termos_seguros: Set[str] = TERMOS_SEGUROS.copy()
+        self.indicadores_servidor: Set[str] = INDICADORES_SERVIDOR.copy()
+        self.cargos_autoridade: Set[str] = CARGOS_AUTORIDADE.copy()
+        self.gatilhos_contato: Set[str] = GATILHOS_CONTATO.copy()
+        self.contextos_pii: Set[str] = CONTEXTOS_PII.copy()
+        self.pesos_pii: Dict[str, int] = PESOS_PII.copy()
+        self.confianca_base: Dict[str, float] = CONFIANCA_BASE.copy()
         
-        # Indicadores de servidor público
-        self.indicadores_servidor: Set[str] = {
-            "SERVIDOR", "SERVIDORA", "FUNCIONARIO", "FUNCIONARIA",
-            "ANALISTA", "TECNICO", "TÉCNICO", "AUDITOR", "FISCAL",
-            "PERITO", "DELEGADO", "DELEGADA", "ADMINISTRADOR", "ADMINISTRADORA",
-            "COORDENADOR", "COORDENADORA", "DIRETOR", "DIRETORA",
-            "SECRETARIO", "SECRETÁRIA", "SECRETARIA",
-            "AGENTE", "MEDICO", "MÉDICO", "MEDICA", "MÉDICA",
-            "ASSESSOR", "ASSESSORA", "CHEFE", "GERENTE",
-            "SUPERINTENDENTE", "SUBSECRETARIO", "SUBSECRETÁRIA"
+        # Adiciona confiança para tipos não definidos no allow_list
+        tipos_adicionais = {
+            "NOME_CONTRA": 0.80,  # Padrão linguístico fraco
         }
+        self.confianca_base.update(tipos_adicionais)
         
-        # Cargos que conferem imunidade em contexto funcional
-        self.cargos_autoridade: Set[str] = {
-            "DRA", "DR", "SR", "SRA", "PROF", "DOUTOR", "DOUTORA",
-            "EXMO", "EXMA", "ILMO", "ILMA", "MM", "MERITISSIMO"
-        }
-        
-        # Gatilhos que ANULAM imunidade (indicam contato pessoal)
-        self.gatilhos_contato: Set[str] = {
-            "FALAR COM", "TRATAR COM", "LIGAR PARA", "CONTATO COM",
-            "TELEFONE DO", "TELEFONE DA", "CELULAR DO", "CELULAR DA",
-            "WHATSAPP DO", "WHATSAPP DA", "EMAIL DO", "EMAIL DA",
-            "FALAR COM O", "FALAR COM A", "CONTATO DO", "CONTATO DA",
-            "PROCURAR", "CHAMAR", "AVISAR", "COMUNICAR COM",
-            "ENDERECO DO", "ENDERECO DA", "RESIDENCIA DO", "RESIDENCIA DA",
-            "CASA DO", "CASA DA", "MORA NA", "MORA NO", "RESIDE NA", "RESIDE NO",
-            # Novos gatilhos para servidores identificados
-            "CONTATO:", "SERVIDOR", "SERVIDORA", "SR.", "SRA.", "SENHOR", "SENHORA",
-            "DIRETOR", "DIRETORA", "DADOS DO", "DADOS DA", "SOLICITO DADOS",
-            "IDENTIFICADO COMO", "CIDADAO", "CIDADA"
-        }
-        
-        # Contextos que indicam informação pessoal
-        self.contextos_pii: Set[str] = {
-            "MEU CPF", "MINHA IDENTIDADE", "MEU RG", "MINHA CNH",
-            "MEU TELEFONE", "MEU CELULAR", "MEU EMAIL", "MEU E-MAIL",
-            "MORO NA", "MORO NO", "RESIDO NA", "RESIDO NO",
-            "MEU ENDERECO", "MINHA RESIDENCIA", "MINHA CASA",
-            "MEU NOME COMPLETO", "ME CHAMO", "MEU NOME E",
-            "MINHA CONTA", "MINHA AGENCIA", "MEU BANCO",
-            "MEU PASSAPORTE", "MEU TITULO", "MEU PIS", "MEU NIT"
-        }
-        
-        # Pesos por tipo de PII (baseado em categorias LGPD)
-        self.pesos_pii: Dict[str, int] = {
-            # Crítico (5) - Identificação direta
-            "CPF": 5, "RG": 5, "CNH": 5, "PASSAPORTE": 5,
-            "TITULO_ELEITOR": 5, "PIS": 5, "CNS": 5, "CNPJ_PESSOAL": 5,
-            "CERTIDAO": 5, "CTPS": 5, "REGISTRO_PROFISSIONAL": 5,
-            
-            # Alto (4) - Contato direto
-            "EMAIL_PESSOAL": 4, "TELEFONE": 4,
-            "ENDERECO_RESIDENCIAL": 4, "NOME": 4,
-            "CONTA_BANCARIA": 4, "PIX": 4, "CARTAO_CREDITO": 4,
-            
-            # Moderado (3) - Identificação indireta
-            "PLACA_VEICULO": 3, "CEP": 3,
-            "DATA_NASCIMENTO": 3, "PROCESSO_CNJ": 3,
-        }
-        
-        # Confiança BASE por tipo de PII (baseado no método de detecção)
-        # Fórmula final: confianca = min(1.0, base * fator_contexto)
-        self.confianca_base: Dict[str, float] = {
-            # Regex + Validação DV (alta confiança)
-            "CPF": 0.98,              # DV Módulo 11
-            "PIS": 0.98,              # DV Módulo 11
-            "CNS": 0.98,              # DV específico
-            "CNH": 0.98,              # DV Módulo 11
-            "TITULO_ELEITOR": 0.98,   # DV específico
-            "CTPS": 0.98,             # DV Módulo 11
-            "CARTAO_CREDITO": 0.95,   # Luhn (pode ser gerado)
-            "CNPJ_PESSOAL": 0.90,     # DV + heurística MEI
-            
-            # Regex estrutural (sem DV)
-            "EMAIL_PESSOAL": 0.95,    # Domínio pessoal confirmado
-            "PROCESSO_CNJ": 0.90,     # Formato muito específico
-            "TELEFONE": 0.88,         # Pode ser comercial
-            "PLACA_VEICULO": 0.88,    # Formato bem definido
-            "PIX": 0.88,              # Chave identificável
-            "RG": 0.85,               # Formato varia por estado
-            "PASSAPORTE": 0.85,       # Formato menos padronizado
-            "ENDERECO_RESIDENCIAL": 0.85,
-            "CONTA_BANCARIA": 0.85,
-            "CERTIDAO": 0.85,
-            "REGISTRO_PROFISSIONAL": 0.85,
-            
-            # LGPD - Dados Sensíveis (peso máximo)
-            "DADO_SAUDE": 0.95,       # CID, prontuário, diagnóstico
-            "DADO_BIOMETRICO": 0.95,  # Impressão digital, facial
-            "MENOR_IDENTIFICADO": 0.95,  # Criança/adolescente identificado
-            
-            # LGPD - Identificadores funcionais
-            "MATRICULA": 0.88,        # Matrícula funcional/escolar
-            
-            # Regex com dependência de contexto
-            "CEP": 0.75,              # Só com contexto pessoal
-            "DATA_NASCIMENTO": 0.70,  # Muitas datas não são nascimento
-            
-            # NER
-            "NOME_BERT": 0.00,        # Usa score do modelo (placeholder)
-            "NOME_SPACY": 0.70,       # Modelo menor
-            "NOME_GATILHO": 0.85,     # Padrão linguístico forte
-            "NOME_CONTRA": 0.80,      # Padrão linguístico fraco
-        }
+        if ALLOW_LIST_AVAILABLE:
+            logger.info(f"✅ Allow_list carregada: {len(self.blocklist_total)} termos na blocklist")
     
     def _compilar_patterns(self) -> None:
         """Compila todos os patterns regex para performance."""
@@ -842,6 +722,8 @@ class PIIDetector:
         considerada PII, como nomes de instituições públicas, termos
         administrativos ou palavras genéricas.
         
+        Todas as listas usadas vêm do módulo allow_list.py (fonte única).
+        
         Args:
             texto_entidade: Texto da entidade detectada
             
@@ -853,43 +735,22 @@ class PIIDetector:
         
         t_norm = self._normalizar(texto_entidade)
         
-        # Blocklist direta
+        # 1. Blocklist direta (match exato)
         if t_norm in self.blocklist_total:
             return True
         
-        # Termos seguros
+        # 2. BLOCK_IF_CONTAINS: verifica se alguma palavra bloqueada está CONTIDA no nome
+        for blocked in BLOCK_IF_CONTAINS:
+            blocked_norm = unidecode(blocked.upper())
+            if blocked_norm in t_norm:
+                return True
+        
+        # 3. Termos seguros (match parcial)
         if any(ts in t_norm for ts in self.termos_seguros):
             return True
         
-        # Instituições públicas (não são nomes de pessoas!)
-        instituicoes_publicas = {
-            "ESCOLA CLASSE", "ESCOLA PARQUE", "CENTRO DE ENSINO", 
-            "HOSPITAL REGIONAL", "HOSPITAL MATERNO", "HOSPITAL DE BASE",
-            "HOSPITAL INFANTIL", "HOSPITAL UNIVERSITARIO", "UBS", "UPA",
-            "CENTRO DE SAUDE", "DELEGACIA", "BATALHAO", "QUARTEL",
-            "ADMINISTRACAO REGIONAL", "PREFEITURA", "SECRETARIA"
-        }
-        if any(inst in t_norm for inst in instituicoes_publicas):
-            return True
-        
-        # Só números/símbolos
+        # 4. Só números/símbolos
         if re.match(r'^[\d/\.\-\s]+$', texto_entidade):
-            return True
-        
-        # Palavras genéricas (não são nomes de pessoas)
-        palavras_bloqueadas = {
-            "LIGACOES", "TELEFONICAS", "RECLAMACAO", "DENUNCIA",
-            "PROTOCOLO", "PROCESSO", "MANIFESTACAO", "SOLICITACAO",
-            # Verbos no infinitivo/conjugados que parecem nomes
-            "SOLICITO", "REQUEIRO", "AUTORIZO", "INFORMO", "PREZADOS",
-            "ACESSO", "INTEGRAL", "AUTOS",
-            # Nomes de doenças que parecem nomes próprios (epônimos médicos)
-            "HUNTINGTON", "PARKINSON", "ALZHEIMER", "CROHN", "HODGKIN",
-            "KAWASAKI", "TOURETTE", "ADDISON", "CUSHING", "GRAVES",
-            "HASHIMOTO", "MENIERE", "RAYNAUD", "SJOGREN", "WILSON",
-            "CHAGAS", "HANSEN", "BASEDOW", "BELL", "DOWN"
-        }
-        if t_norm in palavras_bloqueadas:
             return True
         
         return False

@@ -131,6 +131,7 @@ export function Dashboard() {
             subtitle="processados nesta sessão"
             icon={<FileText className="w-5 h-5" />}
             variant="default"
+            tooltip="Quantidade total de pedidos de acesso à informação analisados pelo motor de IA durante esta sessão de uso."
           />
           <KPICard
             title="Públicos"
@@ -138,6 +139,7 @@ export function Dashboard() {
             subtitle="sem dados sensíveis"
             icon={<CheckCircle className="w-5 h-5" />}
             variant="success"
+            tooltip="Pedidos que NÃO contêm dados pessoais identificáveis (PII) e podem ser divulgados publicamente conforme a LAI."
           />
           <KPICard
             title="Não Públicos"
@@ -145,6 +147,7 @@ export function Dashboard() {
             subtitle="com dados sensíveis"
             icon={<AlertTriangle className="w-5 h-5" />}
             variant="danger"
+            tooltip="Pedidos que CONTÊM dados pessoais sensíveis (CPF, nome, endereço, etc.) e requerem tratamento especial conforme a LGPD."
           />
           <KPICard
             title="Confiança Média"
@@ -152,6 +155,7 @@ export function Dashboard() {
             subtitle="probabilidade média de acerto"
             icon={<Percent className="w-5 h-5" />}
             variant="highlight"
+            tooltip="Média da confiança do modelo em suas classificações. Valores acima de 90% indicam alta certeza nas predições."
           />
         </div>
       </div>
