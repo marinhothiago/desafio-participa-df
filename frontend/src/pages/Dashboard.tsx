@@ -78,14 +78,14 @@ export function Dashboard() {
       <div className="gov-card bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20">
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-5 h-5 text-warning" />
-          <span className="text-sm font-semibold text-foreground">Benchmarks de Performance do Motor Híbrido (IA + Regex + Validação Matemática)</span>
+          <span className="text-sm font-semibold text-foreground">Benchmarks de Performance do Motor Híbrido Ensemble de Alta Recall (BERT NER + spaCy + Regex + Validação DV)</span>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
               <div className="flex items-center justify-center gap-1 text-success mb-1">
                 <Target className="w-4 h-4" />
-                <MetricTooltip content="A IA valida o contexto do Regex, reduzindo falsos positivos e aumentando a precisão global.">
+                <MetricTooltip content="Estratégia Ensemble OR: qualquer detector positivo classifica como PII, maximizando recall para conformidade LGPD/LAI.">
                   <span className="text-xs font-medium">Precisão Global</span>
                 </MetricTooltip>
               </div>
@@ -95,7 +95,7 @@ export function Dashboard() {
             <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
               <div className="flex items-center justify-center gap-1 text-success mb-1">
                 <TrendingUp className="w-4 h-4" />
-                <MetricTooltip content="O Regex garante a captura de 100% dos CPFs, CNPJs e outros padrões estruturados.">
+                <MetricTooltip content="22 tipos de PII detectados: CPF, CNPJ, RG, CNH, PIS, CNS, Email, Telefone, Endereço, Nome e mais.">
                   <span className="text-xs font-medium">Sensibilidade</span>
                 </MetricTooltip>
               </div>
@@ -105,7 +105,7 @@ export function Dashboard() {
             <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
               <div className="flex items-center justify-center gap-1 text-success mb-1">
                 <BarChart3 className="w-4 h-4" />
-                <MetricTooltip content="Média harmônica do sistema híbrido, refletindo o melhor dos dois mundos.">
+                <MetricTooltip content="100+ casos de teste validados incluindo edge cases de Brasília/GDF e imunidade funcional (LAI).">
                   <span className="text-xs font-medium">F1-Score Combinado</span>
                 </MetricTooltip>
               </div>
@@ -114,7 +114,7 @@ export function Dashboard() {
           </div>
           
           <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-            <strong className="text-foreground">Como funciona:</strong> O motor utiliza uma arquitetura híbrida de <span className="text-primary font-medium">Processamento de Linguagem Natural (spaCy)</span> para compreender o contexto semântico e <span className="text-warning font-medium">Expressões Regulares (Regex)</span> para identificar padrões estruturados. O diferencial do sistema é a <span className="text-success font-medium">Camada de Validação Matemática</span>, que aplica algoritmos de verificação (como o Módulo 11) para confirmar a autenticidade de CPFs e CNPJs, eliminando falsos positivos e garantindo maior precisão na classificação de PII.
+            <strong className="text-foreground">Arquitetura do Motor:</strong> Pipeline de 4 camadas em <span className="text-primary font-medium">estratégia Ensemble OR</span> — (1) <span className="text-warning font-medium">Regex com Validação DV</span> (Módulo 11 para CPF, CNPJ, PIS, CNS), (2) <span className="text-primary font-medium">BERT NER Multilíngue</span> (Davlan/bert-base-multilingual-cased-ner-hrl) como detector primário de nomes, (3) <span className="text-success font-medium">spaCy pt_core_news_lg</span> como NER complementar (captura nomes não detectados pelo BERT), e (4) <span className="text-muted-foreground font-medium">Regras de Negócio</span> (imunidade funcional, contexto GDF). Qualquer camada positiva classifica como PII, garantindo máximo recall para conformidade LGPD/LAI.
         </div>
       </div>
 

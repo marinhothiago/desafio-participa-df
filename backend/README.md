@@ -60,11 +60,11 @@ backend/
 ├── src/
 │   ├── __init__.py           ← Marca como módulo Python
 │   ├── detector.py           ← Motor híbrido PII v9.0
-│   │                           (978 linhas com comentários explicativos)
+│   │                           (1016 linhas com comentários explicativos)
 │   │                           - Classe PIIDetector: ensemble de detectores
 │   │                           - Classe ValidadorDocumentos: validação DV
-│   │                           - Regex patterns para 20+ tipos de PII
-│   │                           - NER com BERT multilíngue + spaCy
+│   │                           - Regex patterns para 22 tipos de PII
+│   │                           - NER: BERT (primário) + spaCy (complementar)
 │   │                           - Regras de negócio (imunidade funcional)
 │   │
 │   └── allow_list.py         ← Lista de termos seguros (não são PII)
@@ -330,9 +330,9 @@ Texto de Entrada
        │
        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                    CAMADA 2: BERT NER                        │
+│              CAMADA 2: BERT NER (primário)                   │
 │  Modelo: Davlan/bert-base-multilingual-cased-ner-hrl        │
-│  • Reconhecimento de nomes pessoais (PER)                    │
+│  • Detector primário de nomes pessoais (PER)                 │
 │  • Threshold de confiança: 0.75                              │
 │  • Filtros: nome + sobrenome, não em blocklist               │
 │  • Verifica imunidade funcional antes de marcar              │
@@ -340,10 +340,11 @@ Texto de Entrada
        │
        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                  CAMADA 3: spaCy (backup)                    │
+│            CAMADA 3: spaCy (complementar)                    │
 │  Modelo: pt_core_news_lg (português)                         │
-│  • NER para entidades que BERT não detectou                  │
-│  • Evita duplicatas com BERT                                 │
+│  • Captura nomes que o BERT não detectou                     │
+│  • Roda em paralelo, não é fallback                          │
+│  • Evita duplicatas: só adiciona se BERT não encontrou       │
 │  • Mesmos filtros de qualidade                               │
 └──────────────────────────────────────────────────────────────┘
        │

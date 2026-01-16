@@ -57,11 +57,11 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │                 BACKEND (FastAPI + Python)                  │
 │           HuggingFace Spaces / Docker                       │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ Motor Híbrido de Detecção PII (v9.0 - 978 linhas)      │ │
+│  │ Motor Híbrido de Detecção PII (v9.0 - 1016 linhas)     │ │
 │  │                                                         │ │
 │  │ 1. REGEX + Validação DV (CPF, CNPJ, PIS, CNS, CNH)    │ │
-│  │ 2. BERT NER Multilíngue (Davlan/bert-base-ner-hrl)    │ │
-│  │ 3. spaCy pt_core_news_lg (NER backup)                  │ │
+│  │ 2. BERT NER Multilíngue (detector primário de nomes)   │ │
+│  │ 3. spaCy pt_core_news_lg (NER complementar)            │ │
 │  │ 4. Regras de Negócio (imunidade funcional, contexto)   │ │
 │  │                                                         │ │
 │  │ Estratégia: Ensemble OR (alta recall para LGPD)        │ │
@@ -390,7 +390,7 @@ man_003,"Email para contato: joao.silva@gmail.com"
 
 O código-fonte possui comentários detalhados em trechos complexos. Exemplos:
 
-#### Motor Principal (`backend/src/detector.py` - 978 linhas)
+#### Motor Principal (`backend/src/detector.py` - 1016 linhas)
 
 ```python
 class PIIDetector:
@@ -420,12 +420,46 @@ class PIIDetector:
         # 2. Nomes após gatilhos de contato (sempre PII)
         gatilho_findings = self._extrair_nomes_gatilho(text)
         
-        # 3. NER com BERT + spaCy (nomes e entidades)
+        # 3. NER com BERT (primário) + spaCy (complementar)
         ner_findings = self._detectar_ner(text)
         
         # Ensemble OR: combina todos os achados com deduplicação
         # ...
 ```
+
+#### Arquitetura NER Dual (BERT + spaCy)
+
+O sistema utiliza **dois modelos NER em paralelo** para maximizar recall:
+
+| Modelo | Função | Threshold | Justificativa |
+|--------|--------|-----------|---------------|
+| **BERT NER** (Davlan/bert-base-multilingual-cased-ner-hrl) | Detector **primário** | score > 0.75 | Multilíngue, mais preciso, usa confiança própria do modelo |
+| **spaCy** (pt_core_news_lg) | Detector **complementar** | confiança fixa 0.80 | Nativo PT-BR, captura nomes que o BERT pode perder |
+
+```python
+def _detectar_ner(self, texto: str) -> List[PIIFinding]:
+    findings = []
+    
+    # BERT NER (primário) - roda primeiro
+    if self.nlp_bert:
+        entidades = self.nlp_bert(texto)
+        for ent in entidades:
+            if ent['entity_group'] == 'PER' and ent['score'] > 0.75:
+                findings.append(PIIFinding(tipo="NOME", valor=ent['word'], ...))
+    
+    # spaCy NER (complementar) - adiciona nomes NÃO detectados pelo BERT
+    if self.nlp_spacy:
+        doc = self.nlp_spacy(texto)
+        for ent in doc.ents:
+            if ent.label_ == 'PER':
+                # Evita duplicatas: só adiciona se BERT não encontrou
+                if not any(f.valor.lower() == ent.text.lower() for f in findings):
+                    findings.append(PIIFinding(tipo="NOME", valor=ent.text, ...))
+    
+    return findings
+```
+
+**Por que dois modelos?** A estratégia Ensemble OR garante que se o BERT perder um nome (ex: grafia incomum), o spaCy pode capturá-lo, e vice-versa. Isso maximiza recall, essencial para conformidade LGPD/LAI.
 
 #### API (`backend/api/main.py`)
 
