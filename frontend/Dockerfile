@@ -15,6 +15,8 @@ RUN npm ci || npm install
 
 # Copia código e faz build
 COPY . .
+# Garante que o build Docker use a raiz como base path
+ENV VITE_BASE_PATH=/
 RUN npm run build
 
 # Stage 2: Serve com nginx

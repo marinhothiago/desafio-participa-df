@@ -5,9 +5,11 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // GitHub Pages usa subpath /desafio-participa-df/
-  // Para dev local, usa / via variável de ambiente
-  base: process.env.GITHUB_ACTIONS ? '/desafio-participa-df/' : '/',
+  // Prioridade:
+  // 1. VITE_BASE_PATH (definido no Dockerfile)
+  // 2. GITHUB_ACTIONS (definido no CI/CD)
+  // 3. Fallback para raiz '/'
+  base: process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS ? '/desafio-participa-df/' : '/'),
   server: {
     host: "::",
     port: 8080,
