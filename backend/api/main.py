@@ -48,7 +48,7 @@ from typing import Dict, Optional
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from celery.result import AsyncResult
-from backend.celery_worker import celery_app
+from celery_worker import celery_app
 import json
 import threading
 from datetime import datetime
