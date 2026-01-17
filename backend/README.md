@@ -222,7 +222,7 @@ backend/
 │                               - Edge cases de Brasília/GDF
 │                               - Imunidade funcional
 │
-├── test_confidence.py        ← Testes do sistema de confiança
+├── test_confianca.py         ← Testes do sistema de confiança
 │                               - Validação de dígitos verificadores
 │                               - Calibração isotônica
 │                               - Combinação log-odds
@@ -670,7 +670,7 @@ Servidores públicos em exercício de função **NÃO são PII**:
 python benchmark.py
 
 # Execute os testes de confiança
-python test_confidence.py
+python test_confianca.py
 ```
 
 **Benchmark LGPD (303 casos - F1-Score = 1.0000):**
