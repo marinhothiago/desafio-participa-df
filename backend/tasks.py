@@ -1,4 +1,4 @@
-from .celery_worker import celery_app
+from celery_worker import celery_app
 from src.detector import PIIDetector
 import pandas as pd
 import os
