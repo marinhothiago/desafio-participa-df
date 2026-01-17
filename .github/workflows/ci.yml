@@ -146,18 +146,7 @@ jobs:
       - name: Rodar testes análise confiança
         run: pytest test_analise_confianca.py --disable-warnings
 
-  backend-test-edge-cases:
-    name: Backend - Testes Edge Cases
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
+    # Removido job duplicado backend-test-edge-cases
           python-version: '3.10'
       - name: Instalar dependências
         run: |
