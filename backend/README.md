@@ -12,53 +12,67 @@
 - 🛠️ **Otimizador de ensemble:** `optimize_ensemble.py` para grid search de pesos do ensemble, reuso de detector, e validação automática.
 
 ---
-# 📚 COMO USAR AS NOVAS FUNCIONALIDADES
+## 🆕 Estratégias de Merge de Spans (Presets)
 
+A partir da versão 9.4.3, o endpoint `/analyze` permite escolher a estratégia de merge de spans (entidades sobrepostas) via parâmetro `merge_preset`:
+
+- `recall`: Mantém todos os spans sobrepostos (maximiza recall, útil para auditoria).
+- `precision`: Mantém apenas o span com maior score/confiança (maximiza precisão, útil para produção).
+- `f1`: Mantém o span mais longo por sobreposição (equilíbrio entre recall e precisão, padrão).
+- `custom`: Permite lógica customizada (exemplo: priorizar fonte específica ou lógica própria).
+
+### Como usar na API
+
+```http
+POST /analyze?merge_preset=recall
+Content-Type: application/json
+{
+  "text": "Meu CPF é 123.456.789-09 e meu telefone é 99999-8888"
+}
+```
+
+- `merge_preset` pode ser: `recall`, `precision`, `f1`, `custom` (default: `f1`)
+- O resultado em `detalhes` refletirá a estratégia escolhida.
+
+### Exemplos de uso via curl
+
+```bash
+# Maximizar recall (todos spans):
+
+# Maximizar precisão (apenas maior score):
+curl -X POST "http://localhost:8000/analyze?merge_preset=precision" -H "Content-Type: application/json" -d '{"text": "Meu CPF é 123.456.789-09"}'
+
+# Customizado:
+```
+
+### Observações
+- O merge só é aplicado se as entidades retornadas tiverem `start` e `end` (posição no texto).
+- Para uso avançado, consulte `src/confidence/combiners.py` e ajuste a função `merge_spans_custom`.
+- O preset `custom` pode ser expandido para lógica própria no backend.
+
+---
+# 📚 COMO USAR AS NOVAS FUNCIONALIDADES
 ### Gazetteer GDF
 - Edite `src/gazetteer_gdf.json` para adicionar órgãos, escolas, hospitais, programas ou aliases. O detector ignora entidades que batem com o gazetteer, reduzindo FPs em contexto institucional.
 
-### Thresholds Dinâmicos
-- Os thresholds de confiança são ajustados por tipo de entidade (ex: nomes, documentos, contatos), otimizando recall/precisão para cada categoria. Veja `src/confidence/config.py`.
-
-### Pós-processamento de Spans
-- O pipeline aplica normalização, merge e split de spans para evitar duplicatas e garantir precisão máxima. Funções em `pos_processar_spans.py`.
-
-### Otimizador de Ensemble
 - Execute `python optimize_ensemble.py` para buscar os melhores pesos do ensemble. O script reusa o detector e valida o F1-score automaticamente.
-
 ### Segurança do Token Hugging Face
 - Crie um `.env` (NÃO versionado) com `HF_TOKEN=seu_token`. O backend carrega automaticamente. Nunca exponha o token em código ou log.
 
-### Benchmark Atualizado
-- Execute `python benchmark.py` para rodar os 318+ casos reais. F1-score esperado: 0.9763. Resultados detalhados em `data/output/resultado_benchmark.csv`.
-
-### Checklist de Deploy Seguro
 - [x] `.env` nunca versionado
-- [x] `.gitignore` e `.dockerignore` revisados
 - [x] Modelos baixados no build do Docker
 - [x] Scripts de limpeza não vão para produção
 - [x] Testes e benchmark executados antes do deploy
-
----
-# Exemplos de Uso Rápido (novas features)
-
 ```bash
-# Processar lote com CLI
 python main_cli.py --input data/input/manifestacoes.xlsx --output data/output/resultado
 
 # Rodar benchmark completo
-python benchmark.py
 
-# Otimizar pesos do ensemble
-python optimize_ensemble.py
-
-# Pós-processar spans manualmente
 python pos_processar_spans.py --input data/output/resultado.json --output data/output/resultado_pos.json
 ```
 
 ---
 ---
-title: Participa DF - PII Detector
 emoji: 🛡️
 colorFrom: blue
 colorTo: green
@@ -83,7 +97,7 @@ pinned: false
 
 ## 🆕 Integração Gazetteer GDF (v9.5)
 
-O motor agora integra um **gazetteer institucional do GDF** (arquivo `gazetteer_gdf.json`) para filtrar falsos positivos de nomes, órgãos, escolas, hospitais e programas públicos. Isso garante que entidades institucionais não sejam marcadas como PII, elevando a precisão em contexto Brasília/DF.
+O motor agora integra um **gazetteer institucional do GDF** (arquivo `gazetteer_gdf.json`) para filtrar falsos positivos de nomes, órgãos, escolas, hospitais e programas públicos. Isso garante que entidades institucional não sejam marcadas como PII, elevando a precisão em contexto Brasília/DF.
 
 **Como funciona:**
 - O arquivo `src/gazetteer_gdf.json` contém listas de órgãos, siglas, aliases, escolas e hospitais do GDF.

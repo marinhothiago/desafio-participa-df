@@ -245,17 +245,12 @@ text-unidecode==1.3
     "lucide-react": "^0.462.0",
     "xlsx": "^0.18.5",
     "zod": "^3.25.76"
-  }
-}
-```
 
-### 1.3 Instalação Completa (Passo a Passo)
 
 #### Opção A: Instalação Manual (Desenvolvimento)
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/marinhothiago/desafio-participa-df.git
 cd desafio-participa-df
 
 # ========== BACKEND ==========
@@ -265,52 +260,27 @@ cd backend
 python -m venv venv
 
 # 3. Ative o ambiente virtual
-# Windows:
 venv\Scripts\activate
 # Linux/Mac:
 source venv/bin/activate
-
-# 4. Instale PyTorch CPU (antes das outras dependências)
-pip install torch==2.1.0+cpu --index-url https://download.pytorch.org/whl/cpu
-
-# 5. Instale todas as dependências do backend
-pip install -r requirements.txt
-
 # 6. Baixe o modelo spaCy para português (obrigatório)
-python -m spacy download pt_core_news_lg
 
 # 7. Crie um arquivo .env e adicione seu HF_TOKEN:
 echo "HF_TOKEN=seu_token_aqui" > .env
-
- # ========== FRONTEND ========== 
-cd ../frontend
-
 # 7. Instale dependências do frontend
-npm install
 ```
 
 #### Opção B: Docker Compose (Produção - Recomendado)
-
-```bash
-# Clone o repositório
-git clone https://github.com/marinhothiago/desafio-participa-df.git
 cd desafio-participa-df
-
 # Suba todos os serviços (backend + frontend)
 docker-compose up -d
 
-# Verifique se está rodando
-docker-compose ps
-```
-
 ---
-
 ---
 
 ## 2️⃣ EXECUÇÃO, BENCHMARK E TESTES
 
 ### 2.1 Execução Local (Desenvolvimento)
-
 Abra **dois terminais** side-by-side:
 
 #### Terminal 1: Backend (Motor de IA)

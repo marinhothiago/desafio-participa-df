@@ -275,17 +275,12 @@ frontend/
     "lucide-react": "^0.462.0",
     "date-fns": "^3.6.0",
     
-    "@radix-ui/react-dialog": "^1.1.14",
-    "@radix-ui/react-tabs": "^1.1.12",
-    "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-progress": "^1.1.7",
-    "@radix-ui/react-tooltip": "^1.2.7",
     
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    
     "sonner": "^1.7.4",
     "vaul": "^0.9.9",
     "cmdk": "^1.1.1"
@@ -295,52 +290,27 @@ frontend/
     "typescript": "^5.8.3",
     "@vitejs/plugin-react-swc": "^3.11.0",
     
-    "tailwindcss": "^3.4.17",
     "@tailwindcss/typography": "^0.5.16",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    
-    "eslint": "^9.32.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "typescript-eslint": "^8.38.0",
-    
-    "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
-    "@types/node": "^22.16.5"
   }
 }
 ```
-
-### 1.3 Instalação Passo a Passo
-
-```bash
 # 1. Clone o repositório (se ainda não fez)
-git clone https://github.com/marinhothiago/desafio-participa-df.git
 cd desafio-participa-df/frontend
 
 # 2. Instale todas as dependências
-npm install
-
-# Alternativa com Bun (mais rápido):
-# bun install
 ```
-
 **Tempo estimado:** 1-2 minutos
 
 ---
 
-## 2️⃣ INSTRUÇÕES DE EXECUÇÃO
-
-### 2.1 Servidor de Desenvolvimento
-
-```bash
 # Na pasta frontend/
 npm run dev
 
 # Alternativa com Bun:
 # bun run dev
-```
 
 **Saída esperada:**
 ```
