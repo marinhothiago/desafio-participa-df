@@ -2,10 +2,12 @@
 import pytest
 from src.detector import PIIDetector
 
-detector = PIIDetector()
-
- # Formato: (texto, contem_pii, descricao, categoria)
+# Formato: (texto, contem_pii, descricao, categoria)
 DATASET_LGPD = [
+    # ...todos os itens do dataset...
+    ("Ordem de serviço 2025/12345", False, "OS genérica", "Código Sistema"),
+]
+
 detector = PIIDetector()
 
 # Teste unitário parametrizado para todo o dataset
