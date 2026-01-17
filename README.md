@@ -13,6 +13,10 @@
 > 
 > 🆕 **Novidades v9.4.3**: Telefones internacionais, 5 níveis de risco LGPD completos (CRÍTICO → BAIXO), IP/Coordenadas/User-Agent, contadores globais, menu hambúrguer mobile, allow_list (375 termos).
 
+> **Política de Deploy:**
+> - O build de produção (Docker/Hugging Face) inclui apenas código-fonte, dependências e a amostra oficial `AMOSTRA_e-SIC.xlsx`.
+> - O diretório `scripts/` é exclusivo para automações/limpeza local e nunca vai para produção.
+> - O `.dockerignore` garante que apenas arquivos essenciais e a amostra permitida vão para o build.
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
 | Frontend (Dashboard) | https://marinhothiago.github.io/desafio-participa-df/ |

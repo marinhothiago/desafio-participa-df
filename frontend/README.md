@@ -7,6 +7,11 @@
 
 > **Interface React para análise de privacidade** em pedidos de Lei de Acesso à Informação (LAI), seguindo o padrão visual DSGOV (Gov.br).
 
+> **Política de Deploy:**
+> - O backend inclui apenas código-fonte, dependências e a amostra oficial `AMOSTRA_e-SIC.xlsx` no build de produção.
+> - O diretório `scripts/` é exclusivo para automações/limpeza local e nunca vai para produção.
+> - Veja detalhes e checklist em [../backend/README.md](../backend/README.md).
+
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
 | Frontend (Dashboard) | https://marinhothiago.github.io/desafio-participa-df/ |

@@ -828,3 +828,31 @@ resultado = detector.detect_extended(texto)
 Desenvolvido para o **Hackathon Participa DF 2025** em conformidade com:
 - **LGPD** - Lei Geral de Proteção de Dados (Lei nº 13.709/2018)
 - **LAI** - Lei de Acesso à Informação (Lei nº 12.527/2011)
+
+---
+
+## 🚀 Deploy no Hugging Face Spaces: Quais arquivos vão para produção?
+
+Para garantir builds rápidos, seguros e reprodutíveis no Hugging Face Spaces (ou Docker em produção), **apenas os arquivos essenciais devem ser enviados para o contexto de build**:
+
+
+### Checklist de Deploy (Docker/Hugging Face)
+
+**Inclua no build:**
+- `src/` (código-fonte principal)
+- `api/` (endpoints FastAPI)
+- `requirements.txt` (dependências)
+- `Dockerfile` (build)
+- `data/input/AMOSTRA_e-SIC.xlsx` (amostra oficial, permitida no build)
+
+**Ignore tudo que for apenas para desenvolvimento local:**
+- `scripts/` (automatizações, limpeza, etc)
+- arquivos de teste, notebooks, caches, dados sensíveis não autorizados
+
+**Observação:**
+- A amostra `AMOSTRA_e-SIC.xlsx` pode ir para produção (Docker/HF) conforme decisão do projeto/hackathon.
+- O diretório `scripts/` é exclusivo para automações e limpeza local, nunca vai para produção.
+
+**Dica:** O arquivo `.dockerignore` já está configurado para ignorar scripts/ e artefatos de dev. Se for subir manualmente para o Hugging Face, envie só os arquivos essenciais e a amostra permitida!
+
+---
