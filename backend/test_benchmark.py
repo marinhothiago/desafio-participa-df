@@ -1,41 +1,15 @@
-#!/usr/bin/env python3
-"""
-Benchmark LGPD - HACKATHON PARTICIPA DF 2025
-============================================
 
-Suite de validação com 500+ casos baseados em:
-1. Textos REAIS do e-SIC (AMOSTRA_e-SIC.xlsx)
-2. Definição de PII pela LGPD (Lei 13.709/2018)
-3. Casos de borda e erros de digitação humana
-
-LGPD Art. 5º, I - dado pessoal: 
-"informação relacionada a pessoa natural identificada ou IDENTIFICÁVEL"
-
-Princípio: Dados com erros de digitação AINDA SÃO PII!
-- CPF com DV errado → ainda é tentativa de informar CPF pessoal
-- CNH com 10 dígitos → ainda identifica a pessoa
-- Telefone mal formatado → ainda é contato pessoal
-
-Métricas calculadas:
-- Precisão: VP / (VP + FP)
-- Sensibilidade/Recall: VP / (VP + FN) 
-- P1 (F1-Score): 2 × (Precisão × Sensibilidade) / (Precisão + Sensibilidade)
-"""
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-import sys
-import os
-import json
-from datetime import datetime
-from typing import List, Dict, Tuple
-from collections import defaultdict
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pytest
 from src.detector import PIIDetector
+
+# Instancia o detector uma vez para todos os testes
+detector = PIIDetector()
+
+# Teste unitário parametrizado para todo o dataset
+@pytest.mark.parametrize("texto, contem_pii, descricao, categoria", DATASET_LGPD)
+def test_pii_detector_dataset(texto, contem_pii, descricao, categoria):
+    resultado, findings, risco, confianca = detector.detect(texto)
+    assert resultado == contem_pii, f"Texto: {texto}\nDescrição: {descricao}\nCategoria: {categoria}\nEsperado: {contem_pii}\nObtido: {resultado}"
 
 # =============================================================================
 # DATASET LGPD - 500+ CASOS COM GROUND TRUTH
