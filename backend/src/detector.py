@@ -85,6 +85,14 @@ def detect_pii_presidio(text, entities=None, language='pt'):
 
 
 class PIIDetector:
+    def __init__(self, usar_gpu: bool = True, use_probabilistic_confidence: bool = True):
+        self.usar_gpu = usar_gpu
+        self.use_probabilistic_confidence = use_probabilistic_confidence
+        self.patterns_compilados = {}  # Garante que sempre existe
+        self.confidence_calculator = None  # Pode ser inicializado depois
+        # Inicialização do resto dos atributos necessários pode ser feita aqui
+        # ou nos métodos de setup já existentes
+
     def detect_presidio_ensemble(self, text: str, entities=None, language='pt'):
         """
         Detecta PII usando todos os recognizers registrados no Presidio,
