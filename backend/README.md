@@ -4,9 +4,7 @@ title: Desafio Participa DF
 emoji: 🚀
 colorFrom: indigo
 colorTo: blue
-sdk: gradio
-sdk_version: "4.0.0"
-python_version: "3.10"
+sdk: docker
 app_file: app.py
 pinned: false
 ---
