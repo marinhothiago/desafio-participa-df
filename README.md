@@ -5,10 +5,17 @@
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
 [![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./backend/benchmark.py)
 [![Licença](https://img.shields.io/badge/Licença-LGPD%2FLAI-green)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
-
-[![Build Status](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/marinhothiago/desafio-participa-df/actions)
-[![Coverage Status](https://codecov.io/gh/marinhothiago/participa-df-pii/branch/main/graph/badge.svg)](https://codecov.io/gh/marinhothiago/participa-df-pii)
-[![Dependabot Status](https://img.shields.io/badge/dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/marinhothiago/desafio-participa-df/pulls?q=is:pr+is:open+label:dependencies)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)
+[![GitHub issues](https://img.shields.io/github/issues/marinhothiago/desafio-participa-df)](https://github.com/marinhothiago/desafio-participa-df/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/marinhothiago/desafio-participa-df)](https://github.com/marinhothiago/desafio-participa-df/pulls)
+[![GitHub last commit](https://img.shields.io/github/last-commit/marinhothiago/desafio-participa-df)](https://github.com/marinhothiago/desafio-participa-df/commits/main)
+[![GitHub contributors](https://img.shields.io/github/contributors/marinhothiago/desafio-participa-df)](https://github.com/marinhothiago/desafio-participa-df/graphs/contributors)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/marinhothiago/desafio-participa-df?style=social)](https://github.com/marinhothiago/desafio-participa-df/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/marinhothiago/desafio-participa-df?style=social)](https://github.com/marinhothiago/desafio-participa-df/network/members)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
 > 
@@ -668,26 +675,30 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
 
 ---
 
-## 🧪 Testes
+## 🧪 Testes Automatizados & CI/CD (Novidades 2026)
 
-```bash
-cd backend
+- **Testes de Regex GDF agora divididos em múltiplos arquivos** (`test_regex_gdf.py`, `test_regex_gdf_processo.py`, `test_regex_gdf_matricula.py`, `test_regex_gdf_inscricao.py`) para garantir performance e granularidade no CI.
+- **Timeout automático em todos os testes** usando `pytest-timeout` (10s por teste), evitando travamentos por regex pesada ou loops acidentais.
+- **Validação explícita da inicialização do modelo spaCy** nos testes, garantindo que falhas de dependência sejam detectadas rapidamente.
+- **Workflows GitHub Actions robustos**: qualquer push no branch `main` dispara todos os testes, e commits forçados podem ser usados para garantir execução do pipeline.
+- **Dica:** Se o CI travar ou for cancelado, divida ainda mais os testes ou aumente o timeout conforme necessário.
 
-# Ative o ambiente virtual
-# Windows: venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
-
-# Execute o benchmark LGPD (303 casos)
-python benchmark.py
+### Exemplo de uso do timeout nos testes
+```python
+import pytest
+pytestmark = pytest.mark.timeout(10)  # 10 segundos por teste
 ```
 
-O arquivo `benchmark.py` contém **303 casos de teste LGPD** com **F1-Score = 1.0000** cobrindo:
-- ✅ Situações seguras (não PII) - textos administrativos
-- ✅ PII clássico (CPF, Email, Telefone, RG, CNH)
-- ✅ Edge cases e contexto específico de Brasília/GDF
-- ✅ Imunidade funcional de servidores públicos (LAI)
-- ✅ Gatilhos de contato que anulam imunidade
-- ✅ Documentos com validação de dígito verificador (CPF, CNPJ, PIS, CNS)
+### Exemplo de divisão de arquivos de teste
+- `test_regex_gdf.py` (casos gerais)
+- `test_regex_gdf_processo.py` (apenas PROCESSO_SEI)
+- `test_regex_gdf_matricula.py` (apenas MATRICULA_SERVIDOR)
+- `test_regex_gdf_inscricao.py` (apenas INSCRICAO_IMOVEL)
+
+### Troubleshooting CI travado
+- Se o workflow for cancelado ou travar, rode localmente com `pytest --maxfail=1 -v` para identificar o teste problemático.
+- Use commits forçados (ex: adicionar comentário) para disparar o workflow manualmente.
+- Consulte o badge de build e o log do Actions para rastrear falhas.
 
 ---
 
