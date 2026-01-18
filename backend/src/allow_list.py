@@ -423,3 +423,6 @@ CONFIANCA_BASE: Dict[str, float] = {
 
 # Alias para manter compatibilidade com código legado
 ALLOW_LIST_TERMS = BLOCKLIST_TOTAL
+
+# Flag para indicar disponibilidade da allow list (compatibilidade com detector.py)
+ALLOW_LIST_AVAILABLE = True
