@@ -4,10 +4,17 @@ import re
 import sys
 import os
 import pytest
+pytestmark = pytest.mark.timeout(10)
 
 # Garante import do detector
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 from src.detector import PIIDetector
+
+# Validação explícita da inicialização do modelo spaCy
+try:
+    detector = PIIDetector()
+except Exception as e:
+    print(f"Erro ao inicializar PIIDetector: {e}")
 
 # Casos reais e edge cases dos padrões GDF
 CASES = [
@@ -46,7 +53,6 @@ CASES = [
 
 @pytest.mark.parametrize("texto,tipo,esperado", CASES)
 def test_regex_gdf_padrao(texto, tipo, esperado):
-    detector = PIIDetector()
     findings = detector._detectar_regex(texto)
     achou = any(f.tipo == tipo for f in findings)
     assert achou == esperado, f"Texto: {texto} | Tipo: {tipo} | Esperado: {esperado} | Achados: {findings}"
