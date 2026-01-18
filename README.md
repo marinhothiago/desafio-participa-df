@@ -8,7 +8,6 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)
 [![Licença](https://img.shields.io/badge/Licença-LGPD%2FLAI-green)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub forks](https://img.shields.io/github/forks/marinhothiago/desafio-participa-df?style=social)](https://github.com/marinhothiago/desafio-participa-df/network/members)
 [![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./backend/benchmark.py)
 [![CI](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/ci.yml/badge.svg)](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/ci.yml)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
