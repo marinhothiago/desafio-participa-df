@@ -62,7 +62,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## 🏗️ Arquitetura do Sistema (2026)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -81,22 +81,42 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │                 BACKEND (FastAPI + Python)                  │
 │           HuggingFace Spaces / Docker                       │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ Motor Híbrido de Detecção PII (v9.5 - 2200+ linhas)    │ │
-│  │                                                       │ │
-│  │ 1. REGEX + Validação DV (CPF, CNPJ, PIS, CNS, CNH)     │ │
-│  │ 2. BERT Davlan NER (detector primário de nomes)        │ │
-│  │ 3. NuNER pt-BR (especializado em português)            │ │
-│  │ 4. spaCy pt_core_news_lg (NER complementar)            │ │
-│  │ 5. Gazetteer GDF (órgãos, escolas, hospitais, aliases) │ │
-│  │ 6. Regras de Negócio (imunidade funcional, contexto)   │ │
-│  │ 7. Confiança Probabilística (isotônico + log-odds)     │ │
-│  │ 8. Thresholds Dinâmicos por Tipo                       │ │
-│  │ 9. Pós-processamento de spans                          │ │
-│  │                                                       │ │
-│  │ Estratégia: Ensemble OR (alta recall para LGPD)        │ │
+│  │ Motor Híbrido de Detecção PII (v9.5+)                 │ │
+│  │                                                      │ │
+│  │ ┌─────────────────────────────┐   ┌─────────────────┐ │ │
+│  │ │ Pipeline Híbrido Original   │   │ Presidio (MSFT) │ │ │
+│  │ │ 1. REGEX + Validação DV     │   │ • AnalyzerEngine│ │ │
+│  │ │ 2. BERT Davlan NER          │   │ • Entidades PII │ │ │
+│  │ │ 3. NuNER pt-BR              │   │ • Multi-idioma  │ │ │
+│  │ │ 4. spaCy pt_core_news_lg    │   │ • Modular       │ │ │
+│  │ │ 5. Gazetteer GDF            │   └─────────────────┘ │ │
+│  │ │ 6. Regras de Negócio        │           │           │ │
+│  │ │ 7. Confiança Probabilística │           │           │ │
+│  │ │ 8. Thresholds Dinâmicos     │           │           │ │
+│  │ │ 9. Pós-processamento        │           │           │ │
+│  │ └─────────────┬───────────────┘           │           │ │
+│  │               │                           │           │ │
+│  │         ┌─────▼─────────────┐             │           │ │
+│  │         │   Ensemble/Fusão  │◄────────────┘           │ │
+│  │         └─────────┬─────────┘                         │ │
+│  │                   │                                   │ │
+│  │         ┌─────────▼─────────┐                         │ │
+│  │         │ Árbitro LLM (op.) │                         │ │
+│  │         │ Llama-70B (Groq/HF)│                        │ │
+│  │         │ • Explicação PII   │                        │ │
+│  │         │ • Decisão ambígua  │                        │ │
+│  │         └────────────────────┘                        │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+Agora o backend suporta:
+- **Pipeline híbrido original** (regex, BERT, NuNER, spaCy, gazetteer, regras, confiança, thresholds, pós-processamento)
+- **Presidio Framework (Microsoft)**: manutenção/expansão modular dos detectores PII, multi-idioma, fácil customização
+- **Árbitro LLM (Llama-70B via Hugging Face)**: explicação e decisão em casos ambíguos
+- **Ensemble/Fusão**: resultados combinados para máxima cobertura e explicabilidade
+
+Consulte o backend/README.md para exemplos de uso e detalhes técnicos.
 
 ---
 
