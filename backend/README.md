@@ -1,4 +1,53 @@
 ---
+
+## 🛠️ Troubleshooting & Edge Cases (Presidio/ONNX)
+
+### Erros comuns e soluções rápidas
+
+- **ImportError: 'optimum.onnxruntime' could not be resolved**
+  - Solução: Execute `pip install optimum[onnx] onnxruntime` no seu ambiente virtual.
+  - Dica: Sempre ative o venv antes de instalar (`source venv/bin/activate` ou `venv\Scripts\activate`).
+
+- **Presidio não encontra Recognizers customizados**
+  - Solução: Verifique se o método `_compilar_patterns` foi chamado no construtor do `PIIDetector`.
+  - Dica: Veja logs de inicialização para "Recognizer registrado".
+
+- **ONNX não é usado mesmo com modelo exportado**
+  - Solução: Confirme se o arquivo `backend/models/bert_ner_onnx/model.onnx` existe e está acessível.
+  - Dica: Veja logs para "ONNX NER carregado". Se falhar, o fallback para transformers é automático.
+
+- **Erro de importação de allow_list ou gazetteer**
+  - Solução: Confirme se os arquivos/módulos estão no diretório correto (`src/`). Use imports relativos no backend.
+
+- **Problemas de performance (CPU alto, resposta lenta)**
+  - Dica: ONNX acelera BERT NER em até 5x. Se não estiver usando, revise dependências e modelo exportado.
+
+- **Reconhecedores customizados não detectam entidades**
+  - Solução: Adicione prints/logs no método `analyze` do seu Recognizer para depurar entradas e saídas.
+  - Dica: Use `logger.warning` para mensagens visíveis em produção.
+
+- **Logs não aparecem**
+  - Solução: Certifique-se que o logger está configurado no início do projeto (`logging.basicConfig(level=logging.INFO)`).
+
+### Edge Cases e dicas avançadas
+
+- O fallback para pipelines transformers/spaCy/NuNER é automático se ONNX falhar.
+- Todos os Recognizers customizados podem ser removidos/adicionados em tempo de execução via registry do Presidio.
+- Para debugging profundo, ative logs DEBUG no início do app:
+  ```python
+  import logging
+  logging.basicConfig(level=logging.DEBUG)
+  ```
+- Para auditar decisões, cada achado traz o campo `explanation` e `source`.
+- Para expandir entidades, basta registrar um novo Recognizer (não precisa alterar o core).
+
+### Links úteis
+- [Presidio Analyzer Docs](https://microsoft.github.io/presidio/analyzer/)
+- [Optimum ONNX Export](https://huggingface.co/docs/optimum/exporters/onnx/usage_guides/export_a_model)
+- [Exemplo de Recognizer customizado](https://microsoft.github.io/presidio/analyzer/development/adding_recognizers/)
+
+---
+---
 title: Participa DF - Detector Inteligente de Dados Pessoais
 emoji: 🛡️
 colorFrom: blue
@@ -845,11 +894,25 @@ print(decision, explanation)
 
 ---
 
-## Integração com Presidio Framework (Microsoft)
 
-A partir da versão 9.5, o backend suporta detecção de PII via [Presidio Analyzer](https://microsoft.github.io/presidio/), framework open-source da Microsoft para identificação e anonimização de dados sensíveis.
+## Integração Modular Presidio + ONNX (v9.5+)
 
-### Como usar
+A partir da versão 9.5, **TODO O MOTOR DE DETECÇÃO FOI CENTRALIZADO NO FRAMEWORK [Presidio Analyzer](https://microsoft.github.io/presidio/)**, com todos os regex e NER registrados como Recognizers customizados. Isso garante:
+
+- **Auditoria e rastreabilidade total**: cada achado traz fonte, score, explicação e logs.
+- **Expansão e manutenção facilitadas**: adicionar/ajustar entidades = só registrar novo Recognizer.
+- **Performance máxima**: integração nativa com ONNX para BERT NER (quando disponível), fallback automático para pipelines originais (transformers, spaCy, NuNER).
+- **Política de agregação e deduplicação**: resultados são agregados por span, priorizando maior score e explicação.
+
+### Como funciona
+
+1. **Regex → PatternRecognizer**: Todos os padrões (CPF, CNPJ, RG, etc) agora são PatternRecognizers do Presidio, com validação DV opcional.
+2. **NER → EntityRecognizer**: BERT, NuNER e spaCy são registrados como EntityRecognizers customizados, cada um com sua pipeline.
+3. **BERT NER via ONNX**: Se o modelo ONNX estiver presente (`backend/models/bert_ner_onnx/model.onnx`), o Recognizer usa inferência otimizada via `optimum.onnxruntime`. Caso contrário, usa pipeline transformers padrão.
+4. **Agregação**: Todos os achados são deduplicados por span, priorizando maior score e explicação detalhada (campo `explanation`).
+5. **Fallback e logs**: Se algum Recognizer falhar, logs detalhados são emitidos e o sistema continua com os demais.
+
+### Exemplo de uso: detecção PII centralizada
 
 ```python
 from src.detector import detect_pii_presidio
@@ -857,25 +920,87 @@ from src.detector import detect_pii_presidio
 texto = "Meu CPF é 123.456.789-00 e meu telefone é (61) 99999-8888."
 resultados = detect_pii_presidio(texto, entities=None, language='pt')
 for r in resultados:
-    print(r)
+  print(r)
+# Saída: [{'entity': 'CPF', 'score': 0.98, ...}, {'entity': 'TELEFONE_DDI', ...}, ...]
 ```
 
-- `entities`: lista de entidades a buscar (ex: ["CPF", "PHONE_NUMBER"]). Se None, busca todas suportadas.
-- `language`: idioma do texto (default: 'pt').
+#### Exemplo: uso avançado com agregação e explicação
+
+```python
+from src.detector import PIIDetector
+
+detector = PIIDetector()
+achados = detector.detect_presidio_ensemble("Falar com João Silva, CPF 123.456.789-00", entities=None)
+for a in achados:
+  print(a['entity'], a['score'], a['explanation'])
+# Saída: NOME 0.97 Detectado por ONNX_BERT_NER_Recognizer (score=0.97)
+#        CPF 1.0 Detectado por PatternRecognizer (score=1.00)
+```
+
+### Como expandir: registrando novos Recognizers
+
+Para adicionar um novo padrão ou NER:
+
+```python
+from presidio_analyzer import Pattern, PatternRecognizer, EntityRecognizer
+
+# Exemplo: novo padrão para matrícula funcional
+pattern = Pattern(name="MATRICULA_FUNCIONAL", regex=r"\b\d{7,8}[A-Z]?\b", score=0.90)
+recognizer = PatternRecognizer(supported_entity="MATRICULA_FUNCIONAL", patterns=[pattern])
+detector.presidio_analyzer.registry.add_recognizer(recognizer)
+
+# Exemplo: novo NER customizado
+class MeuNERRecognizer(EntityRecognizer):
+  def __init__(self, nlp_pipeline, entity_label):
+    super().__init__(supported_entities=[entity_label], name="MeuNERRecognizer")
+    self.nlp_pipeline = nlp_pipeline
+  def analyze(self, text, entities, nlp_artifacts=None):
+    # ... lógica customizada ...
+    return results
+detector.presidio_analyzer.registry.add_recognizer(MeuNERRecognizer(...))
+```
 
 ### Vantagens
-- Manutenção facilitada: reconhecedores customizáveis, fácil expansão.
-- Suporte a múltiplos idiomas e entidades.
-- Pode ser usado em conjunto com outros detectores (ensemble).
+- **Auditoria LGPD**: Cada achado traz fonte, score, explicação e logs.
+- **Expansão fácil**: Basta registrar novo Recognizer, sem alterar o core.
+- **Performance**: ONNX acelera BERT NER em até 5x (CPU), sem perder precisão.
+- **Fallback robusto**: Se ONNX não disponível, usa pipeline transformers/spaCy/NuNER.
+- **Agregação e explicação**: Política de deduplicação e explicação detalhada por span.
 
-### Instalação
+### Instalação e dependências
 
 Já incluso em `requirements.txt`:
 
 ```
-pip install -r requirements.txt
+presidio-analyzer
+optimum[onnx]
+onnxruntime
+```
+
+Para exportar o modelo BERT NER para ONNX:
+
+```
+pip install optimum[onnx] onnxruntime
+optimum-cli export onnx --model Davlan/bert-base-multilingual-cased-ner-hrl backend/models/bert_ner_onnx/
 ```
 
 Mais detalhes: [Documentação oficial Presidio](https://microsoft.github.io/presidio/analyzer/)
+
+---
+
+## 🗂️ Fluxograma Arquitetural Atualizado
+
+```mermaid
+flowchart TD
+  A[Texto de Entrada] --> B[Presidio AnalyzerEngine]
+  B --> C1[PatternRecognizers (Regex + Validação DV)]
+  B --> C2[EntityRecognizers (BERT NER ONNX, NuNER, spaCy)]
+  C2 --> D1[ONNX BERT NER (se disponível)]
+  C2 --> D2[Transformers Pipeline (fallback)]
+  C2 --> D3[NuNER Pipeline]
+  C2 --> D4[spaCy Pipeline]
+  B --> E[Agregação/Deduplicação + Explicação]
+  E --> F[Resultado Final: achados, score, explicação, fonte]
+```
 
 ---
