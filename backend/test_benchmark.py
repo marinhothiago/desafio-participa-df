@@ -57,23 +57,23 @@ def test_pii_detector_dataset(texto, contem_pii, descricao, categoria):
         # =========================================================================
         # GRUPO EXTRA: PADRÕES GDF (esperado: True)
         # =========================================================================
-        ("Processo SEI 12345-1234567/2024-12", True, "Processo SEI padrão GDF", "PADRÕES_GDF"),
-        ("Referência SEI 54321-7654321/2023-01", True, "Processo SEI referência", "PADRÕES_GDF"),
-        ("Protocolo LAI LAI-123456/2024", True, "Protocolo LAI padrão GDF", "PADRÕES_GDF"),
-        ("Protocolo OUV OUV-654321/2022", True, "Protocolo OUV padrão GDF", "PADRÕES_GDF"),
-        ("Matrícula do servidor: 98.123-3", True, "Matrícula servidor formato 1", "PADRÕES_GDF"),
-        ("Matrícula funcional: 12345678A", True, "Matrícula servidor formato 2", "PADRÕES_GDF"),
-        ("Ocorrência policial: 2012345678901234", True, "Ocorrência policial padrão GDF", "PADRÕES_GDF"),
-        ("Inscrição do imóvel: inscrição:1234567", True, "Inscrição imóvel padrão GDF", "PADRÕES_GDF"),
-    
-        # Edge cases (esperado: False)
-        ("O número 12345-1234567/2024-12 não é um processo SEI válido", False, "Processo SEI contexto negativo", "PADRÕES_GDF"),
-        ("Meu telefone é 12345-1234567", False, "Número similar a SEI mas contexto telefone", "PADRÕES_GDF"),
-        ("LAI-123456/2024 é só um exemplo, não é protocolo", False, "Protocolo LAI contexto exemplo", "PADRÕES_GDF"),
-        ("OUV-654321/2022 é só referência, não protocolo", False, "Protocolo OUV contexto exemplo", "PADRÕES_GDF"),
-        ("Matrícula: 123456", False, "Matrícula servidor incompleta", "PADRÕES_GDF"),
-        ("Ocorrência: 20123456789012", False, "Ocorrência policial incompleta", "PADRÕES_GDF"),
-        ("Inscrição: 12345", False, "Inscrição imóvel incompleta", "PADRÕES_GDF"),
+    ("Processo SEI 12345-1234567/2024-12", True, "Processo SEI padrão GDF", "PADRÕES_GDF"),
+    ("Referência SEI 54321-7654321/2023-01", True, "Processo SEI referência", "PADRÕES_GDF"),
+    ("Protocolo LAI LAI-123456/2024", True, "Protocolo LAI padrão GDF", "PADRÕES_GDF"),
+    ("Protocolo OUV OUV-654321/2022", True, "Protocolo OUV padrão GDF", "PADRÕES_GDF"),
+    ("Matrícula do servidor: 98.123-3", True, "Matrícula servidor formato 1", "PADRÕES_GDF"),
+    ("Matrícula funcional: 12345678A", True, "Matrícula servidor formato 2", "PADRÕES_GDF"),
+    ("Ocorrência policial: 2012345678901234", True, "Ocorrência policial padrão GDF", "PADRÕES_GDF"),
+    ("Inscrição do imóvel: inscrição:1234567", True, "Inscrição imóvel padrão GDF", "PADRÕES_GDF"),
+
+    # Edge cases (esperado: False)
+    ("O número 12345-1234567/2024-12 não é um processo SEI válido", False, "Processo SEI contexto negativo", "PADRÕES_GDF"),
+    ("Meu telefone é 12345-1234567", False, "Número similar a SEI mas contexto telefone", "PADRÕES_GDF"),
+    ("LAI-123456/2024 é só um exemplo, não é protocolo", False, "Protocolo LAI contexto exemplo", "PADRÕES_GDF"),
+    ("OUV-654321/2022 é só referência, não protocolo", False, "Protocolo OUV contexto exemplo", "PADRÕES_GDF"),
+    ("Matrícula: 123456", False, "Matrícula servidor incompleta", "PADRÕES_GDF"),
+    ("Ocorrência: 20123456789012", False, "Ocorrência policial incompleta", "PADRÕES_GDF"),
+    ("Inscrição: 12345", False, "Inscrição imóvel incompleta", "PADRÕES_GDF"),
     
     # =========================================================================
     # GRUPO 3: CPF - VÁLIDO E COM ERROS DE DIGITAÇÃO (LGPD: todos são PII)
