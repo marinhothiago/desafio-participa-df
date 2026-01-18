@@ -84,6 +84,7 @@ bun.lockb
 
 # === DADOS DE ROTAÇÃO ===
 backend/data/stats.json
+backend/models/bert_ner_onnx/model.onnx
 
 # Nunca excluir ou sobrescrever este arquivo!
 !/backend/data/input/AMOSTRA_e-SIC.xlsx

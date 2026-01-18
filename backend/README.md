@@ -902,7 +902,8 @@ A partir da versão 9.5, **TODO O MOTOR DE DETECÇÃO FOI CENTRALIZADO NO FRAMEW
 - **Auditoria e rastreabilidade total**: cada achado traz fonte, score, explicação e logs.
 - **Expansão e manutenção facilitadas**: adicionar/ajustar entidades = só registrar novo Recognizer.
 - **Performance máxima**: integração nativa com ONNX para BERT NER (quando disponível), fallback automático para pipelines originais (transformers, spaCy, NuNER).
-- **Política de agregação e deduplicação**: resultados são agregados por span, priorizando maior score e explicação.
+- **Política de agregação e deduplicação**: resultados são agregados por span, priorizando maior score e explicação detalhada (campo `explanation`).
+- **Segurança do token Hugging Face**: Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
 
 ### Como funciona
 

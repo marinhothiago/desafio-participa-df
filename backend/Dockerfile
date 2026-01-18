@@ -30,8 +30,10 @@ RUN pip install --no-cache-dir \
     torch==2.1.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu
 
-# 5.2 Dependências do requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+
+# 5.2 Dependências do requirements.txt + optimum[onnx] e onnxruntime para exportação ONNX
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir optimum[onnx] onnxruntime
 
 # 5.3 Modelo spaCy para português (grande)
 RUN pip install --no-cache-dir \
@@ -40,20 +42,26 @@ RUN pip install --no-cache-dir \
 # 6. Pré-download dos modelos NER
 # 6.1 BERT Davlan multilíngue (PER, ORG, LOC, DATE)
 RUN python -c "\
-from transformers import pipeline; \
-print('📥 Baixando modelo BERT Davlan NER multilíngue...'); \
-pipeline('ner', model='Davlan/bert-base-multilingual-cased-ner-hrl', aggregation_strategy='simple'); \
-print('✅ BERT Davlan pronto!')"
+    from transformers import pipeline; \
+    print('📥 Baixando modelo BERT Davlan NER multilíngue...'); \
+    pipeline('ner', model='Davlan/bert-base-multilingual-cased-ner-hrl', aggregation_strategy='simple'); \
+    print('✅ BERT Davlan pronto!')"
 
 # 6.2 NuNER pt-BR especializado em português brasileiro
 RUN python -c "\
-from transformers import pipeline; \
-print('📥 Baixando modelo NuNER pt-BR...'); \
-pipeline('ner', model='monilouise/ner_news_portuguese', aggregation_strategy='simple'); \
-print('✅ NuNER pt-BR pronto!')"
+    from transformers import pipeline; \
+    print('📥 Baixando modelo NuNER pt-BR...'); \
+    pipeline('ner', model='monilouise/ner_news_portuguese', aggregation_strategy='simple'); \
+    print('✅ NuNER pt-BR pronto!')"
+
 
 # 7. Copia código da aplicação
 COPY . .
+
+# 7.1 Exporta modelo BERT NER para ONNX (se não existir)
+RUN if [ ! -f backend/models/bert_ner_onnx/model.onnx ]; then \
+    optimum-cli export onnx --model Davlan/bert-base-multilingual-cased-ner-hrl backend/models/bert_ner_onnx/ --task token-classification --optimize O2; \
+    fi
 
 # 8. Cria diretórios de dados com permissões
 RUN mkdir -p /app/data/input /app/data/output && chmod -R 777 /app/data
