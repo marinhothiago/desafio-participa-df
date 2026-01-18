@@ -1,3 +1,33 @@
+# === INTEGRAÇÃO PRESIDIO FRAMEWORK ===
+try:
+    from presidio_analyzer import AnalyzerEngine
+    _presidio_analyzer = AnalyzerEngine()
+except ImportError:
+    _presidio_analyzer = None
+
+def detect_pii_presidio(text, entities=None, language='pt'):
+    """
+    Detecta entidades PII usando o Presidio Analyzer.
+    :param text: Texto de entrada
+    :param entities: Lista de entidades a buscar (opcional)
+    :param language: Idioma (default: 'pt')
+    :return: Lista de dicts com entidade, score, início, fim
+    """
+    if _presidio_analyzer is None:
+        raise RuntimeError("Presidio não está instalado no ambiente.")
+    results = _presidio_analyzer.analyze(
+        text=text,
+        entities=entities,
+        language=language
+    )
+    return [
+        {
+            'entity': r.entity_type,
+            'score': r.score,
+            'start': r.start,
+            'end': r.end
+        } for r in results
+    ]
 """Módulo de detecção de Informações Pessoais Identificáveis (PII).
 
 Versão: 9.4.3 - HACKATHON PARTICIPA-DF 2025

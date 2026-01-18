@@ -834,6 +834,18 @@ Parceiros: Governo do Distrito Federal, CGDF, comunidade open source.
 
 ---
 
+## 🚀 Detecção PII com Microsoft Presidio
+
+O backend agora suporta integração nativa com o [Presidio Analyzer](https://microsoft.github.io/presidio/), framework open-source da Microsoft para detecção e anonimização de dados sensíveis (PII).
+
+- Detectores customizáveis, manutenção facilitada
+- Suporte a múltiplos idiomas e entidades
+- Pode ser usado em conjunto com outros detectores (ensemble)
+
+Veja detalhes e exemplos em [backend/README.md](backend/README.md)
+
+---
+
 ---
 
 ---

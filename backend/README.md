@@ -830,4 +830,38 @@ print(decision, explanation)
 ```
 
 ---
+
+## Integração com Presidio Framework (Microsoft)
+
+A partir da versão 9.5, o backend suporta detecção de PII via [Presidio Analyzer](https://microsoft.github.io/presidio/), framework open-source da Microsoft para identificação e anonimização de dados sensíveis.
+
+### Como usar
+
+```python
+from src.detector import detect_pii_presidio
+
+texto = "Meu CPF é 123.456.789-00 e meu telefone é (61) 99999-8888."
+resultados = detect_pii_presidio(texto, entities=None, language='pt')
+for r in resultados:
+    print(r)
 ```
+
+- `entities`: lista de entidades a buscar (ex: ["CPF", "PHONE_NUMBER"]). Se None, busca todas suportadas.
+- `language`: idioma do texto (default: 'pt').
+
+### Vantagens
+- Manutenção facilitada: reconhecedores customizáveis, fácil expansão.
+- Suporte a múltiplos idiomas e entidades.
+- Pode ser usado em conjunto com outros detectores (ensemble).
+
+### Instalação
+
+Já incluso em `requirements.txt`:
+
+```
+pip install -r requirements.txt
+```
+
+Mais detalhes: [Documentação oficial Presidio](https://microsoft.github.io/presidio/analyzer/)
+
+---

@@ -31,3 +31,6 @@ python-dotenv>=1.0.0
 # === Celery + Redis ===
 celery[redis]
 redis
+
+# === Presidio ===
+presidio-analyzer>=2.2.360
