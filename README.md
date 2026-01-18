@@ -102,7 +102,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │  │                   │                                   │ │
 │  │         ┌─────────▼─────────┐                         │ │
 │  │         │ Árbitro LLM (op.) │                         │ │
-│  │         │ Llama-70B (Groq/HF)│                        │ │
+│  │         │ Llama-70B (HF API)│                        │ │
 │  │         │ • Explicação PII   │                        │ │
 │  │         │ • Decisão ambígua  │                        │ │
 │  │         └────────────────────┘                        │ │
@@ -113,7 +113,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 Agora o backend suporta:
 - **Pipeline híbrido original** (regex, BERT, NuNER, spaCy, gazetteer, regras, confiança, thresholds, pós-processamento)
 - **Presidio Framework (Microsoft)**: manutenção/expansão modular dos detectores PII, multi-idioma, fácil customização
-- **Árbitro LLM (Llama-70B via Hugging Face)**: explicação e decisão em casos ambíguos
+- **Árbitro LLM (Llama-70B via Hugging Face Inference API)**: explicação e decisão em casos ambíguos
 - **Ensemble/Fusão**: resultados combinados para máxima cobertura e explicabilidade
 
 Consulte o backend/README.md para exemplos de uso e detalhes técnicos.

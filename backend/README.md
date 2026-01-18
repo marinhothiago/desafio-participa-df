@@ -813,6 +813,20 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
 
 ---
 
+## 🏗️ Arquitetura Atualizada (2026)
+
+O backend agora conta com três grandes pilares para detecção e explicação de PII:
+
+- **Pipeline Híbrido Original:** Regex, validação DV, BERT Davlan, NuNER pt-BR, spaCy, gazetteer, regras, confiança probabilística, thresholds dinâmicos, pós-processamento.
+- **Presidio Framework (Microsoft):** Detecção PII modular, multi-idioma, fácil manutenção e expansão de entidades, integração via `detect_pii_presidio`.
+- **Árbitro LLM (Llama-70B via Hugging Face Inference API):** Explicação e arbitragem de casos ambíguos, fallback para edge cases, integração via Hugging Face Inference API.
+
+O resultado final pode ser uma fusão (ensemble) dos detectores, com explicação detalhada e máxima cobertura.
+
+Veja exemplos de uso das novas funções e como customizar detectores no final deste README.
+
+---
+
 ## 🤖 Arbitragem com LLM (Llama-70B via Hugging Face)
 
 O backend possui integração opcional com Llama-70B (Hugging Face Inference API) para arbitragem de casos ambíguos de PII.
