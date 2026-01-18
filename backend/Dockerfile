@@ -51,10 +51,7 @@ RUN python -c "from transformers import pipeline; print('📥 Baixando modelo Nu
 # 7. Copia código da aplicação
 COPY . .
 
-# 7.1 Exporta modelo BERT NER para ONNX (se não existir)
-RUN if [ ! -f backend/models/bert_ner_onnx/model.onnx ]; then \
-    optimum-cli export onnx --model Davlan/bert-base-multilingual-cased-ner-hrl backend/models/bert_ner_onnx/ --task token-classification --optimize O2; \
-    fi
+# 7.1 (Removido: export ONNX deve ser feito localmente para evitar OOM no build do Hugging Face Spaces)
 
 # 8. Cria diretórios de dados com permissões
 RUN mkdir -p /app/data/input /app/data/output && chmod -R 777 /app/data
