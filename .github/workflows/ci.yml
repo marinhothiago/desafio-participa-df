@@ -121,7 +121,7 @@ jobs:
       - name: Baixar modelo spaCy
         run: python -m spacy download pt_core_news_lg
       - name: Rodar testes confiança
-        run: pytest test_confidence.py --disable-warnings
+        run: pytest test_confianca.py --disable-warnings
 
   backend-test-analise:
     name: Backend - Testes Análise Confiança
