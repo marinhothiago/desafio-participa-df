@@ -7,7 +7,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import type { BatchResult } from '@/lib/api';
+
+import type { BatchResult, Entity } from '@/lib/api';
+
 import { formatConfidence } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useState } from 'react';
@@ -52,9 +54,16 @@ export function ResultsTable({ results, pageSize = 5 }: ResultsTableProps) {
   }
 
   // Helper para exibir identificadores como string
-  function getIdentificadoresString(entities: any[]) {
+  // Usa tipagem forte baseada em Entity do api.ts
+  function getIdentificadoresString(entities: Entity[]) {
     if (!entities || entities.length === 0) return '[]';
-    return '[' + entities.map(e => `${e.type || e.tipo}: ${e.value || e.valor}`).join(', ') + ']';
+    return (
+      '[' +
+      entities
+        .map((e) => `${e.type}: ${e.value}`)
+        .join(', ') +
+      ']'
+    );
   }
 
   return (
