@@ -162,16 +162,26 @@ export function Classification() {
 
   // Helper functions for analysis result
   const getClassification = (result: AnalysisResult) => {
+    // Deriva da nova API: has_pii
+    if ('has_pii' in result) {
+      return result.has_pii ? 'NÃO PÚBLICO' : 'PÚBLICO';
+    }
     return result.classificacao;
   };
   const getProbability = (result: AnalysisResult) => {
-    // Novo campo: confidence_all_found
-    return result.confianca ?? result.confidence_all_found ?? 0;
+    // Sempre prioriza confidence_all_found
+    if ('confidence_all_found' in result) {
+      return result.confidence_all_found ?? 0;
+    }
+    return result.confianca ?? 0;
   };
 
   const getDetails = (result: AnalysisResult) => {
-    // Novo campo: entities
-    return result.detalhes || result.entities || [];
+    // Sempre prioriza entities
+    if ('entities' in result) {
+      return result.entities || [];
+    }
+    return result.detalhes || [];
   };
 
   const getRiskIcon = (riskLevel: string) => {

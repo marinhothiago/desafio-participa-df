@@ -217,12 +217,12 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
     const { date, time } = formatDateTime(now);
 
 
-    // Novo formato: risk_level, confidence_all_found, entities
-    const classification = result.classificacao === 'PÚBLICO' ? 'PÚBLICO' : 'NÃO PÚBLICO';
-    const probability = result.confianca ?? 0;
-    const risco = result.risco ?? result.risk_level ?? 'SEGURO';
+    // Corrige para priorizar campos da nova API
+    const classification = 'has_pii' in result ? (result.has_pii ? 'NÃO PÚBLICO' : 'PÚBLICO') : (result.classificacao === 'PÚBLICO' ? 'PÚBLICO' : 'NÃO PÚBLICO');
+    const probability = 'confidence_all_found' in result ? (result.confidence_all_found ?? 0) : (result.confianca ?? 0);
+    const risco = 'risk_level' in result ? (result.risk_level ?? 'SEGURO') : (result.risco ?? 'SEGURO');
     const riskLevel = getRiskLevelFromRisco(risco);
-    const details = result.detalhes || result.entities || [];
+    const details = 'entities' in result ? (result.entities || []) : (result.detalhes || []);
 
     const newItem: AnalysisHistoryItem = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
