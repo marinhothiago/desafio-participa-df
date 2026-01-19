@@ -1,15 +1,16 @@
-import { useState } from 'react';
-import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { StatusBadge } from '@/components/StatusBadge';
-import type { BatchResult } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import type { BatchResult } from '@/lib/api';
+import { formatConfidence } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { useState } from 'react';
 
 interface ResultsTableProps {
   results: BatchResult[];
@@ -43,6 +44,19 @@ export function ResultsTable({ results, pageSize = 5 }: ResultsTableProps) {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedResults = results.slice(startIndex, startIndex + pageSize);
 
+  // Helper para exibir classificação com emoji
+  function getClassificacaoEmoji(classification: string) {
+    if (classification === 'public' || classification === 'PÚBLICO') return '✅ PÚBLICO';
+    if (classification === 'restricted' || classification === 'NÃO PÚBLICO') return '❌ NÃO PÚBLICO';
+    return classification;
+  }
+
+  // Helper para exibir identificadores como string
+  function getIdentificadoresString(entities: any[]) {
+    if (!entities || entities.length === 0) return '[]';
+    return '[' + entities.map(e => `${e.type || e.tipo}: ${e.value || e.valor}`).join(', ') + ']';
+  }
+
   return (
     <>
       <div className="gov-card animate-slide-up overflow-hidden p-0">
@@ -53,7 +67,8 @@ export function ResultsTable({ results, pageSize = 5 }: ResultsTableProps) {
                 <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">ID</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-foreground">Resumo do Texto</th>
                 <th className="text-center py-3 px-4 text-sm font-semibold text-foreground">Classificação</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold text-foreground">Probabilidade</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold text-foreground">Confiança</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold text-foreground">Identificadores</th>
                 <th className="text-center py-3 px-4 text-sm font-semibold text-foreground">Ação</th>
               </tr>
             </thead>
@@ -73,18 +88,13 @@ export function ResultsTable({ results, pageSize = 5 }: ResultsTableProps) {
                     </p>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <StatusBadge status={result.classification} size="sm" />
+                    {getClassificacaoEmoji(result.classification)}
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2 justify-center">
-                      <Progress
-                        value={result.probability * 100}
-                        className="w-20 h-2"
-                      />
-                      <span className="text-sm font-medium text-foreground w-12 text-right">
-                        {(result.probability * 100).toFixed(0)}%
-                      </span>
-                    </div>
+                  <td className="py-3 px-4 text-center">
+                    {formatConfidence(result.probability)}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    {getIdentificadoresString(result.entities)}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <Button
@@ -143,7 +153,7 @@ export function ResultsTable({ results, pageSize = 5 }: ResultsTableProps) {
               {selectedResult && <StatusBadge status={selectedResult.classification} size="sm" />}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedResult && (
             <div className="space-y-4">
               <div>
