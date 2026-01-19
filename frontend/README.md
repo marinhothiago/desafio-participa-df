@@ -121,11 +121,10 @@ Disponibilizar uma interface web intuitiva e acessível para:
 │  └────────────────────────────────────────────────────────┘ │
 │          │ Usa componentes ↓                                 │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ Components (20+ reutilizáveis):                        │ │
+│  │ Components (14 reutilizáveis):                         │ │
 │  │  • Header.tsx         → Logo DSGOV + Menu             │ │
 │  │  • KPICard.tsx        → Cards de métricas             │ │
 │  │  • ConfidenceBar.tsx  → Barra visual 0-100%          │ │
-│  │  • ResultsTable.tsx   → Tabela com paginação          │ │
 │  │  • FileDropzone.tsx   → Upload drag & drop            │ │
 │  │  • RiskThermometer.tsx→ Termômetro de risco          │ │
 │  │  • ui/*               → Shadcn UI components          │ │
@@ -764,6 +763,28 @@ ID,Texto Mascarado
 
 - **Backend (Motor de IA):** [../backend/README.md](../backend/README.md)
 - **Projeto Completo:** [../README.md](../README.md)
+
+---
+
+## 🧹 Changelog de Auditoria (v9.5.1)
+
+**Data:** 2025-01-XX
+
+### Componentes Removidos (código órfão)
+Os seguintes componentes foram identificados como **não utilizados** em nenhuma página, contexto ou outro componente:
+
+| Componente | Motivo da Remoção |
+|------------|-------------------|
+| `NavLink.tsx` | Nunca importado em lugar algum |
+| `EntityTypesChart.tsx` | Nunca importado em lugar algum |
+| `BrazilianAtomIcon.tsx` | Nunca importado em lugar algum |
+| `AnalysisSkeleton.tsx` | Nunca importado em lugar algum |
+| `ResultsTable.tsx` | Nunca importado em lugar algum |
+| `BenchmarkMetrics.tsx` | Nunca importado em lugar algum |
+| `StatusBadge.tsx` | Único import era em `ResultsTable.tsx` (também removido) |
+
+### Componentes em Uso (validados)
+Todos os outros componentes em `src/components/` foram validados como **ativamente utilizados** nas páginas (`Dashboard.tsx`, `Classification.tsx`, `Index.tsx`, `Documentation.tsx`).
 
 ---
 

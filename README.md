@@ -963,6 +963,45 @@ Veja detalhes e exemplos em [backend/README.md](backend/README.md)
 
 ---
 
+## 🧹 Changelog de Auditoria (v9.5.1)
+
+**Data:** 2025-01-XX
+
+Realizada auditoria completa do codebase para identificar e remover código órfão, não utilizado ou obsoleto.
+
+### Backend - Código Removido
+
+| Arquivo/Diretório | Motivo |
+|-------------------|--------|
+| `backend/src/ensemble/arbitro.py` | Classe stub `Arbitro` nunca importada |
+| `backend/src/ensemble/` | Diretório vazio após remoção |
+
+### Frontend - Componentes Removidos
+
+| Componente | Motivo |
+|------------|--------|
+| `NavLink.tsx` | Nunca importado |
+| `EntityTypesChart.tsx` | Nunca importado |
+| `BrazilianAtomIcon.tsx` | Nunca importado |
+| `AnalysisSkeleton.tsx` | Nunca importado |
+| `ResultsTable.tsx` | Nunca importado |
+| `BenchmarkMetrics.tsx` | Nunca importado |
+| `StatusBadge.tsx` | Único uso era em `ResultsTable.tsx` |
+
+### Arquivos Validados como Ativos
+
+**Backend:**
+- ✅ `src/detector.py`, `src/allow_list.py`
+- ✅ `src/analyzers/`, `src/confidence/`, `src/gazetteer/`, `src/patterns/`
+- ✅ `api/main.py`, `api/tasks.py`, `api/celery_config.py`
+- ✅ `scripts/` (desenvolvimento apenas)
+- ✅ `tests/` (todos os 12 arquivos de teste ativos)
+
+**Frontend:**
+- ✅ 14 componentes ativos em `src/components/`
+- ✅ 4 páginas ativas em `src/pages/`
+- ✅ `src/contexts/`, `src/hooks/`, `src/lib/`
+
 ---
 
 ---

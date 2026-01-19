@@ -1210,6 +1210,30 @@ Mais detalhes: [Documentação oficial Presidio](https://microsoft.github.io/pre
 
 ---
 
+## 🧹 Changelog de Auditoria (v9.5.1)
+
+**Data:** 2025-01-XX
+
+### Código Removido (código órfão)
+
+| Arquivo/Diretório | Motivo da Remoção |
+|-------------------|-------------------|
+| `src/ensemble/arbitro.py` | Classe stub `Arbitro` nunca importada em lugar algum do projeto |
+| `src/ensemble/` (diretório) | Ficou vazio após remoção do `arbitro.py` |
+
+### Código Validado como Ativo
+- `src/detector.py` - Motor principal de detecção PII ✅
+- `src/allow_list.py` - Lista de permissões ✅
+- `src/analyzers/` - Analisadores NER, Presidio, Regex ✅
+- `src/confidence/` - Sistema de confiança probabilística ✅
+- `src/gazetteer/` - Gazetteer institucional GDF ✅
+- `src/patterns/` - Padrões regex específicos GDF ✅
+- `api/main.py` - Endpoints FastAPI ✅
+- `api/tasks.py` - Tarefas Celery ✅
+- `scripts/` - Utilitários de desenvolvimento (não vão para produção) ✅
+
+---
+
 ## 🗂️ Fluxograma Arquitetural Atualizado
 
 ```mermaid
