@@ -10,7 +10,7 @@ Pipeline:
 3. NER NuNER (especializado pt-BR) → nomes brasileiros
 4. spaCy como backup → cobertura adicional
 5. Ensemble OR → qualquer detector positivo = PII
-6. Árbitro LLM (Llama-70B) → casos ambíguos
+6. Árbitro LLM (Llama-3.2-3B-Instruct) → casos ambíguos
 7. Cálculo probabilístico de confiança → calibração + log-odds
 """
 
@@ -307,7 +307,7 @@ class PIIDetector:
         Args:
             usar_gpu: Se deve usar GPU para modelos NER
             use_probabilistic_confidence: Se deve usar sistema de confiança probabilística
-            use_llm_arbitration: Se deve usar Llama-70B para arbitrar casos ambíguos (ATIVADO por padrão)
+            use_llm_arbitration: Se deve usar Llama-3.2-3B para arbitrar casos ambíguos (ATIVADO por padrão)
         """
         # Configurações
         self.usar_gpu = usar_gpu
@@ -1910,7 +1910,7 @@ def criar_detector(
     Args:
         usar_gpu: Se deve usar GPU para modelos
         use_probabilistic_confidence: Se deve usar sistema de confiança probabilística
-        use_llm_arbitration: Se deve usar Llama-70B para arbitrar casos ambíguos
+        use_llm_arbitration: Se deve usar Llama-3.2-3B para arbitrar casos ambíguos
     """
     return PIIDetector(
         usar_gpu=usar_gpu,

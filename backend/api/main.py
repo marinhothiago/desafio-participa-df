@@ -95,7 +95,7 @@ def increment_stat(key: str, amount: int = 1) -> Dict:
 app = FastAPI(
     title="Participa DF - PII Detector API",
     description="API para detecção de Informações Pessoais Identificáveis em textos segundo LGPD/LAI",
-    version="9.4.3"
+    version="9.5.0"
 )
 
 # Configuração CORS: Permite requisições de qualquer origem (necessário para frontend React/Vite)
@@ -108,7 +108,7 @@ app.add_middleware(
 )
 
 # Inicializa detector PII na memória (carregamento único de modelos)
-# LLAMA-70B ÁRBITRO: Ativado por padrão para arbitrar casos ambíguos
+# LLAMA-3.2-3B ÁRBITRO: Ativado por padrão para arbitrar casos ambíguos
 # Desative via env PII_USE_LLM_ARBITRATION=False se não tiver HF_TOKEN ou para testes rápidos
 import os
 usar_gpu = os.getenv("PII_USAR_GPU", "True").lower() == "true"

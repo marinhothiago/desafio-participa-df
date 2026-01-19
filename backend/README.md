@@ -1,13 +1,48 @@
 ---
-title: Desafio Participa DF
-emoji: 🚀
-colorFrom: indigo
-colorTo: blue
+title: Participa DF - Detector Inteligente de Dados Pessoais
+emoji: 🛡️
+colorFrom: blue
+colorTo: green
 sdk: docker
-app_file: app.py
+app_file: api/main.py
 pinned: false
 ---
 
+# 🛡️ Backend: Motor PII Participa DF v9.5.0
+
+[![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![spaCy](https://img.shields.io/badge/spaCy-3.8.0-09A3D5?logo=spacy)](https://spacy.io/)
+[![Versão](https://img.shields.io/badge/Versão-9.5.0-blue)](./src/detector.py)
+[![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./tests/test_benchmark.py)
+[![Testes](https://img.shields.io/badge/Testes-410%20passando-brightgreen)](./tests/)
+
+> **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade LGPD/LAI em manifestações do Participa DF.
+> 
+> 🏆 **v9.5.0 - F1-Score = 1.0000** (100% precisão, 100% sensibilidade) em benchmark de 308 casos LGPD + 5 casos LLM árbitro.
+>
+> 🆕 **v9.5.0**: Árbitro LLM Llama-3.2-3B-Instruct via `huggingface_hub`, 410 testes passando, reorganização do projeto.
+
+| 🌐 **Links de Produção** | URL |
+|--------------------------|-----|
+| API Base | https://marinhothiago-desafio-participa-df.hf.space/ |
+| Documentação Interativa | https://marinhothiago-desafio-participa-df.hf.space/docs |
+| Health Check | https://marinhothiago-desafio-participa-df.hf.space/health |
+
+---
+
+## 🚀 MELHORIAS E FUNCIONALIDADES AVANÇADAS (2025-2026)
+
+- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF, editável via `src/gazetteer/gazetteer_gdf.json`. Garante máxima precisão em contexto Brasília/DF.
+- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo, fatores de contexto, explicação detalhada abaixo.
+- ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação de entidades para máxima precisão.
+- 🏆 **Benchmark LGPD/LAI:** 410+ testes, F1-score 1.0000, incluindo 5 casos de árbitro LLM.
+- 🤖 **Árbitro LLM (Llama-3.2-3B-Instruct):** Ativado por padrão para arbitragem inteligente de casos ambíguos via `huggingface_hub`.
+- 🔒 **Segurança do token Hugging Face:** Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
+- 🧹 **Limpeza e organização:** `.gitignore` e `.dockerignore` revisados, scripts de limpeza, deploy seguro, documentação atualizada.
+- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, checklist de produção.
+
+---
 
 ## 🛠️ Troubleshooting & Edge Cases (Presidio/ONNX)
 
@@ -56,31 +91,10 @@ pinned: false
 - [Exemplo de Recognizer customizado](https://microsoft.github.io/presidio/analyzer/development/adding_recognizers/)
 
 ---
----
-title: Participa DF - Detector Inteligente de Dados Pessoais
-emoji: 🛡️
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_file: api/main.py
-pinned: false
----
 
-## 🚀 MELHORIAS E FUNCIONALIDADES AVANÇADAS (2025-2026)
-
-- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF, editável via `src/gazetteer_gdf.json`. Garante máxima precisão em contexto Brasília/DF.
-- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo, fatores de contexto, explicação detalhada abaixo.
-- ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação de entidades para máxima precisão, via `pos_processar_spans.py`.
-- 🏆 **Benchmark LGPD/LAI:** 318+ casos reais, F1-score 0.9763, todos FPs/FNs conhecidos e documentados.
-- 🔒 **Segurança do token Hugging Face:** Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
-- 🧹 **Limpeza e organização:** `.gitignore` e `.dockerignore` revisados, scripts de limpeza, deploy seguro, documentação atualizada.
-- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, checklist de produção.
-- 🛠️ **Otimizador de ensemble:** `scripts/optimize_ensemble.py` para grid search de pesos do ensemble, reuso de detector, e validação automática.
-
----
 ## 🆕 Estratégias de Merge de Spans (Presets)
 
-A partir da versão 9.4.3, o endpoint `/analyze` permite escolher a estratégia de merge de spans (entidades sobrepostas) via parâmetro `merge_preset`:
+A partir da versão 9.4.3+, o endpoint `/analyze` permite escolher a estratégia de merge de spans (entidades sobrepostas) via parâmetro `merge_preset`:
 
 - `recall`: Mantém todos os spans sobrepostos (maximiza recall, útil para auditoria).
 - `precision`: Mantém apenas o span com maior score/confiança (maximiza precisão, útil para produção).
@@ -163,13 +177,13 @@ pinned: false
 
 ---
 
-## 🤖 Árbitro LLM: Llama-70B (v9.5.0)
+## 🤖 Árbitro LLM: Llama-3.2-3B-Instruct (v9.5.0)
 
-O motor de detecção agora conta com um **Árbitro LLM (Llama-70B)** que é acionado automaticamente em casos ambíguos para melhorar a precisão e reduzir falsos negativos.
+O motor de detecção agora conta com um **Árbitro LLM (Llama-3.2-3B-Instruct)** que é acionado automaticamente em casos ambíguos para melhorar a precisão e reduzir falsos negativos.
 
 ### Status: ✅ ATIVADO POR PADRÃO
 
-A partir da versão 9.5.0, o árbitro LLM está **ativado por padrão** (`use_llm_arbitration=True`).
+A partir da versão 9.5.0, o árbitro LLM está **ativado por padrão** (`use_llm_arbitration=True`) e usa a biblioteca oficial `huggingface_hub` com `InferenceClient`.
 
 ### Quando o LLAMA é Acionado
 
@@ -204,7 +218,7 @@ INPUT (texto)
     │               │
     │               ▼
     │      ┌────────────────┐
-    │      │ LLAMA-70B      │  Análise contextual LGPD/LAI
+    │      │ LLAMA-3.2-3B   │  Análise contextual LGPD/LAI
     │      │ ÁRBITRO        │  Prompt em português
     │      └────────┬───────┘
     │               │
@@ -230,10 +244,13 @@ INPUT (texto)
 
 ```bash
 # .env
-HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx  # OBRIGATÓRIO para LLAMA funcionar
-PII_USE_LLM_ARBITRATION=True       # Padrão: True (ativado)
-PII_USAR_GPU=True                  # Usar GPU se disponível
+HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx              # OBRIGATÓRIO para LLAMA funcionar
+HF_MODEL=meta-llama/Llama-3.2-3B-Instruct      # Opcional (este é o padrão)
+PII_USE_LLM_ARBITRATION=True                   # Padrão: True (ativado)
+PII_USAR_GPU=True                              # Usar GPU se disponível
 ```
+
+> **Nota**: Modelos alternativos disponíveis: `meta-llama/Llama-3.1-70B-Instruct` (mais preciso, mais lento)
 
 #### Desativar LLAMA (opcional)
 
@@ -261,9 +278,10 @@ resultado, findings, risco, confianca = detector.detect(texto, force_llm=True)
 
 | Requisito | Detalhe |
 |-----------|---------|
-| **HF_TOKEN** | Token do Hugging Face com acesso ao modelo Llama-2-70b-chat-hf |
+| **HF_TOKEN** | Token do Hugging Face (criar em https://huggingface.co/settings/tokens) |
+| **huggingface_hub** | Biblioteca Python (`pip install huggingface_hub`) |
+| **Aceitar Termos** | Aceitar termos do Llama em https://huggingface.co/meta-llama |
 | **Conexão** | Internet para chamar a Hugging Face Inference API |
-| **Timeout** | 60 segundos por chamada |
 
 ### Fail-Safe (Estratégia de Falha)
 
@@ -288,10 +306,12 @@ Content-Type: application/json
 
 ### Modelo Utilizado
 
-- **Modelo**: `meta-llama/Llama-2-70b-chat-hf`
-- **Endpoint**: Hugging Face Inference API
+- **Modelo**: `meta-llama/Llama-3.2-3B-Instruct` (configurável via `HF_MODEL`)
+- **Biblioteca**: `huggingface_hub` (InferenceClient)
+- **Método**: `client.chat_completion()` com formato messages
 - **Prompt**: Português, com instruções LGPD/LAI específicas
 - **Temperatura**: 0.1 (respostas determinísticas)
+- **Max Tokens**: 150
 
 ### Impacto no Benchmark
 
@@ -344,13 +364,13 @@ O motor agora integra um **gazetteer institucional do GDF** (arquivo `gazetteer_
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![spaCy](https://img.shields.io/badge/spaCy-3.8.0-09A3D5?logo=spacy)](https://spacy.io/)
-[![Versão](https://img.shields.io/badge/Versão-9.4.3-blue)](./src/detector.py)
+[![Versão](https://img.shields.io/badge/Versão-9.5.0-blue)](./src/detector.py)
 [![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./benchmark.py)
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade LGPD/LAI em manifestações do Participa DF.
-> 🏆 **v9.4.3 - F1-Score = 1.0000** (100% precisão, 100% sensibilidade) em benchmark de 303 casos LGPD.
+> 🏆 **v9.5.0 - F1-Score = 1.0000** (100% precisão, 100% sensibilidade) em benchmark de 308 casos LGPD + 5 casos LLM árbitro.
 >
-> 🆕 **v9.4.3**: 5 níveis de risco LGPD (CRÍTICO → BAIXO), 30+ tipos de PII, IP/Coordenadas/User-Agent, contadores globais.
+> 🆕 **v9.5.0**: Árbitro LLM Llama-3.2-3B-Instruct, 410 testes passando, integração `huggingface_hub`.
 
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
@@ -393,7 +413,7 @@ Detectar, classificar e avaliar o risco de vazamento de dados pessoais em textos
 - ✅ **Presets de merge de spans:** recall, precision, f1, custom (ajustável via parâmetro na API).
 - ✅ **Gazetteer institucional GDF:** filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
 - ✅ **Sistema de confiança probabilística:** calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
-- ✅ **Árbitro LLM (opcional):** explicação e decisão em casos ambíguos (Llama-70B via Hugging Face Inference API).
+- ✅ **Árbitro LLM (ativado por padrão):** explicação e decisão em casos ambíguos (Llama-3.2-3B-Instruct via `huggingface_hub`).
 - ✅ **30+ Tipos de PII:** documentos, contatos, financeiros, saúde, biometria, localização.
 - ✅ **Rastreabilidade Total:** preserva o ID original do e-SIC em todo o fluxo.
 - ✅ **Contadores Globais:** persistência em stats.json com thread-safety.
@@ -440,7 +460,7 @@ backend/
 │
 ├── src/
 │   ├── __init__.py           ← Marca como módulo Python
-│   ├── detector.py           ← Motor híbrido PII v9.4.3
+│   ├── detector.py           ← Motor híbrido PII v9.5.0
 │   │                           (2100+ linhas com comentários explicativos)
 │   │                           - Classe PIIDetector: ensemble de detectores
 │   │                           - Classe ValidadorDocumentos: validação DV
@@ -594,7 +614,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 7860 --reload
 
 **Saída esperada:**
 ```
-INFO:     🏆 [v9.4.3] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA
+INFO:     🏆 [v9.5.0] VERSÃO HACKATHON - ENSEMBLE 5 FONTES + CONFIANÇA PROBABILÍSTICA + LLM ÁRBITRO
 INFO:     ✅ spaCy pt_core_news_lg carregado
 INFO:     ✅ BERT Davlan NER multilíngue carregado (PER, ORG, LOC, DATE)
 INFO:     ✅ NuNER pt-BR carregado (especializado em português)
@@ -774,7 +794,7 @@ man_002,"Meu CPF é 529.982.247-25...","❌ NÃO PÚBLICO","98.0%","CRÍTICO","[
 
 ---
 
-## 🧠 Arquitetura do Motor de Detecção (v9.4.3)
+## 🧠 Arquitetura do Motor de Detecção (v9.5.0)
 
 ### Pipeline de Processamento
 
@@ -1069,7 +1089,7 @@ O backend agora conta com três grandes pilares para detecção e explicação d
 
 - **Pipeline Híbrido Original:** Regex, validação DV, BERT Davlan, NuNER pt-BR, spaCy, gazetteer, regras, confiança probabilística, thresholds dinâmicos, pós-processamento.
 - **Presidio Framework (Microsoft):** Detecção PII modular, multi-idioma, fácil manutenção e expansão de entidades, integração via `detect_pii_presidio`.
-- **Árbitro LLM (Llama-70B via Hugging Face Inference API):** Explicação e arbitragem de casos ambíguos, fallback para edge cases, integração via Hugging Face Inference API.
+- **Árbitro LLM (Llama-3.2-3B-Instruct via huggingface_hub):** Explicação e arbitragem de casos ambíguos, fallback para edge cases, integração via biblioteca oficial.
 
 O resultado final pode ser uma fusão (ensemble) dos detectores, com explicação detalhada e máxima cobertura.
 
@@ -1077,9 +1097,9 @@ Veja exemplos de uso das novas funções e como customizar detectores no final d
 
 ---
 
-## 🤖 Arbitragem com LLM (Llama-70B via Hugging Face)
+## 🤖 Arbitragem com LLM (Llama-3.2-3B-Instruct via huggingface_hub)
 
-O backend possui integração opcional com Llama-70B (Hugging Face Inference API) para arbitragem de casos ambíguos de PII.
+O backend possui integração com Llama-3.2-3B-Instruct (biblioteca `huggingface_hub`) para arbitragem de casos ambíguos de PII. **Ativado por padrão na v9.5.0**.
 
 - Use a função `arbitrate_with_llama(texto, achados)` para obter decisão e explicação detalhada de um LLM.
 - Ideal para casos de baixa confiança, empate entre detectores ou explicação avançada para humanos.

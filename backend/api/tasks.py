@@ -11,7 +11,7 @@ def processar_lote(self, arquivo_path, tipo_arquivo='csv', params=None):
     Salva o resultado em arquivo e retorna o caminho.
     """
     # Permitir configuração via params/env
-    # LLAMA-70B ÁRBITRO: Ativado por padrão para arbitrar casos ambíguos em lotes
+    # LLAMA-3.2-3B ÁRBITRO: Ativado por padrão para arbitrar casos ambíguos em lotes
     import os
     usar_gpu = os.getenv("PII_USAR_GPU", "False").lower() == "true"
     use_llm_arbitration = os.getenv("PII_USE_LLM_ARBITRATION", "True").lower() == "true"

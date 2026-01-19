@@ -1,4 +1,3 @@
-# trigger workflow frontend - teste integração nova API
 # 🚀 MELHORIAS E INTEGRAÇÃO AVANÇADA (2025-2026)
 
 - 🔗 **Integração automática com backend:** Detecção local/remota, fallback para Hugging Face Spaces, tratamento de cold start, retry e erros amigáveis.
@@ -147,7 +146,7 @@ Disponibilizar uma interface web intuitiva e acessível para:
                   POST /stats/visit
                          │
                          ▼
-              Backend (FastAPI v9.4.3)
+              Backend (FastAPI v9.5.0)
               Port 7860 (local)
               ou HuggingFace Spaces
 ```

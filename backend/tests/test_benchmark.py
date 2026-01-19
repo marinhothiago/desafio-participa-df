@@ -466,7 +466,7 @@ DATASET_LGPD = [
     ("Ordem de serviço 2025/12345", False, "OS genérica", "Código Sistema"),
 
     # =========================================================================
-    # GRUPO 27: CASOS PARA ÁRBITRO LLM (Llama-70B)
+    # GRUPO 27: CASOS PARA ÁRBITRO LLM (Llama-3.2-3B-Instruct)
     # Estes casos são ambíguos e testam o acionamento do árbitro.
     # NOTA: Se o LLM estiver indisponível, o sistema usa fallback permissivo.
     # =========================================================================

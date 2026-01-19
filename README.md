@@ -16,7 +16,7 @@
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
 > 
-> 🎉 **v9.5.0**: Sistema otimizado com **F1-Score = 1.0000** (100% precisão e sensibilidade) em benchmark de 303 casos LGPD.
+> 🎉 **v9.5.0**: Sistema otimizado com **F1-Score = 1.0000** (100% precisão e sensibilidade) em benchmark de 308 casos LGPD + 5 casos LLM árbitro (410 testes totais).
 > 
 > 🆕 **Novidades v9.5.0**: Reorganização completa do projeto, Celery integrado à API, scripts organizados, CI/CD otimizado.
 
@@ -99,7 +99,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │  │                   │                                   │ │
 │  │         ┌─────────▼─────────┐                         │ │
 │  │         │ Árbitro LLM       │                         │ │
-│  │         │ Llama-70B (HF API)│  ← ATIVADO POR PADRÃO   │ │
+│  │         │ Llama-3.2-3B (HF) │  ← ATIVADO POR PADRÃO   │ │
 │  │         │ • Explicação PII  │                         │ │
 │  │         │ • Decisão ambígua │                         │ │
 │  │         └────────────────────┘                        │ │
@@ -110,7 +110,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 | Agora o backend suporta:
 | - **Pipeline híbrido avançado**: Regex, validação DV, BERT NER, NuNER, spaCy, gazetteer institucional, regras de negócio, pós-processamento, ensemble/fusão, calibradores probabilísticos e thresholds dinâmicos.
 | - **Presidio Framework (Microsoft)**: expansão modular de detectores PII, multi-idioma, fácil customização.
-| - **🤖 Árbitro LLM (Llama-70B)**: **ATIVADO por padrão** - arbitragem inteligente em casos ambíguos via Hugging Face Inference API.
+| - **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **ATIVADO por padrão** - arbitragem inteligente em casos ambíguos via `huggingface_hub` InferenceClient.
 | - **Gazetteer institucional GDF**: filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
 | - **Sistema de confiança probabilística**: calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
 | - **Presets de merge de spans**: recall, precision, f1, custom (ajustável via parâmetro na API).
@@ -121,17 +121,19 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 
 ---
 
-## 🤖 Árbitro LLM: Llama-70B
+## 🤖 Árbitro LLM: Llama-3.2-3B-Instruct
 
-O sistema utiliza o **Llama-70B** como árbitro inteligente para casos ambíguos de detecção de PII.
+O sistema utiliza o **Llama-3.2-3B-Instruct** como árbitro inteligente para casos ambíguos de detecção de PII.
 
 ### Status: ✅ ATIVADO POR PADRÃO (v9.5.0)
 
 | Aspecto | Detalhe |
 |---------|---------|
-| **Modelo** | meta-llama/Llama-2-70b-chat-hf |
+| **Modelo** | `meta-llama/Llama-3.2-3B-Instruct` (configurável via `HF_MODEL`) |
+| **Biblioteca** | `huggingface_hub` (InferenceClient) |
 | **Ativação** | Automática em casos ambíguos |
 | **Requisito** | `HF_TOKEN` no arquivo `.env` |
+| **Latência** | ~1-2 segundos (apenas quando acionado) |
 | **Desativar** | `PII_USE_LLM_ARBITRATION=False` |
 
 ### Quando é Acionado
@@ -145,10 +147,11 @@ O sistema utiliza o **Llama-70B** como árbitro inteligente para casos ambíguos
 ```bash
 # .env (OBRIGATÓRIO)
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
+HF_MODEL=meta-llama/Llama-3.2-3B-Instruct  # Opcional (este é o padrão)
 PII_USE_LLM_ARBITRATION=True  # Padrão: True
 ```
 
-> 📚 **Documentação completa**: Consulte [backend/README.md](backend/README.md#-árbitro-llm-llama-70b-v950) ou [LLAMA_ARBITRAGE_LOGIC.md](LLAMA_ARBITRAGE_LOGIC.md)
+> 📚 **Documentação completa**: Consulte [backend/README.md](backend/README.md#-árbitro-llm-llama-32-3b-instruct-v950) ou [LLAMA_ARBITRAGE_LOGIC.md](LLAMA_ARBITRAGE_LOGIC.md)
 
 ---
 
@@ -258,8 +261,8 @@ desafio-participa-df/
 │   │   ├── clean_backend.ps1     ← Limpeza de cache do backend
 │   │   └── clean_frontend.ps1    ← Limpeza de cache do frontend
 │   │
-│   ├── tests/                    ← Testes automatizados (pytest)
-│   │   ├── test_benchmark.py     ← 🏆 Benchmark LGPD: 303+ casos, F1=1.0000
+│   ├── tests/                    ← Testes automatizados (pytest, 410+ casos)
+│   │   ├── test_benchmark.py     ← 🏆 Benchmark LGPD: 308+ casos, F1=1.0000 + 5 casos LLM
 │   │   ├── test_amostra.py       ← Testes com amostra e-SIC
 │   │   ├── test_confianca.py     ← Testes do sistema de confiança
 │   │   ├── test_edge_cases.py    ← Casos extremos e edge cases

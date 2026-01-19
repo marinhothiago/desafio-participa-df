@@ -460,7 +460,7 @@ class DiagnosticoMotor:
         print("-" * 50, flush=True)
         testes_integracoes = [
             ("Integração API", self.teste_integracao_api),
-            ("Árbitro LLM (Llama-70B)", self.teste_llm_arbitro),
+            ("Árbitro LLM (Llama-3.2-3B)", self.teste_llm_arbitro),
         ]
         for nome, func in testes_integracoes:
             result = self.testar_componente(nome, func)
