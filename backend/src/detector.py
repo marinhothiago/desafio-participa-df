@@ -1782,7 +1782,12 @@ class PIIDetector:
         all_findings = self._aplicar_votacao(all_findings)
 
         # === LLM PARA RECUPERAR PENDENTES (evitar FN) ===
-        if (self.use_llm_arbitration or force_llm) and self._pendentes_llm:
+        # IMPORTANTE: LLM é ativado AUTOMATICAMENTE em ambiguidades mesmo com use_llm_arbitration=False
+        # para evitar custos em casos claros mas aproveitar inteligência em casos cinzentos
+        has_ambiguity = len(self._pendentes_llm) > 0
+        should_use_llm = self.use_llm_arbitration or force_llm or has_ambiguity
+        
+        if should_use_llm and self._pendentes_llm:
             try:
                 for pendente in self._pendentes_llm:
                     # Pergunta ao LLM se deve incluir

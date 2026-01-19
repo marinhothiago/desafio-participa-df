@@ -110,7 +110,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 | Agora o backend suporta:
 | - **Pipeline híbrido avançado**: Regex, validação DV, BERT NER, NuNER, spaCy, gazetteer institucional, regras de negócio, pós-processamento, ensemble/fusão, calibradores probabilísticos e thresholds dinâmicos.
 | - **Presidio Framework (Microsoft)**: expansão modular de detectores PII, multi-idioma, fácil customização.
-| - **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **DESATIVADO por padrão** (opt-in) - arbitragem inteligente em casos ambíguos via `huggingface_hub` InferenceClient. Ative com `PII_USE_LLM_ARBITRATION=True`.
+| - **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **Ativação Inteligente** - desativado por padrão, mas ativado automaticamente em casos ambíguos (zona cinza). Evita custos em análises simples, aproveita inteligência onde importa. Via `huggingface_hub` InferenceClient.
 | - **Gazetteer institucional GDF**: filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
 | - **Sistema de confiança probabilística**: calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
 | - **Presets de merge de spans**: recall, precision, f1, custom (ajustável via parâmetro na API).
@@ -148,7 +148,7 @@ O sistema utiliza o **Llama-3.2-3B-Instruct** como árbitro inteligente para cas
 # .env (OBRIGATÓRIO)
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
 HF_MODEL=meta-llama/Llama-3.2-3B-Instruct  # Opcional (este é o padrão)
-PII_USE_LLM_ARBITRATION=True  # Padrão: False (desativado - evita custos)
+PII_USE_LLM_ARBITRATION=False  # Padrão: False (mas ativa AUTO em ambiguidades)
 ```
 
 > 📚 **Documentação completa**: Consulte [backend/README.md](backend/README.md#-árbitro-llm-llama-32-3b-instruct-v950) ou [LLAMA_ARBITRAGE_LOGIC.md](LLAMA_ARBITRAGE_LOGIC.md)

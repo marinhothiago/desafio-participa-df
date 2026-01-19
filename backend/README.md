@@ -37,7 +37,7 @@ pinned: false
 - 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo, fatores de contexto, explicação detalhada abaixo.
 - ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação de entidades para máxima precisão.
 - 🏆 **Benchmark LGPD/LAI:** 410+ testes, F1-score 1.0000, incluindo 5 casos de árbitro LLM.
-- 🤖 **Árbitro LLM (Llama-3.2-3B-Instruct):** Desativado por padrão (opt-in) - arbitragem inteligente de casos ambíguos via `huggingface_hub`. Ative com `PII_USE_LLM_ARBITRATION=True`.
+- 🤖 **Árbitro LLM (Llama-3.2-3B-Instruct):** Ativação Inteligente - desativado por padrão, mas ativado AUTOMATICAMENTE em casos ambíguos (confiá 0.5-0.8, apenas nomes, >=3 achados baixa confiança). Evita custos em análises simples. Via `huggingface_hub`. Ative globalmente com `PII_USE_LLM_ARBITRATION=True`.
 - 🔒 **Segurança do token Hugging Face:** Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
 - 🧹 **Limpeza e organização:** `.gitignore` e `.dockerignore` revisados, scripts de limpeza, deploy seguro, documentação atualizada.
 - 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, checklist de produção.
@@ -183,7 +183,7 @@ O motor de detecção agora conta com um **Árbitro LLM (Llama-3.2-3B-Instruct)*
 
 ### Status: ✅ ATIVADO POR PADRÃO
 
-A partir da versão 9.5.0, o árbitro LLM está **desativado por padrão** (`use_llm_arbitration=False`) para evitar custos. Para ativar, use a variável de ambiente `PII_USE_LLM_ARBITRATION=True`. Usa a biblioteca oficial `huggingface_hub` com `InferenceClient`.
+A partir da versão 9.5.0, o árbitro LLM usa **Ativação Inteligente**: desativado por padrão (`use_llm_arbitration=False`) para evitar custos em análises simples, mas **ativado AUTOMATICAMENTE** quando ambiguidade é detectada. Usa `huggingface_hub` com `InferenceClient`. Ative globalmente com `PII_USE_LLM_ARBITRATION=True` se preferir forçar LLM em todas as análises.
 
 ### Quando o LLAMA é Acionado
 
@@ -246,25 +246,25 @@ INPUT (texto)
 # .env
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx              # OBRIGATÓRIO para LLAMA funcionar
 HF_MODEL=meta-llama/Llama-3.2-3B-Instruct      # Opcional (este é o padrão)
-PII_USE_LLM_ARBITRATION=True                   # Padrão: False (ative para usar LLM)
+PII_USE_LLM_ARBITRATION=False                  # Padrão: False (Auto em ambiguidades)
 PII_USAR_GPU=True                              # Usar GPU se disponível
 ```
 
-> **Nota**: Modelos alternativos disponíveis: `meta-llama/Llama-3.1-70B-Instruct` (mais preciso, mais lento)
+> **Nota**: O LLM é ativado AUTOMATICAMENTE em ambiguidades mesmo com `PII_USE_LLM_ARBITRATION=False`. Modelos alternativos: `meta-llama/Llama-3.1-70B-Instruct` (mais preciso, mais lento)
 
-#### Desativar LLAMA (opcional)
+#### Ativar LLAMA Globalmente (forçar em todas as análises)
 
-Para testes rápidos ou ambientes sem HF_TOKEN:
+Para usar LLM em TODAS as análises, não apenas ambiguidades:
 
 ```bash
-# Desativar via variável de ambiente
+# Ativar globalmente
 PII_USE_LLM_ARBITRATION=True
 ```
 
 Ou no código:
 
 ```python
-detector = PIIDetector(use_llm_arbitration=False)
+detector = PIIDetector(use_llm_arbitration=True)
 ```
 
 #### Forçar LLAMA em uma chamada específica
@@ -413,7 +413,7 @@ Detectar, classificar e avaliar o risco de vazamento de dados pessoais em textos
 - ✅ **Presets de merge de spans:** recall, precision, f1, custom (ajustável via parâmetro na API).
 - ✅ **Gazetteer institucional GDF:** filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
 - ✅ **Sistema de confiança probabilística:** calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
-- ✅ **Árbitro LLM (opt-in):** explicação e decisão em casos ambíguos (Llama-3.2-3B-Instruct via `huggingface_hub`). Ative com `PII_USE_LLM_ARBITRATION=True`.
+- ✅ **Árbitro LLM (Ativação Inteligente):** ativado AUTOMATICAMENTE em ambiguidades, ou globalmente com `PII_USE_LLM_ARBITRATION=True` (Llama-3.2-3B-Instruct via `huggingface_hub`).
 - ✅ **30+ Tipos de PII:** documentos, contatos, financeiros, saúde, biometria, localização.
 - ✅ **Rastreabilidade Total:** preserva o ID original do e-SIC em todo o fluxo.
 - ✅ **Contadores Globais:** persistência em stats.json com thread-safety.

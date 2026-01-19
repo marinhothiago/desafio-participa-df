@@ -1,15 +1,15 @@
 # LLAMA Como Árbitro: Lógica de Ativação
 
 ## Status Atual (v9.5.0)
-**LLAMA está DESATIVADO por padrão para evitar custos. Quando ativado, se aciona automaticamente em 3 cenários:**
+**LLAMA com Ativação Inteligente: Desativado por padrão, mas acionado AUTOMATICAMENTE em ambiguidades:**
 
 ### Configuração Atual
 | Parâmetro | Valor |
 |-----------|-------|
 | **Modelo** | `meta-llama/Llama-3.2-3B-Instruct` |
 | **Biblioteca** | `huggingface_hub` (InferenceClient) |
-| **Ativado** | Não (opt-in) - ative com `PII_USE_LLM_ARBITRATION=True` |
-| **Latência** | ~1-2 segundos |
+| **Padrão** | Desativado, mas AUTO em ambiguidades |
+| **Latência** | ~1-2 segundos (apenas quando acionado) |
 | **Token** | `HF_TOKEN` no `.env` |
 
 ---
@@ -205,15 +205,16 @@ Se LLAMA não responder (timeout, erro API, etc.):
 
 ## 5️⃣ RESUMO - Resposta Direta (v9.5.0)
 
-### Pergunta: "LLAMA está ativado e se aciona automaticamente quando necessário?"
+### Pergunta: "LLAMA funciona automaticamente em ambiguidades?"
 
-**RESPOSTA: NÃO por padrão (opt-in) ⚠️**
+**RESPOSTA: SIM! ✅ 🦑6🦑6**
 
-- ⚠️ LLAMA está **DESATIVADO por padrão** (`use_llm_arbitration=False`) para evitar custos
-- ✅ Quando ativado, é acionado **automaticamente** quando necessário:
-  - Itens com baixa confiança
-  - Zero PIIs encontrados
-- ✅ Pode ser forçado via `force_llm=True` ou ativado globalmente
+- 🦑6 LLAMA está **INTELIGENTE**: desativado por padrão para evitar custos em análises simples
+- ✅ MAS **ATIVADO AUTOMATICAMENTE** quando ambiguidade é detectada:
+  - Confiança intermediária (0.5-0.8)
+  - Apenas nomes detectados
+  - >=3 achados com baixa confiança
+- 💰 Isso = **Custos apenas quando importa**, sem overhead em casos claros
 
 ### O que Acontece com LLAMA ATIVADO (padrão):
 
@@ -247,29 +248,30 @@ Cenário: Baixa confiança ou zero PIIs
 ```python
 from src.detector import PIIDetector
 
-# Caso 1: Padrão (LLAMA DESATIVADO v9.5.0 - evita custos)
+# Caso 1: Padrão (LLAMA INTELIGENTE v9.5.0 - Auto em ambiguidades)
 det1 = PIIDetector()  # use_llm_arbitration=False por padrão
-r1, f1, _, _ = det1.detect("Silva é um sobrenome comum")  # Apenas ensemble
+r1, f1, _, _ = det1.detect("Silva é um sobrenome comum")  # LLAMA acionado se ambiguo
 
-# Caso 2: Ativar LLAMA explicitamente
+# Caso 2: Ativar LLAMA GLOBALMENTE (força em tudo)
 det2 = PIIDetector(use_llm_arbitration=True)
-r2, f2, _, _ = det2.detect("Silva é um sobrenome comum")  # LLAMA analisa se necessário
+r2, f2, _, _ = det2.detect("Silva é um sobrenome comum")  # LLAMA acionado sempre
 
 # Caso 3: Forçar LLAMA em uma chamada específica
-r3, f3, _, _ = det2.detect("Silva é um sobrenome comum", force_llm=True)  # Força LLAMA
+det3 = PIIDetector()  # Padrão (LLAMA desativado)
+r3, f3, _, _ = det3.detect("Silva é um sobrenome comum", force_llm=True)  # Força LLAMA agora
 ```
 
 ---
 
-## Status Final: ⚠️ DESATIVADO POR PADRÃO (v9.5.0 - evita custos)
+## Status Final: 🦑6 ATIVAÇÃO INTELIGENTE (v9.5.0 - Melhor dos 2 mundos)
 
-**LLAMA é um ÁRBITRO INTELIGENTE de SEGUNDA LINHA:**
-1. Ensemble executa primeiro (BERT + spaCy + Regex)
-2. Se confiança baixa OU zero PIIs → LLAMA é acionado automaticamente **se ativado**
-3. LLAMA faz arbitragem inteligente com contexto LGPD/LAI
+**LLAMA é um ÁRBITRO INTELIGENTE com Ativação Adaptativa:**
+1. Ensemble executa primeiro (BERT + spaCy + Regex) - GRATUITO
+2. Se caso CLARO (confiança alta) → Retorna resultado direto (sem LLM)
+3. Se caso AMBIGUO → LLM é acionado AUTOMATICAMENTE (custo mín) 💰
 4. Se LLAMA falha → Fail-safe (inclui para evitar FN)
-5. **DESATIVADO por padrão** (`use_llm_arbitration=False`) para evitar custos
-6. **Requisito**: `HF_TOKEN` configurado no `.env` + `PII_USE_LLM_ARBITRATION=True`
+5. **Resultado**: Melhor precisão onde importa, sem custos onde não importa
+6. **Ativar globalmente**: `use_llm_arbitration=True` para forçar LLM em tudo
 
 ### Variáveis de Ambiente
 
