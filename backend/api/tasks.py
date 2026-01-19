@@ -1,8 +1,19 @@
 """Tasks assíncronas do Celery para processamento em lote."""
-from backend.api.celery_config import celery_app
-from backend.src.detector import PIIDetector
+import sys, os
+# Adiciona diretório pai ao path para imports
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
+sys.path.insert(0, os.path.dirname(backend_dir))
+
+# Imports com fallback para HF Spaces
+try:
+    from backend.api.celery_config import celery_app
+    from backend.src.detector import PIIDetector
+except ModuleNotFoundError:
+    from api.celery_config import celery_app
+    from src.detector import PIIDetector
+
 import pandas as pd
-import os
 
 @celery_app.task(bind=True)
 def processar_lote(self, arquivo_path, tipo_arquivo='csv', params=None):

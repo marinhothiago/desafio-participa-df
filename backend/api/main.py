@@ -35,9 +35,13 @@ Exemplo de uso:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Corrige PYTHONPATH para garantir importação do pacote backend
+# Corrige PYTHONPATH para garantir importação tanto local quanto no HF Spaces
 import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+# Adiciona diretório pai (backend/) ao path
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
+# Adiciona diretório raiz (para imports com 'backend.')
+sys.path.insert(0, os.path.dirname(backend_dir))
 
 try:
     from dotenv import load_dotenv
@@ -48,16 +52,20 @@ except ImportError:
 from typing import Dict, Optional
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+
+# Imports com fallback para HF Spaces (sem prefixo 'backend.')
+try:
+    from backend.api.celery_config import celery_app
+    from backend.src.detector import PIIDetector
+except ModuleNotFoundError:
+    from api.celery_config import celery_app
+    from src.detector import PIIDetector
+
 from celery.result import AsyncResult
-from backend.api.celery_config import celery_app
 import json
 import threading
 from datetime import datetime
 import shutil
-
-# Adiciona o diretório backend ao path para importação de módulos locais
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-from backend.src.detector import PIIDetector
 
 # === SISTEMA DE CONTADORES GLOBAIS ===
 STATS_FILE = os.path.join(backend_dir, "data", "stats.json")
