@@ -7,6 +7,35 @@
 - 📊 **Dashboard completo:** KPIs, gráficos de distribuição, histórico, exportação de resultados, responsivo e acessível.
 
 ---
+# NOVO FORMATO DE RESPOSTA DA API
+
+O frontend agora consome exclusivamente o novo formato estruturado da API:
+
+```json
+{
+  "has_pii": true,
+  "entities": [
+    {"tipo": "CPF", "valor": "123.456.789-09", "confianca": 0.98, "fonte": "regex"}
+  ],
+  "risk_level": "ALTO",
+  "confidence_all_found": 0.97,
+  "total_entities": 1,
+  "sources_used": ["regex", "bert_ner"]
+}
+```
+
+**Principais campos:**
+- `has_pii`: se encontrou dado pessoal
+- `entities`: lista detalhada de entidades (tipo, valor, confiança, fonte)
+- `risk_level`: nível de risco LGPD
+- `confidence_all_found`: confiança global
+- `total_entities`: total de entidades detectadas
+- `sources_used`: fontes usadas na detecção
+
+> O frontend foi totalmente migrado para este formato. O consumo do formato antigo (tupla/classificacao/risco/confianca/detalhes) foi removido.
+
+---
+
 # Exemplos de Uso Rápido (novas features)
 
 ```bash
@@ -47,6 +76,20 @@ docker run -p 3000:80 participa-df-frontend
 ---
 
 ## 📋 Objetivo do Frontend
+
+### Integração com o Backend (API v2)
+
+- O frontend consome o endpoint `/analyze` e espera o novo formato estruturado (ver exemplo acima).
+- O parsing dos campos foi atualizado para usar: `has_pii`, `entities`, `risk_level`, `confidence_all_found`, etc.
+- Todos os fluxos (análise individual, lote, dashboard, exportação) já utilizam o novo formato.
+- Não há fallback para o formato antigo.
+
+### Estratégia de Testes e Migração
+- Testes manuais e automatizados garantem que todos os fluxos funcionam com o novo formato.
+- O histórico, métricas, exibição de detalhes e exportação foram adaptados para os novos campos.
+- Para migrar projetos derivados, basta seguir o padrão de parsing e exibição dos novos campos.
+
+Consulte o README.md da raiz e do backend para detalhes técnicos e exemplos de integração.
 
 Disponibilizar uma interface web intuitiva e acessível para:
 
