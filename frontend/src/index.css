@@ -1,11 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+/* DSGOV - Padrão Digital de Governo Brasileiro */
+/* Font import must come first */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* DSGOV - Padrão Digital de Governo Brasileiro */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -13,16 +12,16 @@
     --govbr-blue-primary: 218 87% 39%;
     --govbr-blue-dark: 218 90% 25%;
     --govbr-blue-light: 218 80% 95%;
-    
+
     --govbr-success: 120 100% 25%;
     --govbr-success-light: 120 60% 95%;
-    
+
     --govbr-danger: 0 100% 45%;
     --govbr-danger-light: 0 80% 96%;
-    
+
     --govbr-warning: 45 100% 50%;
     --govbr-warning-light: 45 90% 95%;
-    
+
     --govbr-gray-100: 210 20% 98%;
     --govbr-gray-200: 210 15% 94%;
     --govbr-gray-300: 210 12% 88%;
@@ -31,7 +30,7 @@
     --govbr-gray-600: 210 10% 40%;
     --govbr-gray-700: 210 12% 25%;
     --govbr-gray-800: 210 15% 15%;
-    
+
     /* Semantic Tokens */
     --background: 210 20% 98%;
     --foreground: 210 15% 15%;
@@ -126,7 +125,12 @@
     @apply bg-background text-foreground antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 }
@@ -163,16 +167,22 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { 
+    from {
       opacity: 0;
       transform: translateY(10px);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: translateY(0);
     }
