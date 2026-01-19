@@ -1782,12 +1782,18 @@ class PIIDetector:
         all_findings = self._aplicar_votacao(all_findings)
 
         # === LLM PARA RECUPERAR PENDENTES (evitar FN) ===
-        # IMPORTANTE: LLM é ativado AUTOMATICAMENTE em ambiguidades mesmo com use_llm_arbitration=False
-        # para evitar custos em casos claros mas aproveitar inteligência em casos cinzentos
-        # REQUISITO: HF_TOKEN deve estar configurado no ambiente
+        # Ativação Inteligente: LLM em ambiguidades, MAS respeita variável de ambiente
+        # Se PII_USE_LLM_ARBITRATION=false explicitamente, NÃO usa LLM (útil para CI/testes)
+        # Se não definida ou true, ativa automaticamente em ambiguidades
         has_ambiguity = len(self._pendentes_llm) > 0
         has_hf_token = bool(os.getenv("HF_TOKEN"))
-        should_use_llm = (self.use_llm_arbitration or force_llm or has_ambiguity) and has_hf_token
+        
+        # Verifica se foi explicitamente desabilitado via env
+        llm_env = os.getenv("PII_USE_LLM_ARBITRATION", "").lower()
+        llm_explicitly_disabled = llm_env == "false"
+        
+        # Só usa LLM se: (ativado OU forçado OU ambiguidade) E tem token E não foi explicitamente desabilitado
+        should_use_llm = (self.use_llm_arbitration or force_llm or has_ambiguity) and has_hf_token and not llm_explicitly_disabled
         
         if should_use_llm and self._pendentes_llm:
             try:
@@ -1838,8 +1844,8 @@ class PIIDetector:
 
         # === RESULTADO ===
         if not pii_relevantes:
-            # Última chance: LLM analisa texto completo (apenas se HF_TOKEN disponível)
-            if (self.use_llm_arbitration or force_llm) and len(text) > 50 and has_hf_token:
+            # Última chance: LLM analisa texto completo (apenas se permitido e tem token)
+            if (self.use_llm_arbitration or force_llm) and len(text) > 50 and has_hf_token and not llm_explicitly_disabled:
                 try:
                     decision, explanation = arbitrate_with_llama(text, [])
                     if decision == "PII":
