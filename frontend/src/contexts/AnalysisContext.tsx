@@ -232,7 +232,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
       date,
       time,
       type,
-      text: text.slice(0, 200),
+      text, // Texto completo - não truncar
       classification,
       probability,
       riskLevel,
@@ -241,7 +241,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
     };
 
     setRequestCounter(prev => prev + 1);
-    setHistory(prev => [newItem, ...prev].slice(0, 100));
+    setHistory(prev => [newItem, ...prev].slice(0, 10000)); // Aumentado de 100 para 10000
   }, [requestCounter]);
 
   const addBatchResults = useCallback((results: BatchResult[]) => {
@@ -264,7 +264,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
         date,
         time,
         type: 'batch' as const,
-        text: result.text_preview,
+        text: result.fullText || result.text_preview, // Usar texto completo se disponível
         classification,
         probability: result.probability,
         riskLevel,
@@ -276,7 +276,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
 
     // Manter ordem original de processamento (sem ordenação)
     setRequestCounter(prev => prev + results.length);
-    setHistory(prev => [...newItems, ...prev].slice(0, 100));
+    setHistory(prev => [...newItems, ...prev].slice(0, 10000)); // Aumentado de 100 para 10000
   }, [requestCounter]);
 
   const clearHistory = useCallback(() => {
