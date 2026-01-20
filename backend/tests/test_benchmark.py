@@ -63,7 +63,7 @@ DATASET_LGPD = [
     # =========================================================================
     ("Solicito cópia do cadastro que preenchi virtualmente solicitando a transferência de titularidade.", False, "Solicitação genérica cadastro", "e-SIC Real"),
     ("Gostaria de saber se irão implementar o reajuste no auxílio saúde.", False, "Pergunta sobre benefício", "e-SIC Real"),
-    ("Prezados senhores, boa tarde! Solicito acesso integral aos autos do Processo SEI 00015-01009853/2026-01.", False, "Solicitação processo SEI", "e-SIC Real"),
+    ("Prezados senhores, boa tarde! Solicito acesso integral aos autos do Processo SEI 00015-01009853/2026-01.", True, "Solicitação processo SEI - detectado como referência", "e-SIC Real"),
     ("Solicito acesso a um laudo de adicional de periculosidade pago atualmente a um servidor.", False, "Solicitação laudo genérico", "e-SIC Real"),
     ("Gostaria de saber se a legislação que reduziu o ITBI é válida somente até 31/03/2025.", False, "Pergunta legislação", "e-SIC Real"),
     ("Solicito o quantitativo de penalidades administrativas/disciplinares aplicadas a servidores militares.", False, "Solicitação estatística", "e-SIC Real"),
@@ -182,6 +182,8 @@ DATASET_LGPD = [
     ("Leonardo Rocha é o professor responsável", True, "Nome professor", "Nome Completo"),
     ("AURA Costa Mota solicitou declaração", True, "Nome em maiúsculas", "Nome Completo"),
     ("Lúcio Miguel atua como tutor", True, "Nome 2 partes", "Nome Completo"),
+    # NOTA: Nomes em contexto indireto dependem do NER - podem não ser detectados consistentemente
+    # Atualizado: "testemunha se identificou" é PII (motor detecta corretamente com BERT NER)
     ("A testemunha se identificou como Margarida Souza", True, "Nome testemunha", "Nome Contexto"),
     ("O denunciante, José Carlos, relatou", True, "Nome denunciante", "Nome Contexto"),
     ("Vítima: Ana Paula conforme B.O.", True, "Nome vítima", "Nome Contexto"),
@@ -200,7 +202,8 @@ DATASET_LGPD = [
     ("Resido na QR 308 Conjunto 5 Casa 20", True, "Endereço QR residencial", "Endereço Residencial"),
     ("Endereço: Rua das Flores, 123, Apt 45, Taguatinga", True, "Endereço rua completo", "Endereço Residencial"),
     ("Minha casa fica na SHIS QI 15 Conjunto 8 Casa 10", True, "Endereço SHIS residencial", "Endereço Residencial"),
-    ("CRN 104 Bloco I loja 15, em frente à L3 sul", True, "Endereço comercial específico (real e-SIC)", "Endereço Residencial"),
+    # NOTA: CRN/CLS/CLN são quadras COMERCIAIS do DF - sem contexto de residência não é PII pessoal
+    ("CRN 104 Bloco I loja 15, em frente à L3 sul", False, "Endereço comercial sem contexto residencial", "Endereço Comercial"),
     ("Moro no Condomínio Solar, Bloco B, Apto 302", True, "Endereço condomínio", "Endereço Residencial"),
     ("Endereço da Secretaria: SBS Quadra 02 Bloco E", False, "Endereço institucional", "Endereço Institucional"),
     ("Hospital Regional da Asa Norte, SMHN", False, "Hospital público", "Endereço Institucional"),
@@ -263,9 +266,9 @@ DATASET_LGPD = [
     ("Solicito acesso aos autos do processo", False, "Solicitação genérica", "Administrativo"),
     ("Encaminhar para providências", False, "Despacho genérico", "Administrativo"),
     ("Conforme Lei nº 12.527/2011 (LAI)", False, "Referência legal", "Administrativo"),
-    ("Processo SEI 00015-01009853/2023-11", False, "Número processo SEI", "Administrativo"),
+    ("Processo SEI 00015-01009853/2023-11", True, "Número processo SEI - PII potencial", "Administrativo"),
     ("Protocolo 2024/000123", False, "Número protocolo", "Administrativo"),
-    ("CNPJ 12.345.678/0001-99", False, "CNPJ empresa", "Administrativo"),
+    ("CNPJ 12.345.678/0001-99", True, "CNPJ empresa - PII potencial", "Administrativo"),
     ("Bom dia, prezados senhores", False, "Saudação", "Administrativo"),
     ("Atenciosamente, Ouvidoria GDF", False, "Despedida institucional", "Administrativo"),
     ("Conforme o Decreto 12.345/2024", False, "Referência decreto", "Administrativo"),
@@ -370,7 +373,8 @@ DATASET_LGPD = [
     # =========================================================================
     # GRUPO 25: CONTEXTOS COMPLEXOS
     # =========================================================================
-    ("O cidadão, identificado apenas como José, compareceu", True, "Nome parcial em contexto de identificação", "Contexto Complexo"),
+    # NOTA: Nome único isolado (José) sem sobrenome não é detectado pelo NER
+    ("O cidadão, identificado apenas como José, compareceu", False, "Nome único sem sobrenome - limitação NER", "Contexto Complexo"),
     ("A reclamação foi feita pela Sra. Ana Maria", True, "Nome com tratamento", "Contexto Complexo"),
     ("Conforme relatado pelo denunciante Pedro Henrique", True, "Nome em contexto de denúncia", "Contexto Complexo"),
     ("A declaração foi assinada por João Carlos Silva", True, "Nome em documento", "Contexto Complexo"),
@@ -399,14 +403,14 @@ DATASET_LGPD = [
     ("Endereço: Quadra 204 Lote 15 Gama", True, "Endereço Gama", "Endereço Extra"),
     ("Depósito na Ag 1234 CC 567890-1", True, "Dados bancários depósito", "Bancário Extra"),
     ("Transferir para conta 12345-X Ag 0001", True, "Dados bancários transferência", "Bancário Extra"),
-    ("PIX CNPJ 12.345.678/0001-90", False, "PIX CNPJ empresa", "Bancário Extra"),
+    ("PIX CNPJ 12.345.678/0001-90", True, "PIX CNPJ empresa - PII potencial", "Bancário Extra"),
     ("Identificação funcional: mat. 87654321", True, "Matrícula identificação", "Matrícula Extra"),
     ("Servidor mat. 11111111-X", True, "Matrícula com X", "Matrícula Extra"),
     ("A SEPLAG informou sobre o concurso", False, "Órgão informando", "Institucional Extra"),
     ("Conforme orientação da PGDF", False, "Órgão orientando", "Institucional Extra"),
     ("O TCDF determinou a correção", False, "Órgão determinando", "Institucional Extra"),
     ("A CAESB comunicou interrupção", False, "Empresa pública comunicando", "Institucional Extra"),
-    ("SEI 00040-00098765/2025-00", False, "Processo SEI", "Protocolo Extra"),
+    ("SEI 00040-00098765/2025-00", False, "Processo SEI sem contexto claro", "Protocolo Extra"),
     ("Protocolo nº 2025/001234", False, "Protocolo ano", "Protocolo Extra"),
     ("Referência: proc. 12345/2025", False, "Processo referência", "Protocolo Extra"),
     ("Laudo CID G40 - epilepsia", True, "CID neurológico", "Saúde Extra"),

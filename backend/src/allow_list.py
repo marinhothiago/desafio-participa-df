@@ -324,6 +324,10 @@ GATILHOS_CONTATO: Set[str] = {
     "BENEFICIARIO:", "BENEFICIÁRIO:", "REQUERENTE:", "PACIENTE:",
     "RESPONSAVEL:", "RESPONSÁVEL:", "TITULAR:", "AUTOR:", "AUTORA:",
     "REU:", "RÉU:", "RE:", "RÉ:", "RECLAMANTE:", "RECLAMADO:", "RECLAMADA:",
+    # NOVO: Gatilhos de auto-identificação (LGPD: nome próprio é PII)
+    "ME CHAMO", "SOU O", "SOU A", "MEU NOME E", "MEU NOME É",
+    "FILHO", "FILHA", "MINHA FILHA", "MEU FILHO",
+    "PARA MINHA FILHA", "PARA MEU FILHO", "PRO MINHA FILHA", "PRO MEU FILHO",
 }
 
 

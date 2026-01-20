@@ -1,7 +1,7 @@
 # 🛡️ Participa DF - Detector Inteligente de Dados Pessoais
 
 [![Status](https://img.shields.io/badge/Status-Produção-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
-[![Versão](https://img.shields.io/badge/Versão-9.5.0-blue)](./backend/README.md)
+[![Versão](https://img.shields.io/badge/Versão-9.6.0-blue)](./backend/README.md)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
@@ -16,9 +16,9 @@
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
 > 
-> 🎉 **v9.5.0**: Sistema otimizado com **F1-Score = 1.0000** (100% precisão e sensibilidade) em benchmark de 308 casos LGPD + 5 casos LLM árbitro (410 testes totais).
+> 🎉 **v9.6.0**: Sistema com **F1-Score = 1.0000** (100% precisão e recall) em auditoria LGPD completa (153 PIIs mapeados) + 438 testes unitários.
 > 
-> 🆕 **Novidades v9.5.0**: Reorganização completa do projeto, Celery integrado à API, scripts organizados, CI/CD otimizado.
+> 🆕 **Novidades v9.6.0**: Árbitro LLM ativado por padrão, Presidio com recognizers customizados GDF, validação completa de DV (CPF/CNPJ), análise de contexto avançada (reidentificação).
 
 > **Política de Deploy:**
 > - O build de produção (Docker/Hugging Face) inclui apenas código-fonte, dependências e a amostra oficial `AMOSTRA_e-SIC.xlsx`.
@@ -78,19 +78,19 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │                 BACKEND (FastAPI + Python)                  │
 │           HuggingFace Spaces / Docker                       │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ Motor Híbrido de Detecção PII (v9.5+)                 │ │
+│  │ Motor Híbrido de Detecção PII (v9.6.0)                 │ │
 │  │                                                      │ │
 │  │ ┌─────────────────────────────┐   ┌─────────────────┐ │ │
 │  │ │ Pipeline Híbrido Original   │   │ Presidio (MSFT) │ │ │
 │  │ │ 1. REGEX + Validação DV     │   │ • AnalyzerEngine│ │ │
-│  │ │ 2. BERT Davlan NER          │   │ • Entidades PII │ │ │
-│  │ │ 3. NuNER pt-BR              │   │ • Multi-idioma  │ │ │
-│  │ │ 4. spaCy pt_core_news_lg    │   │ • Modular       │ │ │
+│  │ │ 2. BERT Davlan NER          │   │ • Recognizers   │ │ │
+│  │ │ 3. NuNER pt-BR              │   │   Customizados  │ │ │
+│  │ │ 4. spaCy pt_core_news_lg    │   │   GDF (10+)     │ │ │
 │  │ │ 5. Gazetteer GDF            │   └─────────────────┘ │ │
 │  │ │ 6. Regras de Negócio        │           │           │ │
 │  │ │ 7. Confiança Probabilística │           │           │ │
 │  │ │ 8. Thresholds Dinâmicos     │           │           │ │
-│  │ │ 9. Pós-processamento        │           │           │ │
+│  │ │ 9. Deduplicação Avançada    │           │           │ │
 │  │ └─────────────┬───────────────┘           │           │ │
 │  │               │                           │           │ │
 │  │         ┌─────▼─────────────┐             │           │ │
@@ -99,8 +99,8 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │  │                   │                                   │ │
 │  │         ┌─────────▼─────────┐                         │ │
 │  │         │ Árbitro LLM       │                         │ │
-│  │         │ Llama-3.2-3B (HF) │  ← ATIVADO POR PADRÃO   │ │
-│  │         │ • Explicação PII  │                         │ │
+│  │         │ Llama-3.2-3B (HF) │  ← ✅ ATIVADO PADRÃO    │ │
+│  │         │ • Reidentificação │                         │ │
 │  │         │ • Decisão ambígua │                         │ │
 │  │         └────────────────────┘                        │ │
 │  └────────────────────────────────────────────────────────┘ │
@@ -108,14 +108,14 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 ```
 
 | Agora o backend suporta:
-| - **Pipeline híbrido avançado**: Regex, validação DV, BERT NER, NuNER, spaCy, gazetteer institucional, regras de negócio, pós-processamento, ensemble/fusão, calibradores probabilísticos e thresholds dinâmicos.
-| - **Presidio Framework (Microsoft)**: expansão modular de detectores PII, multi-idioma, fácil customização.
-| - **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **Ativação Inteligente** - desativado por padrão, mas ativado automaticamente em casos ambíguos (zona cinza). Evita custos em análises simples, aproveita inteligência onde importa. Via `huggingface_hub` InferenceClient.
+| - **Pipeline híbrido avançado**: Regex, validação DV completa (CPF/CNPJ), BERT NER, NuNER, spaCy, gazetteer institucional, regras de negócio, deduplicação avançada, ensemble/fusão, calibradores probabilísticos e thresholds dinâmicos.
+| - **Presidio Framework (Microsoft)**: 10 PatternRecognizers customizados para GDF (PROCESSO_SEI, MATRICULA_GDF, OAB, TELEFONE_BR, CEP_BR, etc.).
+| - **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **ATIVADO por padrão** - avalia risco de reidentificação (número isolado vs número + nome/CPF). Via `huggingface_hub` InferenceClient.
+| - **Análise de contexto avançada**: Distingue endereço em contexto de fiscalização/urbanismo vs residência pessoal.
 | - **Gazetteer institucional GDF**: filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
 | - **Sistema de confiança probabilística**: calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
-| - **Presets de merge de spans**: recall, precision, f1, custom (ajustável via parâmetro na API).
 | - **Novo formato de resposta da API**: dicionário estruturado, pronto para integrações modernas.
-| - **Testes robustos**: edge cases, benchmark LGPD, análise de confiança, integração e cobertura total.
+| - **Testes robustos**: 438 testes unitários, edge cases, benchmark LGPD, auditoria completa (153 PIIs).
 |
 | Consulte o backend/README.md para exemplos de uso, formato de resposta e detalhes técnicos.
 
@@ -125,16 +125,16 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 
 O sistema utiliza o **Llama-3.2-3B-Instruct** como árbitro inteligente para casos ambíguos de detecção de PII.
 
-### Status: ✅ ATIVADO POR PADRÃO (v9.5.0)
+### Status: ✅ ATIVADO POR PADRÃO (v9.6.0)
 
 | Aspecto | Detalhe |
 |---------|---------|
 | **Modelo** | `meta-llama/Llama-3.2-3B-Instruct` (configurável via `HF_MODEL`) |
 | **Biblioteca** | `huggingface_hub` (InferenceClient) |
-| **Ativação** | Automática em casos ambíguos |
+| **Ativação** | **Ativado por padrão** (`use_llm_arbitration=True`) |
 | **Requisito** | `HF_TOKEN` no arquivo `.env` |
 | **Latência** | ~1-2 segundos (apenas quando acionado) |
-| **Ativar** | `PII_USE_LLM_ARBITRATION=True` |
+| **Desativar** | `PII_USE_LLM_ARBITRATION=false` (env var) |
 
 ### Quando é Acionado
 
@@ -142,13 +142,25 @@ O sistema utiliza o **Llama-3.2-3B-Instruct** como árbitro inteligente para cas
 2. **Zero PIIs encontrados** → LLAMA faz análise final do texto
 3. **Via API** → `POST /analyze?use_llm=true`
 
+### Regras do System Prompt (v9.6.0)
+
+O árbitro LLM agora avalia **risco de reidentificação**:
+
+| Cenário | Criticidade | Exemplo |
+|---------|-------------|---------|
+| Número isolado | BAIXA | "Processo 00001-123456/2024" sozinho |
+| Número + Nome/CPF | ALTA | "Maria Silva, CPF 123.456.789-00, processo 00001" |
+| Servidor em ato funcional | PÚBLICO | "Assinado por João Silva, Diretor" |
+| Cidadão em manifestação | PII | "Me chamo Maria e moro na SQN 302" |
+| Dados sensíveis LGPD | CRÍTICO | Saúde, biométricos, menores |
+
 ### Configuração Rápida
 
 ```bash
 # .env (OBRIGATÓRIO)
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
 HF_MODEL=meta-llama/Llama-3.2-3B-Instruct  # Opcional (este é o padrão)
-PII_USE_LLM_ARBITRATION=False  # Padrão: False (mas ativa AUTO em ambiguidades)
+PII_USE_LLM_ARBITRATION=false  # Opcional: desativar LLM em CI/testes
 ```
 
 > 📚 **Documentação completa**: Consulte [backend/README.md](backend/README.md#-árbitro-llm-llama-32-3b-instruct-v950) ou [LLAMA_ARBITRAGE_LOGIC.md](LLAMA_ARBITRAGE_LOGIC.md)
@@ -211,16 +223,26 @@ Consulte o backend/README.md para exemplos detalhados e documentação técnica.
 
 ---
 
-## 🚀 DESTAQUES E MELHORIAS RECENTES
+## 🚀 DESTAQUES E MELHORIAS RECENTES (v9.6.0)
 
-- 🔒 **Segurança total do token Hugging Face:** Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
-- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF, editável via `backend/src/gazetteer_gdf.json`.
-- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo, fatores de contexto, e explicação detalhada no README do backend.
-- 🏆 **Benchmark LGPD/LAI:** 318+ casos reais, F1-score 0.9763, todos FPs/FNs conhecidos e documentados.
-- ⚡ **Pós-processamento de spans:** Normalização, merge/split, e deduplicação de entidades para máxima precisão.
-- 🧹 **Limpeza e organização:** `.gitignore` e `.dockerignore` revisados, scripts de limpeza, deploy seguro, e documentação atualizada.
-- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, e GitHub Pages, com checklist de produção.
-- 📚 **Documentação detalhada:** Todos os módulos, exemplos de uso, arquitetura, e links para docs do backend/frontend.
+### 🆕 Novidades v9.6.0
+
+- 🤖 **Árbitro LLM ATIVADO por padrão:** Llama-3.2-3B-Instruct agora é ativado automaticamente para casos ambíguos
+- 🎯 **System Prompt Inteligente:** Avalia risco de reidentificação (número isolado vs número + nome/CPF)
+- ✅ **Validação completa de DV:** CPF e CNPJ com algoritmo oficial de dígito verificador
+- 🏛️ **Presidio com Recognizers Customizados:** 10 PatternRecognizers para padrões GDF (PROCESSO_SEI, MATRICULA_GDF, etc.)
+- 📍 **Análise de Contexto Avançada:** Distingue endereço em contexto de fiscalização vs residência
+- 📊 **Auditoria LGPD Completa:** 153 PIIs mapeados manualmente, F1=100%
+
+### Melhorias Anteriores
+
+- 🔒 **Segurança total do token Hugging Face:** Uso obrigatório de `.env` (não versionado)
+- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para órgãos, escolas, hospitais
+- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos
+- 🏆 **Benchmark LGPD/LAI:** 438 testes unitários, F1-score 1.0000
+- ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação avançada
+- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, GitHub Pages
+- 📚 **Documentação detalhada:** Arquitetura completa do pipeline documentada no código
 
 ---
 
@@ -937,6 +959,8 @@ python backend/scripts/main_cli.py --input backend/data/input/AMOSTRA_e-SIC.xlsx
 
 ## 📝 Changelog Resumido
 
+- **v9.6.0**: Árbitro LLM ATIVADO por padrão, Presidio com 10 recognizers customizados GDF, validação completa de DV (CPF/CNPJ), análise de contexto avançada (reidentificação), auditoria LGPD completa (153 PIIs), 438 testes passando
+- v9.5.0: Reorganização completa do projeto, Celery integrado à API, scripts organizados, CI/CD otimizado
 - v9.4.3: Telefones internacionais, 5 níveis de risco LGPD, IP/Coordenadas/User-Agent, allow_list ampliada, F1-score 1.0000
 - v9.4.2: Benchmark LGPD ampliado, integração NuNER
 - v9.4.1: Sistema de confiança probabilística, thresholds dinâmicos

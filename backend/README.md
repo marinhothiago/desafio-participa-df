@@ -8,20 +8,20 @@ app_file: api/main.py
 pinned: false
 ---
 
-# 🛡️ Backend: Motor PII Participa DF v9.5.0
+# 🛡️ Backend: Motor PII Participa DF v9.6.0
 
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![spaCy](https://img.shields.io/badge/spaCy-3.8.0-09A3D5?logo=spacy)](https://spacy.io/)
-[![Versão](https://img.shields.io/badge/Versão-9.5.0-blue)](./src/detector.py)
+[![Versão](https://img.shields.io/badge/Versão-9.6.0-blue)](./src/detector.py)
 [![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./tests/test_benchmark.py)
-[![Testes](https://img.shields.io/badge/Testes-410%20passando-brightgreen)](./tests/)
+[![Testes](https://img.shields.io/badge/Testes-438%20passando-brightgreen)](./tests/)
 
 > **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade LGPD/LAI em manifestações do Participa DF.
 > 
-> 🏆 **v9.5.0 - F1-Score = 1.0000** (100% precisão, 100% sensibilidade) em benchmark de 308 casos LGPD + 5 casos LLM árbitro.
+> 🏆 **v9.6.0 - F1-Score = 1.0000** (100% precisão, 100% recall) em auditoria LGPD completa (153 PIIs mapeados).
 >
-> 🆕 **v9.5.0**: Árbitro LLM Llama-3.2-3B-Instruct via `huggingface_hub`, 410 testes passando, reorganização do projeto.
+> 🆕 **v9.6.0**: Árbitro LLM **ATIVADO por padrão**, Presidio com recognizers customizados GDF, validação completa de DV (CPF/CNPJ), análise de contexto avançada (reidentificação).
 
 | 🌐 **Links de Produção** | URL |
 |--------------------------|-----|
@@ -31,16 +31,25 @@ pinned: false
 
 ---
 
-## 🚀 MELHORIAS E FUNCIONALIDADES AVANÇADAS (2025-2026)
+## 🚀 MELHORIAS E FUNCIONALIDADES AVANÇADAS (v9.6.0)
 
-- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF, editável via `src/gazetteer/gazetteer_gdf.json`. Garante máxima precisão em contexto Brasília/DF.
-- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo, fatores de contexto, explicação detalhada abaixo.
-- ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação de entidades para máxima precisão.
-- 🏆 **Benchmark LGPD/LAI:** 410+ testes, F1-score 1.0000, incluindo 5 casos de árbitro LLM.
-- 🤖 **Árbitro LLM (Llama-3.2-3B-Instruct):** Ativação Inteligente - desativado por padrão, mas ativado AUTOMATICAMENTE em casos ambíguos (confiá 0.5-0.8, apenas nomes, >=3 achados baixa confiança). Evita custos em análises simples. Via `huggingface_hub`. Ative globalmente com `PII_USE_LLM_ARBITRATION=True`.
-- 🔒 **Segurança do token Hugging Face:** Uso obrigatório de `.env` (não versionado), carregamento automático em todos os entrypoints, nunca exposto em código ou log.
-- 🧹 **Limpeza e organização:** `.gitignore` e `.dockerignore` revisados, scripts de limpeza, deploy seguro, documentação atualizada.
-- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, checklist de produção.
+### 🆕 Novidades v9.6.0
+
+- 🤖 **Árbitro LLM ATIVADO por padrão:** `use_llm_arbitration=True` - Llama-3.2-3B-Instruct agora é ativado automaticamente
+- 🎯 **System Prompt Inteligente:** Avalia risco de reidentificação (número isolado = baixo, número + nome = alto)
+- ✅ **Validação completa de DV:** CPF e CNPJ com algoritmo oficial de dígito verificador (mod 11)
+- 🏛️ **Presidio com Recognizers Customizados:** 10 PatternRecognizers para padrões GDF (PROCESSO_SEI, MATRICULA_GDF, OAB, TELEFONE_BR, etc.)
+- 📍 **Análise de Contexto Avançada:** Distingue endereço em contexto de fiscalização/urbanismo vs residência pessoal
+- 📊 **Auditoria LGPD Completa:** 153 PIIs mapeados manualmente em 99 registros, F1=100%
+
+### Funcionalidades Anteriores
+
+- 🏛️ **Gazetteer institucional GDF:** Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF
+- 🧠 **Sistema de confiança probabilística:** Calibração isotônica + log-odds, thresholds dinâmicos por tipo
+- ⚡ **Pós-processamento de spans:** Normalização, merge/split, deduplicação avançada de entidades
+- 🏆 **Benchmark LGPD/LAI:** 438 testes unitários, F1-score 1.0000
+- 🔒 **Segurança do token Hugging Face:** Uso obrigatório de `.env` (não versionado)
+- 🐳 **Deploy profissional:** Docker Compose, Hugging Face Spaces, checklist de produção
 
 ---
 

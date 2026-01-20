@@ -11,8 +11,21 @@ PATTERNS = {
     # Matrícula funcional: 7-8 dígitos, opcional hífen/letra
     'matricula_gdf': r'\b\d{7,8}[A-Za-zXx-]?\b',
 
-    # Processo SEI: 5 dígitos - 7 dígitos / 4 dígitos
-    'processo_sei': r'\b\d{5}-\d{7}/\d{4}-\d{2}\b|\b\d{5}-\d{8}/\d{4}-\d{2}\b|\b\d{5}-\d{7}/\d{4}\b',
+    # Processo SEI/GDF - Padrões abrangentes baseados em casos reais:
+    # Formatos encontrados na AMOSTRA:
+    # - 00015-01009853/2026-01 (5-8/4-2)
+    # - 22009-98514623/2017-26 (5-8/4-2)  
+    # - 56478.000012/2026-05 (5.6/4-2) - com PONTO
+    # - 0315-000009878/2023-15 (4-9/4-2)
+    # - 589642/2018-58 (6/4-2) - sem hífen inicial
+    # - 0032185265/2024 (10/4) - sem hífen, sem sufixo
+    # - 1002-853241/2019 (4-6/4)
+    # - 0003689712003/2025-06 (13/4-2)
+    'processo_sei': (
+        r'\b\d{4,5}[-\.]\d{5,10}/\d{4}(?:-\d{2})?\b|'  # Com hífen ou ponto: XXXXX-XXXXXXXX/YYYY-ZZ
+        r'\b\d{5,13}/\d{4}(?:-\d{2})?\b|'              # Sem hífen: XXXXX.../YYYY-ZZ
+        r'\bProcesso(?:\s+(?:SEI|n[°º]?|nº?))?\s*:?\s*\d{4,13}[-\./]?\d{0,10}/?(?:\d{4})?(?:-\d{2})?\b'  # Com contexto
+    ),
 
     # CNH: 10, 11 ou 12 dígitos (com ou sem contexto)
     # CNH: 10, 11 ou 12 dígitos, ultra-tolerante a separadores, espaços, pontuação
