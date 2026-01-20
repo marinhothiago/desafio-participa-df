@@ -360,12 +360,18 @@ async def submit_feedback(feedback: FeedbackRequest) -> Dict:
             from backend.src.confidence.auto_recalibrate import recalibrate_from_feedbacks
         
         feedback_data = load_feedback()
+        total_fb = len(feedback_data.get("feedbacks", []))
+        logging.info(f"📥 Recalibração: {total_fb} feedbacks total no arquivo")
+        
         recalibration_result = recalibrate_from_feedbacks(feedback_data)
-        print(f"🔄 Recalibração automática: {recalibration_result.get('message')}")
+        logging.info(f"🔄 Recalibração automática: {recalibration_result.get('message')}")
+        if recalibration_result.get('success'):
+            logging.info(f"   ✅ {recalibration_result.get('total_samples')} amostras processadas")
+            logging.info(f"   📊 By source: {recalibration_result.get('by_source')}")
     except Exception as e:
         import traceback
-        print(f"⚠️ Erro na recalibração automática: {e}")
-        print(traceback.format_exc())
+        logging.error(f"❌ Erro na recalibração automática: {e}")
+        logging.error(traceback.format_exc())
     
     return {
         "feedback_id": feedback_entry["feedback_id"],

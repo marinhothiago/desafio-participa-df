@@ -52,8 +52,11 @@ class TrainingTracker:
             os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
             with open(self.storage_path, 'w', encoding='utf-8') as f:
                 json.dump(self.data, f, indent=2, ensure_ascii=False)
+            logger.debug(f"✅ Treinamento salvo em {self.storage_path}")
         except Exception as e:
-            logger.error(f"Erro ao salvar training status: {e}")
+            logger.error(f"❌ Erro ao salvar training status em {self.storage_path}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
     
     def record_calibration(
         self,

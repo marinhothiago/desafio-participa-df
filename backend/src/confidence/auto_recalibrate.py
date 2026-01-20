@@ -30,11 +30,14 @@ def recalibrate_from_feedbacks(feedbacks_data: Dict) -> Dict:
         Dict com resultado do treinamento
     """
     feedbacks = feedbacks_data.get("feedbacks", [])
+    logger.debug(f"🔄 Recalibração: Iniciando com {len(feedbacks)} feedbacks")
     
     if len(feedbacks) < 10:
+        msg = f"⚠️ Apenas {len(feedbacks)} feedbacks. Mínimo 10 necessários."
+        logger.debug(msg)
         return {
             "success": False,
-            "message": f"Apenas {len(feedbacks)} feedbacks. Mínimo 10 necessários.",
+            "message": msg,
             "samples_count": len(feedbacks),
         }
     
@@ -55,19 +58,23 @@ def recalibrate_from_feedbacks(feedbacks_data: Dict) -> Dict:
     
     for source, (raw_scores, true_labels, by_type) in training_data_by_source.items():
         if len(raw_scores) < 5:
+            logger.debug(f"⏭️ Saltando {source}: apenas {len(raw_scores)} amostras")
             continue
         
         # Calcula acurácia antes
         accuracy_before = _calculate_accuracy(raw_scores, true_labels)
+        logger.debug(f"📊 {source}: accuracy_before = {accuracy_before:.2%}")
         
         # Treina calibrador
         calibrator = registry.get(source)
         calibrator.fit(raw_scores, true_labels)
+        logger.debug(f"✅ Calibrador '{source}' treinado com {len(raw_scores)} amostras")
         
         # Calcula acurácia depois (simulada com dados de treino)
         # Na prática, isso seria validação com holdout set
         calibrated_scores = [calibrator.calibrate(s) for s in raw_scores]
         accuracy_after = _calculate_accuracy(calibrated_scores, true_labels)
+        logger.debug(f"📊 {source}: accuracy_after = {accuracy_after:.2%}")
         
         total_samples += len(raw_scores)
         results_by_source[source] = {
