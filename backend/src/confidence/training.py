@@ -136,6 +136,16 @@ class TrainingTracker:
         """Gera recomendações de ação."""
         recommendations = []
         
+        # Se nunca treinado, orienta sobre como começar
+        if self.data["total_samples_used"] == 0:
+            recommendations.append({
+                "type": "collect_more_data",
+                "message": "🚀 Envie feedbacks nas análises para calibrar o modelo automaticamente",
+                "action": "Clique em 'Detalhes' em uma análise e valide os PIIs detectados",
+            })
+            self.data["recommendations"] = recommendations
+            return
+        
         # Se accuracy está bom, pode fazer fine-tuning
         if self.data["accuracy_after"] >= 0.90 and self.data["total_samples_used"] >= 50:
             recommendations.append({
@@ -165,6 +175,10 @@ class TrainingTracker:
     
     def get_status(self) -> Dict:
         """Retorna status atual de treinamento."""
+        # Gera recomendações se não existirem
+        if not self.data.get("recommendations"):
+            self._generate_recommendations()
+        
         status = {
             **self.data,
             "status": self._compute_status(),

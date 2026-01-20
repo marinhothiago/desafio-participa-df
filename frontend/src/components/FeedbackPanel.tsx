@@ -225,6 +225,10 @@ export function FeedbackPanel({
 
             setStatus('success');
             setStatusMessage(`Acurácia: ${(response.stats.accuracy * 100).toFixed(1)}%`);
+
+            // Dispara evento para atualizar TrainingStatus
+            window.dispatchEvent(new CustomEvent('feedbackSubmitted'));
+
             onFeedbackSubmitted?.();
         } catch (error) {
             setStatus('error');

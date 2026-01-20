@@ -19,6 +19,9 @@ interface TrainingStatus {
     }>;
 }
 
+// Evento customizado para notificar quando feedback é enviado
+const FEEDBACK_SUBMITTED_EVENT = 'feedbackSubmitted';
+
 export function TrainingStatus() {
     const [status, setStatus] = useState<TrainingStatus | null>(null);
     const [loading, setLoading] = useState(true);
@@ -46,11 +49,25 @@ export function TrainingStatus() {
         fetchStatus();
 
         // Auto-refresh a cada 10 segundos se estiver em progresso
+        let interval: ReturnType<typeof setInterval> | null = null;
         if (isAutoRefresh) {
-            const interval = setInterval(fetchStatus, 10000);
-            return () => clearInterval(interval);
+            interval = setInterval(fetchStatus, 10000);
         }
+
+        // Escuta evento de feedback para atualizar imediatamente
+        const handleFeedbackSubmitted = () => {
+            setTimeout(fetchStatus, 1000); // Aguarda 1s para backend processar
+        };
+        window.addEventListener(FEEDBACK_SUBMITTED_EVENT, handleFeedbackSubmitted);
+
+        return () => {
+            if (interval) clearInterval(interval);
+            window.removeEventListener(FEEDBACK_SUBMITTED_EVENT, handleFeedbackSubmitted);
+        };
     }, [isAutoRefresh]);
+
+    // Exporta função para disparar atualização
+    (TrainingStatus as any).refresh = fetchStatus;
 
     if (loading) {
         return (
@@ -64,9 +81,12 @@ export function TrainingStatus() {
     if (error || !status) {
         return (
             <div className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-destructive">
+                <div className="flex items-center gap-2 text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
-                    <p className="text-sm">{error || 'Status indisponível'}</p>
+                    <div>
+                        <p className="text-sm font-medium">Aguardando dados de treinamento</p>
+                        <p className="text-xs mt-1">Submeta feedbacks nas análises para calibrar o modelo automaticamente.</p>
+                    </div>
                 </div>
             </div>
         );
@@ -84,10 +104,49 @@ export function TrainingStatus() {
                 <BarChart3 className="h-4 w-4" />;
 
     const statusLabel =
-        status.status === 'fresh' ? 'Treinado Recentemente' :
-            status.status === 'recent' ? 'Treinado Hoje' :
-                status.status === 'stale' ? 'Treinado há tempo' :
-                    'Nunca Treinado';
+        status.status === 'fresh' ? 'Calibrado Recentemente' :
+            status.status === 'recent' ? 'Calibrado Hoje' :
+                status.status === 'stale' ? 'Calibrado há tempo' :
+                    'Aguardando Feedbacks';
+
+    // Se nunca treinado, mostra interface informativa
+    if (status.status === 'never_trained') {
+        return (
+            <div className="space-y-3">
+                <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-full">
+                            <BarChart3 className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="font-semibold text-sm mb-1">Sistema de Calibração Automática</h4>
+                            <p className="text-xs text-muted-foreground mb-3">
+                                O modelo melhora automaticamente com base nos seus feedbacks.
+                                Revise análises e valide se os PIIs detectados estão corretos.
+                            </p>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="bg-muted/50 rounded p-2">
+                                    <p className="text-lg font-bold text-muted-foreground">0</p>
+                                    <p className="text-[10px] text-muted-foreground">Amostras</p>
+                                </div>
+                                <div className="bg-muted/50 rounded p-2">
+                                    <p className="text-lg font-bold text-muted-foreground">—</p>
+                                    <p className="text-[10px] text-muted-foreground">Acurácia</p>
+                                </div>
+                                <div className="bg-muted/50 rounded p-2">
+                                    <p className="text-lg font-bold text-muted-foreground">10</p>
+                                    <p className="text-[10px] text-muted-foreground">Min. Feedbacks</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-xs bg-blue-500/10 border border-blue-500/20 rounded p-3 text-blue-700">
+                    💡 <strong>Dica:</strong> Clique em "Detalhes" nas análises e use o painel de feedback para validar os PIIs detectados.
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
