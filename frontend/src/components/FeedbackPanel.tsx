@@ -1,12 +1,5 @@
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     Select,
     SelectContent,
     SelectItem,
@@ -22,7 +15,7 @@ import {
 } from '@/components/ui/tooltip';
 import { api, type EntityFeedback, type FeedbackRequest } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Check, Edit2, Loader2, MessageSquare, X } from 'lucide-react';
+import { Check, ChevronUp, Edit2, Loader2, MessageSquare, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -57,11 +50,12 @@ export function EntityFeedbackItem({ entity, onFeedback, disabled = false }: Ent
     const [comment, setComment] = useState('');
 
     const handleValidation = (validacao: 'CORRETO' | 'INCORRETO' | 'PARCIAL') => {
-        setSelectedValidation(validacao);
-
         if (validacao === 'PARCIAL') {
-            setShowReclassify(true);
+            setShowReclassify(!showReclassify);
+            setSelectedValidation(validacao);
         } else {
+            setSelectedValidation(validacao);
+            setShowReclassify(false);
             onFeedback({
                 tipo: entity.tipo,
                 valor: entity.valor,
@@ -88,144 +82,121 @@ export function EntityFeedbackItem({ entity, onFeedback, disabled = false }: Ent
 
     return (
         <div className={cn(
-            "flex items-center justify-between gap-2 p-2 rounded-lg border transition-colors",
+            "rounded-lg border transition-colors",
             selectedValidation === 'CORRETO' && "bg-success/10 border-success/30",
             selectedValidation === 'INCORRETO' && "bg-destructive/10 border-destructive/30",
             selectedValidation === 'PARCIAL' && "bg-warning/10 border-warning/30",
             !selectedValidation && "bg-muted/50 border-border"
         )}>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">{entity.tipo}</span>
-                    {entity.confianca !== undefined && (
-                        <span className="text-xs text-muted-foreground">
-                            ({(entity.confianca * 100).toFixed(0)}%)
-                        </span>
-                    )}
+            <div className="flex items-center justify-between gap-2 p-2">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground">{entity.tipo}</span>
+                        {entity.confianca !== undefined && (
+                            <span className="text-xs text-muted-foreground">
+                                ({(entity.confianca * 100).toFixed(0)}%)
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-sm font-mono truncate" title={entity.valor}>
+                        {entity.valor}
+                    </p>
                 </div>
-                <p className="text-sm font-mono truncate" title={entity.valor}>
-                    {entity.valor}
-                </p>
+
+                <TooltipProvider>
+                    <div className="flex items-center gap-1">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant={selectedValidation === 'CORRETO' ? 'default' : 'outline'}
+                                    className={cn(
+                                        "h-8 w-8 p-0",
+                                        selectedValidation === 'CORRETO' && "bg-success hover:bg-success/90"
+                                    )}
+                                    onClick={() => handleValidation('CORRETO')}
+                                    disabled={disabled}
+                                >
+                                    <Check className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Correto - É PII</p>
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant={selectedValidation === 'INCORRETO' ? 'default' : 'outline'}
+                                    className={cn(
+                                        "h-8 w-8 p-0",
+                                        selectedValidation === 'INCORRETO' && "bg-destructive hover:bg-destructive/90"
+                                    )}
+                                    onClick={() => handleValidation('INCORRETO')}
+                                    disabled={disabled}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Incorreto - Falso Positivo</p>
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant={selectedValidation === 'PARCIAL' ? 'default' : 'outline'}
+                                    className={cn(
+                                        "h-8 w-8 p-0",
+                                        selectedValidation === 'PARCIAL' && "bg-warning hover:bg-warning/90"
+                                    )}
+                                    onClick={() => handleValidation('PARCIAL')}
+                                    disabled={disabled}
+                                >
+                                    {showReclassify ? <ChevronUp className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Reclassificar Tipo</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
             </div>
 
-            <TooltipProvider>
-                <div className="flex items-center gap-1">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="sm"
-                                variant={selectedValidation === 'CORRETO' ? 'default' : 'outline'}
-                                className={cn(
-                                    "h-8 w-8 p-0",
-                                    selectedValidation === 'CORRETO' && "bg-success hover:bg-success/90"
-                                )}
-                                onClick={() => handleValidation('CORRETO')}
-                                disabled={disabled}
-                            >
-                                <Check className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Correto - É PII</p>
-                        </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="sm"
-                                variant={selectedValidation === 'INCORRETO' ? 'default' : 'outline'}
-                                className={cn(
-                                    "h-8 w-8 p-0",
-                                    selectedValidation === 'INCORRETO' && "bg-destructive hover:bg-destructive/90"
-                                )}
-                                onClick={() => handleValidation('INCORRETO')}
-                                disabled={disabled}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Incorreto - Falso Positivo</p>
-                        </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                size="sm"
-                                variant={selectedValidation === 'PARCIAL' ? 'default' : 'outline'}
-                                className={cn(
-                                    "h-8 w-8 p-0",
-                                    selectedValidation === 'PARCIAL' && "bg-warning hover:bg-warning/90"
-                                )}
-                                onClick={() => handleValidation('PARCIAL')}
-                                disabled={disabled}
-                            >
-                                <Edit2 className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Reclassificar Tipo</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </div>
-            </TooltipProvider>
-
-            {/* Dialog de Reclassificação */}
-            <Dialog open={showReclassify} onOpenChange={setShowReclassify}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Reclassificar Entidade</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div>
-                            <p className="text-sm text-muted-foreground mb-1">Valor detectado:</p>
-                            <p className="font-mono text-sm bg-muted p-2 rounded">{entity.valor}</p>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-muted-foreground mb-1">Tipo original: <strong>{entity.tipo}</strong></p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Tipo correto:</label>
-                            <Select value={newType} onValueChange={setNewType}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o tipo correto..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {PII_TYPES.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Comentário (opcional):</label>
-                            <Textarea
-                                placeholder="Ex: É nome de rua, não pessoa..."
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                rows={2}
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowReclassify(false)}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleReclassify}>
+            {/* Painel de Reclassificação Inline (sem Dialog para evitar conflito) */}
+            {showReclassify && (
+                <div className="px-2 pb-2 pt-1 border-t border-border/50 space-y-2">
+                    <div className="flex items-center gap-2">
+                        <Select value={newType} onValueChange={setNewType}>
+                            <SelectTrigger className="h-8 text-xs flex-1">
+                                <SelectValue placeholder="Tipo correto..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {PII_TYPES.map((type) => (
+                                    <SelectItem key={type} value={type} className="text-xs">
+                                        {type}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button size="sm" className="h-8 text-xs" onClick={handleReclassify}>
                             Confirmar
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                    <Textarea
+                        placeholder="Comentário opcional..."
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        rows={1}
+                        className="text-xs min-h-[32px]"
+                    />
+                </div>
+            )}
         </div>
     );
 }
