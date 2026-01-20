@@ -174,7 +174,16 @@ def add_feedback(feedback_entry: Dict) -> Dict:
                 data["stats"]["by_type"][tipo]["partial"] += 1
         
         save_feedback(data)
-        return data["stats"]
+        
+        # Calcula accuracy para retorno
+        total = data["stats"]["total_entities_reviewed"]
+        correct = data["stats"]["correct"]
+        accuracy = correct / total if total > 0 else 0
+        
+        return {
+            **data["stats"],
+            "accuracy": round(accuracy, 4)
+        }
 
 
 # === MODELOS PYDANTIC PARA FEEDBACK ===
