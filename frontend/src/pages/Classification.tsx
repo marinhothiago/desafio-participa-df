@@ -654,8 +654,8 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
 
       {/* History Item Details Dialog */}
       <Dialog open={!!selectedHistoryItem} onOpenChange={() => setSelectedHistoryItem(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-3">
               <span>Detalhes da Análise</span>
               {selectedHistoryItem && (
@@ -672,7 +672,7 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
           </DialogHeader>
 
           {selectedHistoryItem && (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">ID do Pedido</h4>
                 <p className="text-sm font-mono text-foreground bg-primary/10 px-3 py-2 rounded-lg inline-block">

@@ -1,17 +1,14 @@
-import { useState } from 'react';
-import { FileText, AlertTriangle, CheckCircle, Clock, Eye, ShieldX, AlertCircle, Sparkles, Target, TrendingUp, BarChart3, Zap, Info, Percent, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { KPICard } from '@/components/KPICard';
-import { DistributionChart } from '@/components/DistributionChart';
-import { RiskThermometer } from '@/components/RiskThermometer';
-import { RiskDistributionChart } from '@/components/RiskDistributionChart';
-import { PIITypesChart } from '@/components/PIITypesChart';
 import { ConfidenceBar, normalizeConfidence } from '@/components/ConfidenceBar';
-import { ResultsLegend } from '@/components/ResultsLegend';
+import { DistributionChart } from '@/components/DistributionChart';
+import { ExpandableText } from '@/components/ExpandableText';
 import { ExportButton } from '@/components/ExportButton';
 import { IdentifierList } from '@/components/IdentifierBadge';
-import { useAnalysis, getRiskBgClass, getRiskLabel } from '@/contexts/AnalysisContext';
-import { cn } from '@/lib/utils';
+import { KPICard } from '@/components/KPICard';
+import { PIITypesChart } from '@/components/PIITypesChart';
+import { ResultsLegend } from '@/components/ResultsLegend';
+import { RiskDistributionChart } from '@/components/RiskDistributionChart';
+import { RiskThermometer } from '@/components/RiskThermometer';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +21,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getRiskBgClass, getRiskLabel, useAnalysis } from '@/contexts/AnalysisContext';
+import { cn } from '@/lib/utils';
+import { AlertCircle, AlertTriangle, BarChart3, CheckCircle, ChevronLeft, ChevronRight, Clock, Eye, FileText, Info, Percent, Shield, ShieldX, Target, TrendingUp, Zap } from 'lucide-react';
+import { useState } from 'react';
 
 function MetricTooltip({ children, content }: { children: React.ReactNode; content: string }) {
   return (
@@ -46,7 +47,7 @@ function MetricTooltip({ children, content }: { children: React.ReactNode; conte
 export function Dashboard() {
   const { history, metrics, counters, clearHistory } = useAnalysis();
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<typeof history[0] | null>(null);
-  
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -80,41 +81,41 @@ export function Dashboard() {
           <Zap className="w-5 h-5 text-warning" />
           <span className="text-sm font-semibold text-foreground">Benchmarks de Performance do Motor Híbrido Ensemble de Alta Recall (BERT NER + spaCy + Regex + Validação DV)</span>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
-              <div className="flex items-center justify-center gap-1 text-success mb-1">
-                <Target className="w-4 h-4" />
-                <MetricTooltip content="Estratégia Ensemble OR: qualquer detector positivo classifica como PII, maximizando recall para conformidade LGPD/LAI.">
-                  <span className="text-xs font-medium">Precisão Global</span>
-                </MetricTooltip>
-              </div>
-              <p className="text-2xl font-bold text-success">94%</p>
+          <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
+            <div className="flex items-center justify-center gap-1 text-success mb-1">
+              <Target className="w-4 h-4" />
+              <MetricTooltip content="Estratégia Ensemble OR: qualquer detector positivo classifica como PII, maximizando recall para conformidade LGPD/LAI.">
+                <span className="text-xs font-medium">Precisão Global</span>
+              </MetricTooltip>
             </div>
-            
-            <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
-              <div className="flex items-center justify-center gap-1 text-success mb-1">
-                <TrendingUp className="w-4 h-4" />
-                <MetricTooltip content="22 tipos de PII detectados: CPF, CNPJ, RG, CNH, PIS, CNS, Email, Telefone, Endereço, Nome e mais.">
-                  <span className="text-xs font-medium">Sensibilidade</span>
-                </MetricTooltip>
-              </div>
-              <p className="text-2xl font-bold text-success">98%</p>
-            </div>
-            
-            <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
-              <div className="flex items-center justify-center gap-1 text-success mb-1">
-                <BarChart3 className="w-4 h-4" />
-                <MetricTooltip content="100+ casos de teste validados incluindo edge cases de Brasília/GDF e imunidade funcional (LAI).">
-                  <span className="text-xs font-medium">F1-Score Combinado</span>
-                </MetricTooltip>
-              </div>
-              <p className="text-2xl font-bold text-success">96%</p>
-            </div>
+            <p className="text-2xl font-bold text-success">94%</p>
           </div>
-          
-          <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-            <strong className="text-foreground">Arquitetura do Motor:</strong> Pipeline de 4 camadas em <span className="text-primary font-medium">estratégia Ensemble OR</span> — (1) <span className="text-warning font-medium">Regex com Validação DV</span> (Módulo 11 para CPF, CNPJ, PIS, CNS), (2) <span className="text-primary font-medium">BERT NER Multilíngue</span> (Davlan/bert-base-multilingual-cased-ner-hrl) como detector primário de nomes, (3) <span className="text-success font-medium">spaCy pt_core_news_lg</span> como NER complementar (captura nomes não detectados pelo BERT), e (4) <span className="text-muted-foreground font-medium">Regras de Negócio</span> (imunidade funcional, contexto GDF). Qualquer camada positiva classifica como PII, garantindo máximo recall para conformidade LGPD/LAI.
+
+          <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
+            <div className="flex items-center justify-center gap-1 text-success mb-1">
+              <TrendingUp className="w-4 h-4" />
+              <MetricTooltip content="22 tipos de PII detectados: CPF, CNPJ, RG, CNH, PIS, CNS, Email, Telefone, Endereço, Nome e mais.">
+                <span className="text-xs font-medium">Sensibilidade</span>
+              </MetricTooltip>
+            </div>
+            <p className="text-2xl font-bold text-success">98%</p>
+          </div>
+
+          <div className="text-center p-3 bg-card/50 rounded-lg border border-success/20">
+            <div className="flex items-center justify-center gap-1 text-success mb-1">
+              <BarChart3 className="w-4 h-4" />
+              <MetricTooltip content="100+ casos de teste validados incluindo edge cases de Brasília/GDF e imunidade funcional (LAI).">
+                <span className="text-xs font-medium">F1-Score Combinado</span>
+              </MetricTooltip>
+            </div>
+            <p className="text-2xl font-bold text-success">96%</p>
+          </div>
+        </div>
+
+        <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+          <strong className="text-foreground">Arquitetura do Motor:</strong> Pipeline de 4 camadas em <span className="text-primary font-medium">estratégia Ensemble OR</span> — (1) <span className="text-warning font-medium">Regex com Validação DV</span> (Módulo 11 para CPF, CNPJ, PIS, CNS), (2) <span className="text-primary font-medium">BERT NER Multilíngue</span> (Davlan/bert-base-multilingual-cased-ner-hrl) como detector primário de nomes, (3) <span className="text-success font-medium">spaCy pt_core_news_lg</span> como NER complementar (captura nomes não detectados pelo BERT), e (4) <span className="text-muted-foreground font-medium">Regras de Negócio</span> (imunidade funcional, contexto GDF). Qualquer camada positiva classifica como PII, garantindo máximo recall para conformidade LGPD/LAI.
         </div>
       </div>
 
@@ -173,9 +174,9 @@ export function Dashboard() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[300px]">
-              <RiskThermometer 
-                distribution={metrics.riskDistribution} 
-                total={metrics.totalProcessed} 
+              <RiskThermometer
+                distribution={metrics.riskDistribution}
+                total={metrics.totalProcessed}
               />
             </div>
             <div className="min-h-[300px]">
@@ -214,7 +215,7 @@ export function Dashboard() {
             )}
           </div>
         </div>
-        
+
         {history.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -250,8 +251,8 @@ export function Dashboard() {
                       <td className="py-3 px-3">
                         <span className={cn(
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                          item.type === 'individual' 
-                            ? 'bg-primary/10 text-primary' 
+                          item.type === 'individual'
+                            ? 'bg-primary/10 text-primary'
                             : 'bg-muted text-muted-foreground'
                         )}>
                           {item.type === 'individual' ? 'Individual' : 'Lote'}
@@ -260,8 +261,8 @@ export function Dashboard() {
                       <td className="py-3 px-3">
                         <span className={cn(
                           'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                          item.classification === 'PÚBLICO' 
-                            ? 'bg-green-600/10 text-green-600' 
+                          item.classification === 'PÚBLICO'
+                            ? 'bg-green-600/10 text-green-600'
                             : 'bg-red-600/10 text-red-600'
                         )}>
                           {item.classification === 'PÚBLICO' ? (
@@ -281,8 +282,8 @@ export function Dashboard() {
                         {(() => {
                           const normalizedProb = normalizeConfidence(item.probability, item.classification);
                           return (
-                            <ConfidenceBar 
-                              value={normalizedProb} 
+                            <ConfidenceBar
+                              value={normalizedProb}
                               classification={item.classification}
                             />
                           );
@@ -390,15 +391,15 @@ export function Dashboard() {
 
       {/* History Item Details Dialog */}
       <Dialog open={!!selectedHistoryItem} onOpenChange={() => setSelectedHistoryItem(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-3">
               <span>Detalhes da Análise</span>
               {selectedHistoryItem && (
                 <span className={cn(
                   'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                  selectedHistoryItem.classification === 'PÚBLICO' 
-                    ? 'bg-green-600/10 text-green-600' 
+                  selectedHistoryItem.classification === 'PÚBLICO'
+                    ? 'bg-green-600/10 text-green-600'
                     : 'bg-red-600/10 text-red-600'
                 )}>
                   {selectedHistoryItem.classification}
@@ -406,9 +407,9 @@ export function Dashboard() {
               )}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedHistoryItem && (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">ID do Pedido</h4>
                 <p className="text-sm font-mono text-foreground bg-primary/10 px-3 py-2 rounded-lg inline-block">
@@ -418,9 +419,10 @@ export function Dashboard() {
 
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Texto Analisado</h4>
-                <p className="text-sm text-foreground bg-muted/50 p-3 rounded-lg">
-                  {selectedHistoryItem.text}
-                </p>
+                <ExpandableText
+                  text={selectedHistoryItem.text}
+                  maxLines={3}
+                />
               </div>
 
               <div>
@@ -444,8 +446,8 @@ export function Dashboard() {
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">
                     Dados Pessoais Identificados ({selectedHistoryItem.details.length})
                   </h4>
-                  <IdentifierList 
-                    identificadores={selectedHistoryItem.details} 
+                  <IdentifierList
+                    identificadores={selectedHistoryItem.details}
                     showConfidence={true}
                     size="md"
                   />
