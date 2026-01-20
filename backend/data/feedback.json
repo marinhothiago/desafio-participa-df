@@ -1,0 +1,12 @@
+{
+    "feedbacks": [],
+    "stats": {
+        "total_feedbacks": 0,
+        "total_entities_reviewed": 0,
+        "correct": 0,
+        "incorrect": 0,
+        "partial": 0,
+        "by_type": {}
+    },
+    "last_updated": null
+}

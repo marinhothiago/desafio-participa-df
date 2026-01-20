@@ -49,9 +49,12 @@ try:
 except ImportError:
     pass
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import uuid
 
 # Imports com fallback para HF Spaces (sem prefixo 'backend.')
 try:
@@ -69,7 +72,9 @@ import shutil
 
 # === SISTEMA DE CONTADORES GLOBAIS ===
 STATS_FILE = os.path.join(backend_dir, "data", "stats.json")
+FEEDBACK_FILE = os.path.join(backend_dir, "data", "feedback.json")
 stats_lock = threading.Lock()
+feedback_lock = threading.Lock()
 
 def load_stats() -> Dict:
     """Carrega estatísticas do arquivo JSON."""
@@ -98,6 +103,98 @@ def increment_stat(key: str, amount: int = 1) -> Dict:
         stats[key] = stats.get(key, 0) + amount
         save_stats(stats)
         return stats
+
+
+# === SISTEMA DE FEEDBACK HUMANO ===
+def load_feedback() -> Dict:
+    """Carrega feedbacks do arquivo JSON."""
+    try:
+        if os.path.exists(FEEDBACK_FILE):
+            with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Erro ao carregar feedback: {e}")
+    return {
+        "feedbacks": [],
+        "stats": {
+            "total_feedbacks": 0,
+            "total_entities_reviewed": 0,
+            "correct": 0,
+            "incorrect": 0,
+            "partial": 0,
+            "by_type": {}
+        },
+        "last_updated": None
+    }
+
+
+def save_feedback(data: Dict) -> None:
+    """Salva feedbacks no arquivo JSON com lock para concorrência."""
+    try:
+        data["last_updated"] = datetime.now().isoformat()
+        os.makedirs(os.path.dirname(FEEDBACK_FILE), exist_ok=True)
+        with open(FEEDBACK_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Erro ao salvar feedback: {e}")
+
+
+def add_feedback(feedback_entry: Dict) -> Dict:
+    """Adiciona um feedback e atualiza estatísticas."""
+    with feedback_lock:
+        data = load_feedback()
+        
+        # Adiciona o feedback
+        data["feedbacks"].append(feedback_entry)
+        data["stats"]["total_feedbacks"] += 1
+        
+        # Atualiza estatísticas por entidade
+        for entity_fb in feedback_entry.get("entity_feedbacks", []):
+            data["stats"]["total_entities_reviewed"] += 1
+            validacao = entity_fb.get("validacao_humana", "").upper()
+            
+            if validacao == "CORRETO":
+                data["stats"]["correct"] += 1
+            elif validacao == "INCORRETO":
+                data["stats"]["incorrect"] += 1
+            elif validacao == "PARCIAL":
+                data["stats"]["partial"] += 1
+            
+            # Estatísticas por tipo de entidade
+            tipo = entity_fb.get("tipo", "UNKNOWN")
+            if tipo not in data["stats"]["by_type"]:
+                data["stats"]["by_type"][tipo] = {"correct": 0, "incorrect": 0, "partial": 0, "total": 0}
+            
+            data["stats"]["by_type"][tipo]["total"] += 1
+            if validacao == "CORRETO":
+                data["stats"]["by_type"][tipo]["correct"] += 1
+            elif validacao == "INCORRETO":
+                data["stats"]["by_type"][tipo]["incorrect"] += 1
+            elif validacao == "PARCIAL":
+                data["stats"]["by_type"][tipo]["partial"] += 1
+        
+        save_feedback(data)
+        return data["stats"]
+
+
+# === MODELOS PYDANTIC PARA FEEDBACK ===
+class EntityFeedback(BaseModel):
+    tipo: str
+    valor: str
+    confianca_modelo: float
+    fonte: Optional[str] = "unknown"
+    validacao_humana: str  # CORRETO | INCORRETO | PARCIAL
+    tipo_corrigido: Optional[str] = None
+    comentario: Optional[str] = None
+
+
+class FeedbackRequest(BaseModel):
+    analysis_id: Optional[str] = None
+    original_text: str
+    entity_feedbacks: List[EntityFeedback]
+    classificacao_modelo: str
+    classificacao_corrigida: Optional[str] = None
+    revisor: Optional[str] = "anonymous"
 
 # Inicializa aplicação FastAPI
 app = FastAPI(
@@ -216,6 +313,105 @@ async def register_visit() -> Dict:
         Dict com estatísticas atualizadas
     """
     return increment_stat("site_visits")
+
+
+# === ENDPOINTS DE FEEDBACK HUMANO ===
+@app.post("/feedback")
+async def submit_feedback(feedback: FeedbackRequest) -> Dict:
+    """Submete validação humana de uma análise de PII.
+    
+    Permite que revisores validem se as entidades detectadas são realmente PII.
+    
+    Args:
+        feedback: Objeto com validações das entidades detectadas
+        
+    Returns:
+        Dict com:
+            - feedback_id: ID único do feedback
+            - stats: Estatísticas atualizadas de acurácia
+    """
+    feedback_entry = {
+        "feedback_id": str(uuid.uuid4()),
+        "analysis_id": feedback.analysis_id,
+        "timestamp": datetime.now().isoformat(),
+        "original_text": feedback.original_text[:500],  # Limita tamanho
+        "entity_feedbacks": [ef.dict() for ef in feedback.entity_feedbacks],
+        "classificacao_modelo": feedback.classificacao_modelo,
+        "classificacao_corrigida": feedback.classificacao_corrigida,
+        "revisor": feedback.revisor
+    }
+    
+    stats = add_feedback(feedback_entry)
+    
+    return {
+        "feedback_id": feedback_entry["feedback_id"],
+        "message": "Feedback registrado com sucesso",
+        "stats": stats
+    }
+
+
+@app.get("/feedback/stats")
+async def get_feedback_stats() -> Dict:
+    """Retorna estatísticas de acurácia baseadas no feedback humano.
+    
+    Returns:
+        Dict com:
+            - total_feedbacks: Total de análises revisadas
+            - total_entities_reviewed: Total de entidades validadas
+            - accuracy: Taxa de acertos do modelo (correct / total)
+            - false_positive_rate: Taxa de falsos positivos
+            - by_type: Estatísticas por tipo de entidade
+    """
+    data = load_feedback()
+    stats = data.get("stats", {})
+    
+    total = stats.get("total_entities_reviewed", 0)
+    correct = stats.get("correct", 0)
+    incorrect = stats.get("incorrect", 0)
+    
+    # Calcula métricas
+    accuracy = correct / total if total > 0 else 0
+    false_positive_rate = incorrect / total if total > 0 else 0
+    
+    # Calcula acurácia por tipo
+    by_type_with_accuracy = {}
+    for tipo, tipo_stats in stats.get("by_type", {}).items():
+        tipo_total = tipo_stats.get("total", 0)
+        tipo_correct = tipo_stats.get("correct", 0)
+        tipo_incorrect = tipo_stats.get("incorrect", 0)
+        by_type_with_accuracy[tipo] = {
+            **tipo_stats,
+            "accuracy": tipo_correct / tipo_total if tipo_total > 0 else 0,
+            "false_positive_rate": tipo_incorrect / tipo_total if tipo_total > 0 else 0
+        }
+    
+    return {
+        "total_feedbacks": stats.get("total_feedbacks", 0),
+        "total_entities_reviewed": total,
+        "correct": correct,
+        "incorrect": incorrect,
+        "partial": stats.get("partial", 0),
+        "accuracy": round(accuracy, 4),
+        "false_positive_rate": round(false_positive_rate, 4),
+        "by_type": by_type_with_accuracy,
+        "last_updated": data.get("last_updated")
+    }
+
+
+@app.get("/feedback/export")
+async def export_feedback() -> Dict:
+    """Exporta todos os feedbacks para dataset de treinamento.
+    
+    Returns:
+        Dict com lista completa de feedbacks e estatísticas
+    """
+    data = load_feedback()
+    return {
+        "total_records": len(data.get("feedbacks", [])),
+        "feedbacks": data.get("feedbacks", []),
+        "stats": data.get("stats", {}),
+        "exported_at": datetime.now().isoformat()
+    }
 
 
 @app.get("/health")

@@ -707,6 +707,23 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
                 </div>
               )}
 
+              {/* Painel de Feedback Humano */}
+              {selectedHistoryItem.details.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <FeedbackPanel
+                    analysisId={selectedHistoryItem.pedidoId}
+                    originalText={selectedHistoryItem.text}
+                    entities={selectedHistoryItem.details.map(d => ({
+                      tipo: d.tipo,
+                      valor: d.valor,
+                      confianca: (d as { confianca?: number }).confianca,
+                    }))}
+                    classificacao={selectedHistoryItem.classification}
+                    onFeedbackSubmitted={() => { }}
+                  />
+                </div>
+              )}
+
               <div className="text-xs text-muted-foreground pt-2 border-t border-border">
                 Analisado em: {selectedHistoryItem.date} às {selectedHistoryItem.time}
               </div>

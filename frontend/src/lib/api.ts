@@ -394,6 +394,137 @@ class ApiClient {
       console.error('Erro ao registrar visita:', error);
     }
   }
+
+  // === SISTEMA DE FEEDBACK HUMANO ===
+
+  async submitFeedback(feedback: FeedbackRequest): Promise<FeedbackResponse> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+      const response = await fetch(`${API_BASE_URL}/feedback`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new ApiError('Erro ao enviar feedback', 'NETWORK_ERROR');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao enviar feedback:', error);
+      throw error;
+    }
+  }
+
+  async getFeedbackStats(): Promise<FeedbackStats> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${API_BASE_URL}/feedback/stats`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Erro ao buscar feedback stats:', error);
+    }
+    return {
+      total_feedbacks: 0,
+      total_entities_reviewed: 0,
+      correct: 0,
+      incorrect: 0,
+      partial: 0,
+      accuracy: 0,
+      false_positive_rate: 0,
+      by_type: {},
+      last_updated: null,
+    };
+  }
+
+  async exportFeedback(): Promise<FeedbackExport> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`${API_BASE_URL}/feedback/export`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Erro ao exportar feedback:', error);
+    }
+    return { total_records: 0, feedbacks: [], stats: {}, exported_at: '' };
+  }
+}
+
+// === TIPOS DE FEEDBACK ===
+export interface EntityFeedback {
+  tipo: string;
+  valor: string;
+  confianca_modelo: number;
+  fonte?: string;
+  validacao_humana: 'CORRETO' | 'INCORRETO' | 'PARCIAL';
+  tipo_corrigido?: string;
+  comentario?: string;
+}
+
+export interface FeedbackRequest {
+  analysis_id?: string;
+  original_text: string;
+  entity_feedbacks: EntityFeedback[];
+  classificacao_modelo: string;
+  classificacao_corrigida?: string;
+  revisor?: string;
+}
+
+export interface FeedbackResponse {
+  feedback_id: string;
+  message: string;
+  stats: FeedbackStats;
+}
+
+export interface FeedbackStats {
+  total_feedbacks: number;
+  total_entities_reviewed: number;
+  correct: number;
+  incorrect: number;
+  partial: number;
+  accuracy: number;
+  false_positive_rate: number;
+  by_type: Record<string, {
+    correct: number;
+    incorrect: number;
+    partial: number;
+    total: number;
+    accuracy: number;
+    false_positive_rate: number;
+  }>;
+  last_updated: string | null;
+}
+
+export interface FeedbackExport {
+  total_records: number;
+  feedbacks: unknown[];
+  stats: Record<string, unknown>;
+  exported_at: string;
 }
 
 export const api = new ApiClient();
