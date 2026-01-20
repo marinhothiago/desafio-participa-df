@@ -295,6 +295,188 @@ class PIIDetector:
         self._pendentes_llm = rejeitados_para_llm
         return confirmados
 
+    def _deduplicate_findings(self, findings: List[Dict]) -> List[Dict]:
+        """
+        Deduplicação avançada de entidades detectadas.
+        
+        Remove:
+        1. Duplicatas exatas (mesmo valor)
+        2. Substrings (ex: "Ruth Helena" contido em "Ruth Helena Franco")
+        3. Fragmentos de telefone/documento
+        4. Valores com palavras-chave erradas (ex: "Ruth Helena Franco CPF")
+        
+        Mantém sempre o valor mais completo/longo com maior peso.
+        """
+        if not findings:
+            return []
+        
+        # Primeiro passo: agrupar por tipo similar
+        grupos_tipo = {}
+        for f in findings:
+            tipo = f.get('tipo', 'UNKNOWN')
+            # Normaliza tipos de NOME
+            tipo_base = 'NOME' if 'NOME' in tipo else tipo
+            if tipo_base not in grupos_tipo:
+                grupos_tipo[tipo_base] = []
+            grupos_tipo[tipo_base].append(f)
+        
+        resultado_final = []
+        
+        for tipo_base, grupo in grupos_tipo.items():
+            if tipo_base == 'NOME':
+                # Deduplicação especial para nomes - remover substrings
+                deduplicados = self._deduplicate_names(grupo)
+            elif tipo_base in ('TELEFONE', 'CELULAR'):
+                # Deduplicação especial para telefones - remover fragmentos
+                deduplicados = self._deduplicate_phones(grupo)
+            else:
+                # Deduplicação padrão por valor exato
+                deduplicados = self._deduplicate_exact(grupo)
+            
+            resultado_final.extend(deduplicados)
+        
+        return resultado_final
+    
+    def _deduplicate_names(self, findings: List[Dict]) -> List[Dict]:
+        """
+        Deduplicação de nomes - remove substrings e valores com erros.
+        
+        Exemplos de remoção:
+        - "Ruth Helena" se existe "Ruth Helena Franco" (substring)
+        - "Ruth Helena Franco CPF" (contém palavra-chave errada)
+        - "Júlio Cesar Alves da" se existe "Júlio Cesar Alves da Rosa" (incompleto)
+        """
+        if not findings:
+            return []
+        
+        # Palavras que não devem aparecer em nomes
+        PALAVRAS_INVALIDAS = {
+            'cpf', 'cnpj', 'rg', 'tel', 'telefone', 'celular', 'email', 'e-mail',
+            'endereço', 'endereco', 'cep', 'processo', 'sei', 'observação', 'observacao',
+            'dados', 'meus', 'atenciosamente', 'att', 'obrigado', 'obrigada'
+        }
+        
+        # Limpa nomes com palavras inválidas e normaliza
+        cleaned = []
+        for f in findings:
+            valor = f.get('valor', '').strip()
+            valor_lower = valor.lower()
+            
+            # Rejeita se contém palavras inválidas
+            if any(palavra in valor_lower for palavra in PALAVRAS_INVALIDAS):
+                logger.debug(f"[DEDUP] Nome rejeitado por palavra inválida: {valor}")
+                continue
+            
+            # Rejeita se muito curto (menos de 2 palavras)
+            palavras = [p for p in valor.split() if len(p) > 1]
+            if len(palavras) < 2:
+                logger.debug(f"[DEDUP] Nome rejeitado por ser muito curto: {valor}")
+                continue
+            
+            cleaned.append(f)
+        
+        if not cleaned:
+            return []
+        
+        # Ordena por tamanho do valor (maior primeiro) e peso
+        sorted_findings = sorted(
+            cleaned,
+            key=lambda x: (len(x.get('valor', '')), x.get('peso', 0)),
+            reverse=True
+        )
+        
+        # Remove substrings - mantém apenas os mais longos
+        resultado = []
+        valores_aceitos = []  # Lista de valores já aceitos (normalizados)
+        
+        for f in sorted_findings:
+            valor = f.get('valor', '').strip()
+            valor_norm = ' '.join(valor.lower().split())  # Normaliza espaços
+            
+            # Verifica se é substring de algum valor já aceito
+            is_substring = False
+            for aceito in valores_aceitos:
+                if valor_norm in aceito or aceito in valor_norm:
+                    # Se o atual é maior, substitui
+                    if len(valor_norm) > len(aceito):
+                        # Remove o menor e adiciona o maior
+                        valores_aceitos.remove(aceito)
+                        valores_aceitos.append(valor_norm)
+                        # Atualiza resultado
+                        resultado = [r for r in resultado if ' '.join(r.get('valor', '').lower().split()) != aceito]
+                        resultado.append(f)
+                    is_substring = True
+                    break
+            
+            if not is_substring:
+                valores_aceitos.append(valor_norm)
+                resultado.append(f)
+        
+        logger.debug(f"[DEDUP] Nomes: {len(findings)} -> {len(resultado)}")
+        return resultado
+    
+    def _deduplicate_phones(self, findings: List[Dict]) -> List[Dict]:
+        """
+        Deduplicação de telefones - remove fragmentos.
+        
+        Exemplos:
+        - "(54)99199-1000" é mantido
+        - "54", "99199" são removidos se são fragmentos do número completo
+        """
+        if not findings:
+            return []
+        
+        # Extrai apenas dígitos para comparação
+        def digits_only(valor: str) -> str:
+            return ''.join(c for c in valor if c.isdigit())
+        
+        # Ordena por quantidade de dígitos (mais dígitos = mais completo)
+        sorted_findings = sorted(
+            findings,
+            key=lambda x: (len(digits_only(x.get('valor', ''))), x.get('peso', 0)),
+            reverse=True
+        )
+        
+        resultado = []
+        digitos_aceitos = []
+        
+        for f in sorted_findings:
+            valor = f.get('valor', '')
+            digitos = digits_only(valor)
+            
+            # Ignora se muito curto (menos de 4 dígitos)
+            if len(digitos) < 4:
+                logger.debug(f"[DEDUP] Telefone rejeitado por ser muito curto: {valor}")
+                continue
+            
+            # Verifica se é fragmento de algum número já aceito
+            is_fragment = False
+            for aceito in digitos_aceitos:
+                if digitos in aceito:
+                    is_fragment = True
+                    break
+            
+            if not is_fragment:
+                digitos_aceitos.append(digitos)
+                resultado.append(f)
+        
+        logger.debug(f"[DEDUP] Telefones: {len(findings)} -> {len(resultado)}")
+        return resultado
+    
+    def _deduplicate_exact(self, findings: List[Dict]) -> List[Dict]:
+        """Deduplicação por valor exato - mantém o de maior peso."""
+        if not findings:
+            return []
+        
+        por_valor = {}
+        for f in findings:
+            key = f.get('valor', '').lower().strip()
+            peso = f.get('peso', 0)
+            if key and (key not in por_valor or peso > por_valor[key].get('peso', 0)):
+                por_valor[key] = f
+        
+        return list(por_valor.values())
+
     def __init__(
         self,
         usar_gpu: bool = True,
@@ -528,11 +710,14 @@ class PIIDetector:
             ),
             
             'CELULAR': (
-                r'(?<!\d)(?:0?(\d{2})[\s\-\)]*9[\s\-]?\d{4}[\s\-]?\d{4})(?!\d)',
+                # Captura celulares com ou sem DDD, com ou sem parênteses
+                # Exemplos: (54)99199-1000, 54 99199-1000, 99199-1000, (11) 91234-5678
+                r'(?<!\d)\(?(\d{2})\)?[\s\-]?9\d{4}[\s\-]?\d{4}(?!\d)',
                 re.IGNORECASE
             ),
             
             'TELEFONE_CURTO': (
+                # Captura telefone sem DDD - só usar se não houver match maior
                 r'(?<!\d)(9?\d{4})-(\d{4})(?!\d)',
                 re.IGNORECASE
             ),
@@ -1006,7 +1191,13 @@ class PIIDetector:
                         valor = match.group()
                     inicio, fim = match.start(), match.end()
                 else:
-                    valor = match.group(1) if match.lastindex else match.group()
+                    # Para telefones, usar match completo ao invés do grupo capturado
+                    # Isso evita pegar só o DDD ao invés do número completo
+                    if tipo in ['CELULAR', 'TELEFONE_FIXO', 'TELEFONE_DDI', 'TELEFONE_DDD_ESPACO', 
+                                'TELEFONE_LOCAL', 'TELEFONE_INTERNACIONAL', 'TELEFONE_CURTO']:
+                        valor = match.group()
+                    else:
+                        valor = match.group(1) if match.lastindex else match.group()
                     inicio, fim = match.start(), match.end()
 
                 # --- PATCH: INSCRICAO_IMOVEL ---
@@ -1817,14 +2008,8 @@ class PIIDetector:
             # Sem LLM disponível: incluir tudo para evitar FN
             all_findings.extend(self._pendentes_llm)
 
-        # === DEDUPLICAÇÃO ===
-        final_dict = {}
-        for finding in all_findings:
-            key = finding.get('valor', '').lower().strip()
-            peso = finding.get('peso', 0)
-            if key and (key not in final_dict or peso > final_dict[key].get('peso', 0)):
-                final_dict[key] = finding
-        final_list = list(final_dict.values())
+        # === DEDUPLICAÇÃO AVANÇADA ===
+        final_list = self._deduplicate_findings(all_findings)
 
         # === FILTRAGEM POR THRESHOLD (permissiva) ===
         pii_relevantes = []
