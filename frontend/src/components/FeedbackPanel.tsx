@@ -1,21 +1,7 @@
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { api, type EntityFeedback, type FeedbackRequest } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Check, ChevronUp, Edit2, Loader2, MessageSquare, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Loader2, MessageSquare, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -83,9 +69,9 @@ export function EntityFeedbackItem({ entity, onFeedback, disabled = false }: Ent
     return (
         <div className={cn(
             "rounded-lg border transition-colors",
-            selectedValidation === 'CORRETO' && "bg-success/10 border-success/30",
-            selectedValidation === 'INCORRETO' && "bg-destructive/10 border-destructive/30",
-            selectedValidation === 'PARCIAL' && "bg-warning/10 border-warning/30",
+            selectedValidation === 'CORRETO' && "bg-green-500/10 border-green-500/30",
+            selectedValidation === 'INCORRETO' && "bg-red-500/10 border-red-500/30",
+            selectedValidation === 'PARCIAL' && "bg-yellow-500/10 border-yellow-500/30",
             !selectedValidation && "bg-muted/50 border-border"
         )}>
             <div className="flex items-center justify-between gap-2 p-2">
@@ -103,97 +89,81 @@ export function EntityFeedbackItem({ entity, onFeedback, disabled = false }: Ent
                     </p>
                 </div>
 
-                <TooltipProvider>
-                    <div className="flex items-center gap-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    size="sm"
-                                    variant={selectedValidation === 'CORRETO' ? 'default' : 'outline'}
-                                    className={cn(
-                                        "h-8 w-8 p-0",
-                                        selectedValidation === 'CORRETO' && "bg-success hover:bg-success/90"
-                                    )}
-                                    onClick={() => handleValidation('CORRETO')}
-                                    disabled={disabled}
-                                >
-                                    <Check className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Correto - É PII</p>
-                            </TooltipContent>
-                        </Tooltip>
+                {/* Botões simples sem Tooltip */}
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        title="Correto - É PII"
+                        className={cn(
+                            "h-8 w-8 rounded-md border flex items-center justify-center transition-colors",
+                            selectedValidation === 'CORRETO'
+                                ? "bg-green-600 text-white border-green-600"
+                                : "bg-background border-input hover:bg-accent"
+                        )}
+                        onClick={() => handleValidation('CORRETO')}
+                        disabled={disabled}
+                    >
+                        <Check className="h-4 w-4" />
+                    </button>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    size="sm"
-                                    variant={selectedValidation === 'INCORRETO' ? 'default' : 'outline'}
-                                    className={cn(
-                                        "h-8 w-8 p-0",
-                                        selectedValidation === 'INCORRETO' && "bg-destructive hover:bg-destructive/90"
-                                    )}
-                                    onClick={() => handleValidation('INCORRETO')}
-                                    disabled={disabled}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Incorreto - Falso Positivo</p>
-                            </TooltipContent>
-                        </Tooltip>
+                    <button
+                        type="button"
+                        title="Incorreto - Falso Positivo"
+                        className={cn(
+                            "h-8 w-8 rounded-md border flex items-center justify-center transition-colors",
+                            selectedValidation === 'INCORRETO'
+                                ? "bg-red-600 text-white border-red-600"
+                                : "bg-background border-input hover:bg-accent"
+                        )}
+                        onClick={() => handleValidation('INCORRETO')}
+                        disabled={disabled}
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    size="sm"
-                                    variant={selectedValidation === 'PARCIAL' ? 'default' : 'outline'}
-                                    className={cn(
-                                        "h-8 w-8 p-0",
-                                        selectedValidation === 'PARCIAL' && "bg-warning hover:bg-warning/90"
-                                    )}
-                                    onClick={() => handleValidation('PARCIAL')}
-                                    disabled={disabled}
-                                >
-                                    {showReclassify ? <ChevronUp className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Reclassificar Tipo</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                </TooltipProvider>
+                    <button
+                        type="button"
+                        title="Reclassificar Tipo"
+                        className={cn(
+                            "h-8 w-8 rounded-md border flex items-center justify-center transition-colors",
+                            selectedValidation === 'PARCIAL'
+                                ? "bg-yellow-600 text-white border-yellow-600"
+                                : "bg-background border-input hover:bg-accent"
+                        )}
+                        onClick={() => handleValidation('PARCIAL')}
+                        disabled={disabled}
+                    >
+                        {showReclassify ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                </div>
             </div>
 
-            {/* Painel de Reclassificação Inline (sem Dialog para evitar conflito) */}
+            {/* Painel de Reclassificação com elementos nativos */}
             {showReclassify && (
                 <div className="px-2 pb-2 pt-1 border-t border-border/50 space-y-2">
                     <div className="flex items-center gap-2">
-                        <Select value={newType} onValueChange={setNewType}>
-                            <SelectTrigger className="h-8 text-xs flex-1">
-                                <SelectValue placeholder="Tipo correto..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {PII_TYPES.map((type) => (
-                                    <SelectItem key={type} value={type} className="text-xs">
-                                        {type}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <select
+                            value={newType}
+                            onChange={(e) => setNewType(e.target.value)}
+                            className="h-8 text-xs flex-1 rounded-md border border-input bg-background px-2"
+                        >
+                            <option value="">Selecione o tipo correto...</option>
+                            {PII_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                    {type}
+                                </option>
+                            ))}
+                        </select>
                         <Button size="sm" className="h-8 text-xs" onClick={handleReclassify}>
-                            Confirmar
+                            OK
                         </Button>
                     </div>
-                    <Textarea
+                    <input
+                        type="text"
                         placeholder="Comentário opcional..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        rows={1}
-                        className="text-xs min-h-[32px]"
+                        className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
                     />
                 </div>
             )}
@@ -228,7 +198,6 @@ export function FeedbackPanel({
 
     const handleEntityFeedback = (feedback: EntityFeedback) => {
         setEntityFeedbacks(prev => {
-            // Remove feedback anterior para mesma entidade
             const filtered = prev.filter(f => f.valor !== feedback.valor);
             return [...filtered, feedback];
         });
@@ -252,7 +221,7 @@ export function FeedbackPanel({
 
             const response = await api.submitFeedback(feedbackRequest);
 
-            toast.success(`Feedback enviado! Acurácia atual: ${(response.stats.accuracy * 100).toFixed(1)}%`);
+            toast.success(`Feedback enviado! Acurácia: ${(response.stats.accuracy * 100).toFixed(1)}%`);
             setSubmitted(true);
             onFeedbackSubmitted?.();
         } catch (error) {
@@ -263,14 +232,13 @@ export function FeedbackPanel({
         }
     };
 
-    const allValidated = entityFeedbacks.length === entities.length;
     const validatedCount = entityFeedbacks.length;
 
     if (submitted) {
         return (
-            <div className="bg-success/10 border border-success/30 rounded-lg p-4 text-center">
-                <Check className="h-8 w-8 text-success mx-auto mb-2" />
-                <p className="text-sm font-medium text-success">Feedback enviado com sucesso!</p>
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                <Check className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-medium text-green-600">Feedback enviado!</p>
                 <p className="text-xs text-muted-foreground mt-1">
                     Obrigado por ajudar a melhorar o sistema.
                 </p>
@@ -330,16 +298,10 @@ export function FeedbackPanel({
                     </>
                 ) : (
                     <>
-                        Enviar Feedback ({validatedCount} {validatedCount === 1 ? 'entidade' : 'entidades'})
+                        Enviar Feedback ({validatedCount} {validatedCount === 1 ? 'item' : 'itens'})
                     </>
                 )}
             </Button>
-
-            {!allValidated && (
-                <p className="text-xs text-muted-foreground text-center">
-                    Valide todas as entidades para feedback completo
-                </p>
-            )}
         </div>
     );
 }
