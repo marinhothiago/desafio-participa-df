@@ -933,12 +933,28 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
 
 | Tecnologia | Versão | Função |
 |------------|--------|--------|
-| Python | 3.10+ | Linguagem principal |
-| FastAPI | 0.110.0 | Framework web assíncrono |
-| spaCy | 3.8.0 | NLP para português (pt_core_news_lg) |
-| Transformers | 4.41.2 | BERT NER multilíngue (Davlan/bert-base-multilingual-cased-ner-hrl) |
-| PyTorch | 2.1.0 | Deep learning (CPU) |
-| Pandas | 2.2.1 | Processamento de dados tabulares |
+| **Python** | 3.10+ | Linguagem principal |
+| **FastAPI** | 0.110.0 | Framework web assíncrono |
+| **spaCy** | 3.8.0 | NLP para português (`pt_core_news_lg`) |
+| **Transformers** | 4.41.2 | BERT NER (`monilouise/ner_news_portuguese`) |
+| **NuNER** | - | NER multilíngue (`numind/NuNER_Zero`) |
+| **PyTorch** | 2.1.0 | Deep learning (CPU) |
+| **Presidio Analyzer** | 2.2.360+ | Framework Microsoft para detecção de PII |
+| **Llama 3.2** | 3B-Instruct | Árbitro LLM via HuggingFace Inference API |
+| **huggingface_hub** | latest | InferenceClient para chamadas LLM |
+| **scikit-learn** | 1.3.0+ | Calibração isotônica de confiança |
+| **Pandas** | 2.2.1 | Processamento de dados tabulares |
+| **Celery** | 5.3.0+ | Processamento assíncrono de lotes |
+| **Redis** | - | Broker para filas Celery |
+
+#### Modelos de IA
+
+| Modelo | Tipo | Função |
+|--------|------|--------|
+| `monilouise/ner_news_portuguese` | BERT NER | Detecção de nomes (pt-BR especializado) |
+| `numind/NuNER_Zero` | NER Zero-shot | Detecção multilíngue (backup) |
+| `pt_core_news_lg` | spaCy | NER português (fallback) |
+| `meta-llama/Llama-3.2-3B-Instruct` | LLM | Árbitro para casos ambíguos |
 
 #### Frontend (Interface)
 
