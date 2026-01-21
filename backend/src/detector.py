@@ -979,6 +979,23 @@ class PIIDetector:
                 re.IGNORECASE | re.UNICODE
             ),
             
+            # NOVO: Endereço com contexto pessoal explícito
+            # Detecta: "me encontrar na", "entrega em minha casa", "venha ao meu endereço", etc.
+            'ENDERECO_CONTEXTO_PESSOAL': (
+                r'(?:'
+                r'(?:me\s+)?encontrar\s+(?:na|no|em)|'
+                r'venha?\s+(?:na|no|em|ao)|'
+                r'vou\s+estar\s+(?:na|no|em)|'
+                r'fico\s+(?:na|no|em)|'
+                r'estou\s+(?:na|no|em)|'
+                r'entrega\s+(?:na|no|em)|'
+                r'buscar\s+(?:na|no|em)|'
+                r'pegar\s+(?:na|no|em)'
+                r')\s+'
+                r'([A-ZÀ-Ú][a-záéíóúàèìòùâêîôûãõ\s]*(?:SQ[NS]|SH[IL]N|SRES|QN[MN]|CL[NS]W|SCLR?[NS]|SCRLN|Asa\s+(?:Sul|Norte)|Rua|Av\.?|Avenida|Alameda|Travessa)[^\n,]{0,60})',
+                re.IGNORECASE | re.UNICODE
+            ),
+            
             # NOVO: Endereço com label "endereço:" seguido de localização
             'ENDERECO_LABEL': (
                 r'(?:endere[cç]o\s*:)\s*'
@@ -1855,6 +1872,21 @@ class PIIDetector:
                     if eh_processo_protocolo and not any(p in contexto_amplo for p in ["TEL", "FONE", "CELULAR", "CONTATO"]):
                         continue  # É processo/protocolo, não telefone
                     
+                    # NOVO: Contextos que indicam que NÃO é telefone (código, referência, etc.)
+                    contexto_nao_telefone = texto[max(0, inicio-40):min(len(texto), fim+40)].lower()
+                    termos_nao_telefone = [
+                        'código', 'codigo', 'referência', 'referencia', 'ref:', 'ref.',
+                        'número do pedido', 'numero do pedido', 'nº pedido', 'n° pedido',
+                        'ordem de serviço', 'ordem de servico', 'o.s.:', 'o.s. n',
+                        'ticket', 'chamado', 'solicitação nº', 'solicitacao n',
+                        'versão', 'versao', 'modelo', 'série', 'serie',
+                        'lote nº', 'lote n°', 'item nº', 'item n°', 'artigo', 'parágrafo', 'paragrafo',
+                    ]
+                    if any(t in contexto_nao_telefone for t in termos_nao_telefone):
+                        # Verifica se realmente tem contexto de telefone que sobrescreve
+                        if not any(p in contexto_nao_telefone for p in ['tel', 'fone', 'celular', 'contato', 'ligar', 'whats']):
+                            continue  # É código/referência, não telefone
+                    
                     # IMPORTANTE: Número sem formatação típica (sem hífen, parênteses) pode ser processo
                     # Se começa com muitos zeros, provavelmente é número de protocolo
                     valor_limpo = re.sub(r'\D', '', valor)
@@ -1957,7 +1989,7 @@ class PIIDetector:
                         })
 
 
-                elif tipo in ['ENDERECO_RESIDENCIAL', 'ENDERECO_BRASILIA', 'ENDERECO_SHIN_SHIS', 'ENDERECO_DF_RESIDENCIAL', 'ENDERECO_MORO_EM', 'ENDERECO_LABEL', 'ENDERECO_SETOR_DF']:
+                elif tipo in ['ENDERECO_RESIDENCIAL', 'ENDERECO_BRASILIA', 'ENDERECO_SHIN_SHIS', 'ENDERECO_DF_RESIDENCIAL', 'ENDERECO_MORO_EM', 'ENDERECO_LABEL', 'ENDERECO_SETOR_DF', 'ENDERECO_CONTEXTO_PESSOAL']:
                     from text_unidecode import unidecode
                     import logging
                     contexto = unidecode(texto[max(0, inicio-120):fim+120]).lower()
@@ -1968,12 +2000,12 @@ class PIIDetector:
                         "inquilina", "inquilino", "imóvel localizado", "imovel localizado", 
                         "moro", "resido", "minha casa", "meu endere", "minha resid",
                         "mora na", "mora no", "moradora", "morador", "endereco:",
-                        "residencia", "residencial"
+                        "residencia", "residencial", "me encontrar", "entrega", "buscar"
                     ]
                     tem_contexto_residencial = any(g in contexto for g in gatilhos_residenciais)
                     
-                    # PATCH: ENDERECO_MORO_EM e ENDERECO_LABEL sempre são aceitos (já tem contexto no pattern)
-                    if tipo in ['ENDERECO_MORO_EM', 'ENDERECO_LABEL']:
+                    # PATCH: ENDERECO_MORO_EM, ENDERECO_LABEL e ENDERECO_CONTEXTO_PESSOAL sempre aceitos
+                    if tipo in ['ENDERECO_MORO_EM', 'ENDERECO_LABEL', 'ENDERECO_CONTEXTO_PESSOAL']:
                         findings.append({
                             "tipo": "ENDERECO_RESIDENCIAL", "valor": valor,
                             "confianca": self._calcular_confianca("ENDERECO_RESIDENCIAL", texto, inicio, fim),
