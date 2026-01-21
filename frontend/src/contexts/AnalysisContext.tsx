@@ -222,7 +222,15 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
     const probability = 'confidence_all_found' in result ? (result.confidence_all_found ?? 0) : (result.confianca ?? 0);
     const risco = 'risk_level' in result ? (result.risk_level ?? 'SEGURO') : (result.risco ?? 'SEGURO');
     const riskLevel = getRiskLevelFromRisco(risco);
-    const details = 'entities' in result ? (result.entities || []) : (result.detalhes || []);
+
+    // Mapeia details preservando explicacao (XAI)
+    const rawDetails = 'entities' in result ? (result.entities || []) : (result.detalhes || []);
+    const details = rawDetails.map((d: { tipo: string; valor: string; confianca?: number; explicacao?: ExplicacaoXAI }) => ({
+      tipo: d.tipo,
+      valor: d.valor,
+      confianca: d.confianca,
+      explicacao: d.explicacao,
+    }));
 
     const newItem: AnalysisHistoryItem = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -269,7 +277,12 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
         probability: result.probability,
         riskLevel,
         risco,
-        details: result.entities.map(e => ({ tipo: e.type, valor: e.value })),
+        details: result.entities.map(e => ({
+          tipo: e.type,
+          valor: e.value,
+          confianca: e.confidence,
+          explicacao: e.explicacao,
+        })),
       };
       return item;
     });

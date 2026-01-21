@@ -769,6 +769,65 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
                 </div>
               )}
 
+              {/* Seção de Explicabilidade (XAI) */}
+              {selectedHistoryItem.details.some(d => d.explicacao) && (
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    Explicabilidade (XAI)
+                  </h4>
+                  <div className="space-y-3">
+                    {selectedHistoryItem.details.filter(d => d.explicacao).map((d, i) => (
+                      <div key={i} className="bg-background rounded-lg p-3 border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-primary text-sm">{d.tipo}</span>
+                          <code className="text-xs bg-muted px-2 py-0.5 rounded">{d.valor}</code>
+                          {d.explicacao?.confianca_percent && (
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {d.explicacao.confianca_percent}
+                            </span>
+                          )}
+                        </div>
+
+                        {d.explicacao?.motivos && d.explicacao.motivos.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Motivos:</p>
+                            <ul className="text-xs space-y-0.5">
+                              {d.explicacao.motivos.map((m, j) => (
+                                <li key={j} className="text-foreground">{m}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {d.explicacao?.validacoes && d.explicacao.validacoes.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Validações:</p>
+                            <ul className="text-xs space-y-0.5">
+                              {d.explicacao.validacoes.map((v, j) => (
+                                <li key={j} className="text-green-600">{v}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {d.explicacao?.fontes && d.explicacao.fontes.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            <span className="font-medium">Fontes:</span> {d.explicacao.fontes.join(', ')}
+                          </p>
+                        )}
+
+                        {d.explicacao?.contexto && d.explicacao.contexto.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            <span className="font-medium">Contexto:</span> {d.explicacao.contexto.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Painel de Feedback Humano */}
               {selectedHistoryItem.details.length > 0 && (
                 <div className="pt-4 border-t border-border">
