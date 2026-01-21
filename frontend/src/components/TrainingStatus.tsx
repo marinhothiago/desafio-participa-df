@@ -1,17 +1,32 @@
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { AlertCircle, BarChart3, Check, Loader2, TrendingUp } from 'lucide-react';
+import { AlertCircle, BarChart3, Check, CheckCircle, Loader2, TrendingUp, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+interface ValidationBreakdown {
+    correct: number;
+    incorrect: number;
+    partial: number;
+}
+
+interface ByTypeStats {
+    correct: number;
+    incorrect: number;
+    partial: number;
+    total: number;
+}
 
 interface TrainingStatus {
     status: string;
     last_calibration: string | null;
     total_samples_used: number;
+    total_feedbacks: number;
     accuracy_before: number;
     accuracy_after: number;
     improvement_percentage: number;
     time_since_last: string;
-    by_source: Record<string, { avg_improvement: number; num_calibrations: number; total_samples: number }>;
+    by_source: Record<string, ByTypeStats>;
+    validation_breakdown?: ValidationBreakdown;
     recommendations: Array<{
         type: string;
         message: string;
@@ -48,10 +63,10 @@ export function TrainingStatus() {
     useEffect(() => {
         fetchStatus();
 
-        // Auto-refresh a cada 10 segundos se estiver em progresso
+        // Auto-refresh a cada 30 segundos para refletir dados de outras sessões
         let interval: ReturnType<typeof setInterval> | null = null;
         if (isAutoRefresh) {
-            interval = setInterval(fetchStatus, 10000);
+            interval = setInterval(fetchStatus, 30000);
         }
 
         // Escuta evento de feedback para atualizar imediatamente
@@ -93,24 +108,28 @@ export function TrainingStatus() {
     }
 
     const statusColor =
-        status.status === 'fresh' ? 'text-green-600' :
-            status.status === 'recent' ? 'text-yellow-600' :
-                status.status === 'stale' ? 'text-orange-600' :
-                    'text-gray-500';
+        status.status === 'ready' ? 'text-green-600' :
+            status.status === 'improving' ? 'text-blue-600' :
+                status.status === 'learning' ? 'text-yellow-600' :
+                    status.status === 'needs_attention' ? 'text-orange-600' :
+                        'text-gray-500';
 
     const statusIcon =
-        status.status === 'fresh' ? <Check className="h-4 w-4" /> :
-            status.status === 'never_trained' ? <AlertCircle className="h-4 w-4" /> :
-                <BarChart3 className="h-4 w-4" />;
+        status.status === 'ready' ? <Check className="h-4 w-4" /> :
+            status.status === 'improving' ? <TrendingUp className="h-4 w-4" /> :
+                status.status === 'learning' ? <BarChart3 className="h-4 w-4" /> :
+                    status.status === 'needs_attention' ? <AlertCircle className="h-4 w-4" /> :
+                        <AlertCircle className="h-4 w-4" />;
 
     const statusLabel =
-        status.status === 'fresh' ? 'Calibrado Recentemente' :
-            status.status === 'recent' ? 'Calibrado Hoje' :
-                status.status === 'stale' ? 'Calibrado há tempo' :
-                    'Aguardando Feedbacks';
+        status.status === 'ready' ? 'Modelo Calibrado' :
+            status.status === 'improving' ? 'Aprendendo...' :
+                status.status === 'learning' ? 'Coletando Dados' :
+                    status.status === 'needs_attention' ? 'Precisa Atenção' :
+                        'Aguardando Feedbacks';
 
-    // Se nunca treinado, mostra interface informativa
-    if (status.status === 'never_trained') {
+    // Se nunca treinado (zero feedbacks), mostra interface informativa
+    if (status.status === 'never_trained' || status.total_samples_used === 0) {
         return (
             <div className="space-y-3">
                 <div className="bg-card border border-border rounded-lg p-4">
@@ -127,15 +146,15 @@ export function TrainingStatus() {
                             <div className="grid grid-cols-3 gap-2 text-center">
                                 <div className="bg-muted/50 rounded p-2">
                                     <p className="text-lg font-bold text-muted-foreground">0</p>
-                                    <p className="text-[10px] text-muted-foreground">Amostras</p>
+                                    <p className="text-[10px] text-muted-foreground">Avaliações</p>
                                 </div>
                                 <div className="bg-muted/50 rounded p-2">
                                     <p className="text-lg font-bold text-muted-foreground">—</p>
                                     <p className="text-[10px] text-muted-foreground">Acurácia</p>
                                 </div>
                                 <div className="bg-muted/50 rounded p-2">
-                                    <p className="text-lg font-bold text-muted-foreground">10</p>
-                                    <p className="text-[10px] text-muted-foreground">Min. Feedbacks</p>
+                                    <p className="text-lg font-bold text-muted-foreground">20</p>
+                                    <p className="text-[10px] text-muted-foreground">Meta Inicial</p>
                                 </div>
                             </div>
                         </div>
@@ -148,95 +167,121 @@ export function TrainingStatus() {
         );
     }
 
+    // Interface com dados de feedback coletados
+    const breakdown = status.validation_breakdown || { correct: 0, incorrect: 0, partial: 0 };
+    const totalValidations = breakdown.correct + breakdown.incorrect + breakdown.partial;
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-3">
             {/* Card Principal */}
             <div className={cn(
                 'bg-card border rounded-lg p-4',
-                status.status === 'fresh' && 'border-green-500/30 bg-green-500/5',
-                status.status === 'recent' && 'border-yellow-500/30 bg-yellow-500/5',
-                status.status === 'stale' && 'border-orange-500/30 bg-orange-500/5',
+                status.status === 'ready' && 'border-green-500/30 bg-green-500/5',
+                status.status === 'improving' && 'border-blue-500/30 bg-blue-500/5',
+                status.status === 'learning' && 'border-yellow-500/30 bg-yellow-500/5',
+                status.status === 'needs_attention' && 'border-orange-500/30 bg-orange-500/5',
             )}>
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-3">
                     <div>
-                        <h3 className="font-semibold text-sm mb-1">Status de Calibração</h3>
-                        <div className={cn('flex items-center gap-2 text-sm', statusColor)}>
+                        <div className={cn('flex items-center gap-2 text-sm font-medium', statusColor)}>
                             {statusIcon}
                             <span>{statusLabel}</span>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">{status.time_since_last}</p>
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-bold text-foreground">
-                            {(status.accuracy_after * 100).toFixed(1)}%
+                            {status.accuracy_after > 0 ? `${(status.accuracy_after * 100).toFixed(0)}%` : '—'}
                         </div>
-                        <p className="text-xs text-muted-foreground">Acurácia Atual</p>
+                        <p className="text-xs text-muted-foreground">Acurácia</p>
                     </div>
                 </div>
 
-                {/* Métricas */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="bg-background/50 rounded p-2">
-                        <p className="text-xs text-muted-foreground">Amostras</p>
-                        <p className="text-lg font-semibold">{status.total_samples_used}</p>
+                {/* Barra de Progresso Visual */}
+                {totalValidations > 0 && (
+                    <div className="mb-3">
+                        <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+                            <div
+                                className="bg-green-500 transition-all"
+                                style={{ width: `${(breakdown.correct / totalValidations) * 100}%` }}
+                            />
+                            <div
+                                className="bg-yellow-500 transition-all"
+                                style={{ width: `${(breakdown.partial / totalValidations) * 100}%` }}
+                            />
+                            <div
+                                className="bg-red-500 transition-all"
+                                style={{ width: `${(breakdown.incorrect / totalValidations) * 100}%` }}
+                            />
+                        </div>
                     </div>
-                    <div className="bg-background/50 rounded p-2">
-                        <p className="text-xs text-muted-foreground">Antes</p>
-                        <p className="text-lg font-semibold">{(status.accuracy_before * 100).toFixed(1)}%</p>
-                    </div>
-                    <div className={cn(
-                        "bg-background/50 rounded p-2 border",
-                        status.improvement_percentage > 0 && "border-green-500/30 bg-green-500/10"
-                    )}>
-                        <p className="text-xs text-muted-foreground">Melhoria</p>
-                        <p className={cn(
-                            "text-lg font-semibold",
-                            status.improvement_percentage > 0 ? "text-green-600" : "text-gray-500"
-                        )}>
-                            {status.improvement_percentage > 0 ? '+' : ''}{status.improvement_percentage.toFixed(1)}%
-                        </p>
-                    </div>
-                </div>
-
-                {/* Timestamp */}
-                {status.last_calibration && (
-                    <p className="text-xs text-muted-foreground">
-                        Última calibração: {status.time_since_last}
-                    </p>
                 )}
+
+                {/* Métricas de Validação */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-green-500/10 rounded p-2 border border-green-500/20">
+                        <div className="flex items-center justify-center gap-1">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <p className="text-lg font-bold text-green-600">{breakdown.correct}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Corretas</p>
+                    </div>
+                    <div className="bg-yellow-500/10 rounded p-2 border border-yellow-500/20">
+                        <div className="flex items-center justify-center gap-1">
+                            <AlertCircle className="h-3 w-3 text-yellow-600" />
+                            <p className="text-lg font-bold text-yellow-600">{breakdown.partial}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Parciais</p>
+                    </div>
+                    <div className="bg-red-500/10 rounded p-2 border border-red-500/20">
+                        <div className="flex items-center justify-center gap-1">
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <p className="text-lg font-bold text-red-600">{breakdown.incorrect}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Incorretas</p>
+                    </div>
+                </div>
             </div>
 
-            {/* Por Fonte */}
+            {/* Estatísticas por Tipo de PII */}
             {Object.keys(status.by_source).length > 0 && (
-                <div className="bg-card border border-border rounded-lg p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        Calibradores por Fonte
+                <div className="bg-card border border-border rounded-lg p-3">
+                    <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        Acurácia por Tipo de PII
                     </h4>
-                    <div className="space-y-2">
-                        {Object.entries(status.by_source).map(([source, data]) => (
-                            <div key={source} className="bg-background/50 rounded p-2">
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className="text-xs font-medium capitalize">{source}</span>
-                                    <span className={cn(
-                                        "text-xs font-semibold",
-                                        data.avg_improvement > 0 ? "text-green-600" : "text-gray-500"
-                                    )}>
-                                        {data.avg_improvement > 0 ? '+' : ''}{(data.avg_improvement * 100).toFixed(1)}%
-                                    </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {data.num_calibrations} treinamento(s) · {data.total_samples} amostras
-                                </p>
-                            </div>
-                        ))}
+                    <div className="space-y-1.5">
+                        {Object.entries(status.by_source)
+                            .sort((a, b) => b[1].total - a[1].total)
+                            .slice(0, 5)
+                            .map(([tipo, data]) => {
+                                const accuracy = data.total > 0 ? data.correct / data.total : 0;
+                                return (
+                                    <div key={tipo} className="flex items-center gap-2">
+                                        <span className="text-xs font-medium w-20 truncate" title={tipo}>{tipo}</span>
+                                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className={cn(
+                                                    "h-full rounded-full transition-all",
+                                                    accuracy >= 0.9 ? "bg-green-500" :
+                                                        accuracy >= 0.7 ? "bg-yellow-500" : "bg-red-500"
+                                                )}
+                                                style={{ width: `${accuracy * 100}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-muted-foreground w-10 text-right">
+                                            {(accuracy * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                );
+                            })}
                     </div>
                 </div>
             )}
 
             {/* Recomendações */}
             {status.recommendations && status.recommendations.length > 0 && (
-                <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-                    <h4 className="text-sm font-semibold mb-2">Recomendações</h4>
+                <div className="space-y-1.5">
                     {status.recommendations.map((rec, idx) => (
                         <div
                             key={idx}
@@ -245,10 +290,10 @@ export function TrainingStatus() {
                                 rec.type === 'ready_for_finetuning' && 'bg-green-500/10 border-l-green-500 text-green-700',
                                 rec.type === 'needs_attention' && 'bg-orange-500/10 border-l-orange-500 text-orange-700',
                                 rec.type === 'collect_more_data' && 'bg-blue-500/10 border-l-blue-500 text-blue-700',
+                                rec.type === 'get_started' && 'bg-blue-500/10 border-l-blue-500 text-blue-700',
                             )}
                         >
                             <p>{rec.message}</p>
-                            {rec.action && <p className="text-xs opacity-70 mt-1">→ {rec.action}</p>}
                         </div>
                     ))}
                 </div>
@@ -262,7 +307,7 @@ export function TrainingStatus() {
                     onChange={(e) => setIsAutoRefresh(e.target.checked)}
                     className="rounded"
                 />
-                Atualizar automaticamente
+                Atualizar automaticamente (30s)
             </label>
         </div>
     );

@@ -529,24 +529,115 @@ async def get_dataset_stats() -> Dict:
 async def get_training_status() -> Dict:
     """Retorna status de treinamento e calibração automática.
     
+    Combina dados de:
+    - feedback.json: Estatísticas de feedback dos usuários (persistente)
+    - training_status.json: Histórico de calibração do modelo
+    
     Mostra:
-    - Última calibração realizada
-    - Acurácia antes/depois
-    - Número de amostras usadas
-    - Recomendações
-    - Métricas por fonte (BERT, spaCy, etc)
+    - Total de feedbacks coletados
+    - Acurácia do modelo baseada em feedback humano
+    - Distribuição de validações (correto/incorreto/parcial)
+    - Estatísticas por tipo de PII
+    - Recomendações automáticas
     
     Returns:
         Dict com status completo do treinamento
     """
     try:
-        try:
-            from src.confidence.training import get_training_tracker
-        except ImportError:
-            from backend.src.confidence.training import get_training_tracker
+        # Carregar estatísticas de feedback (persistentes)
+        feedback_data = load_feedback()
+        stats = feedback_data.get("stats", {})
         
-        tracker = get_training_tracker()
-        return tracker.get_status()
+        total_entities = stats.get("total_entities_reviewed", 0)
+        correct = stats.get("correct", 0)
+        incorrect = stats.get("incorrect", 0)
+        partial = stats.get("partial", 0)
+        
+        # Calcular acurácia baseada em feedback humano
+        accuracy = correct / total_entities if total_entities > 0 else 0
+        
+        # Gerar status baseado na quantidade de dados
+        if total_entities == 0:
+            status = "never_trained"
+            time_since_last = "Nenhum feedback ainda"
+        elif total_entities < 20:
+            status = "learning"
+            time_since_last = f"{total_entities} feedbacks coletados"
+        elif total_entities < 50:
+            status = "improving"
+            time_since_last = f"{total_entities} feedbacks coletados"
+        else:
+            status = "ready" if accuracy >= 0.85 else "needs_attention"
+            time_since_last = f"{total_entities} feedbacks coletados"
+        
+        # Gerar recomendações dinâmicas
+        recommendations = []
+        
+        if total_entities == 0:
+            recommendations.append({
+                "type": "get_started",
+                "message": "📝 Comece a avaliar detecções para treinar o modelo",
+                "action": "Use o painel de feedback nas análises",
+            })
+        elif total_entities < 20:
+            needed = 20 - total_entities
+            recommendations.append({
+                "type": "collect_more_data",
+                "message": f"📊 Precisamos de mais {needed} avaliações para calibração inicial",
+                "action": "Continue avaliando detecções",
+            })
+        elif total_entities < 50:
+            needed = 50 - total_entities
+            recommendations.append({
+                "type": "collect_more_data",
+                "message": f"📊 Mais {needed} avaliações para treinamento robusto",
+                "action": "Continue coletando feedbacks",
+            })
+        
+        if accuracy < 0.85 and total_entities >= 20:
+            recommendations.append({
+                "type": "needs_attention",
+                "message": f"⚠️ Acurácia atual: {accuracy*100:.1f}%. Investigar tipos problemáticos.",
+                "action": "Revisar tipos com mais erros",
+            })
+        
+        if accuracy >= 0.90 and total_entities >= 50:
+            recommendations.append({
+                "type": "ready_for_finetuning",
+                "message": "✅ Dados suficientes e acurácia boa! Modelo calibrado.",
+                "action": "Sistema pronto para uso em produção",
+            })
+        
+        # Tentar carregar também o training_status.json (calibração manual)
+        training_data = {}
+        try:
+            try:
+                from src.confidence.training import get_training_tracker
+            except ImportError:
+                from backend.src.confidence.training import get_training_tracker
+            
+            tracker = get_training_tracker()
+            training_data = tracker.data
+        except Exception:
+            pass
+        
+        return {
+            "status": status,
+            "last_calibration": training_data.get("last_calibration"),
+            "total_samples_used": total_entities,
+            "total_feedbacks": stats.get("total_feedbacks", 0),
+            "accuracy_before": training_data.get("accuracy_before", 0),
+            "accuracy_after": accuracy,
+            "improvement_percentage": round((accuracy - training_data.get("accuracy_before", 0)) * 100, 2) if accuracy > 0 else 0,
+            "time_since_last": time_since_last,
+            "by_source": stats.get("by_type", {}),
+            "validation_breakdown": {
+                "correct": correct,
+                "incorrect": incorrect,
+                "partial": partial,
+            },
+            "recommendations": recommendations,
+        }
     except Exception as e:
         import traceback
         logger.error(f"Erro ao obter status de treinamento: {e}\n{traceback.format_exc()}")
