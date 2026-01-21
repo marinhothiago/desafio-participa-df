@@ -163,6 +163,7 @@ BLOCKLIST_TOTAL: Set[str] = {
     # ─────────────────────────────────────────────────────────────────────
     # Leis e Referências Legais
     # ─────────────────────────────────────────────────────────────────────
+    "DECRETO", "LEI", "PORTARIA", "RESOLUCAO", "INSTRUCAO NORMATIVA",
     "LEI MARIA DA PENHA", "LEI DE ACESSO A INFORMACAO",
     "LEI GERAL DE PROTECAO DE DADOS", "LGPD",
     "ESTATUTO DA CRIANCA", "ESTATUTO DO IDOSO",
@@ -420,6 +421,34 @@ CONFIANCA_BASE: Dict[str, float] = {
     "USER_AGENT": 0.70,
 }
 
+
+# ============================================================================
+# PREFIXOS_TELEFONE_INSTITUCIONAL: Prefixos de telefones fixos do GDF
+# Telefones que começam com esses prefixos são institucionais (não são PII)
+# ============================================================================
+
+PREFIXOS_TELEFONE_INSTITUCIONAL: Set[str] = {
+    # Prefixos comuns de órgãos públicos do DF (61 3xxx-xxxx)
+    "3105",  # CGDF, Controladoria
+    "3312",  # Diversos órgãos
+    "3325",  # DETRAN
+    "3961",  # Secretarias
+    "3214",  # Ministérios
+    "3411",  # CAESB
+    "3344",  # BRB
+    "3048",  # NOVACAP
+    "3349",  # SEEDF
+    "3346",  # SESDF
+    "3462",  # PCDF
+    "3190",  # PMDF
+    "3901",  # CBMDF
+    "3326",  # TCDF
+    "3348",  # CLDF
+    # 0800 e serviços
+    "0800",
+    "4003",  # SAC nacional
+    "4004",  # SAC nacional
+}
 
 # ============================================================================
 # Exportar nomes alternativos para compatibilidade

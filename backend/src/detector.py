@@ -1150,7 +1150,7 @@ class PIIDetector:
             
             'DATA_NASCIMENTO': (
                 r'(?:'
-                r'(?:nasc|nascimento|nascido|data de nascimento|d\.?n\.?)[\s:]*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})'
+                r'(?:nasc|nascimento|nascido|data de nascimento|d\.?n\.?)[\s:]*(?:em\s+)?(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})'
                 r'|'
                 r'(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})\s*\)?\s*\.?\s*(?:nascimento|nasc|nascido)'
                 r')',
@@ -1231,10 +1231,22 @@ class PIIDetector:
             ),
             
             'MENOR_IDENTIFICADO': (
+                # Detecta menores de idade com contexto claro
+                # Padrão 1: "paciente/criança/filho Maria, 8 anos"
+                # Padrão 2: "Maria, 8 anos, estudante/criança"
+                # Inclui: paciente, menino, menina, criança, filho, filha, aluno, aluna, estudante, menor, bebê, neto, sobrinho
                 r'(?:'
-                r'(?:crian[çc]a|menor|alun[oa]|estudante)\s+([A-Z][a-záéíóúàâêôãõç]+(?:\s+[A-Z][a-záéíóúàâêôãõç]+)*)[\s,]+(\d{1,2})\s*anos?|'
-                r'([A-Z][a-záéíóúàâêôãõç]+)[\s,]+(\d{1,2})\s*anos[\s,]+(?:estudante|alun[oa]|crian[çc]a|menor)'
+                r'(?:paciente|menin[oa]|crian[çc]a|filh[oa]|alun[oa]|estudante|menor|beb[êe]|net[oa]|sobrinh[oa])\s+([A-Z][a-záéíóúàâêôãõç]+(?:\s+[A-Z][a-záéíóúàâêôãõç]+)*)[\s,]+(?:de\s+)?(\d{1,2})\s*anos?|'
+                r'([A-Z][a-záéíóúàâêôãõç]+)[\s,]+(\d{1,2})\s*anos[\s,]+(?:estudante|alun[oa]|crian[çc]a|menor|paciente)'
                 r')',
+                re.IGNORECASE | re.UNICODE
+            ),
+            
+            # NOVO: Conta bancária com contexto explícito "Conta bancária/corrente/poupança"
+            # Detecta: "Conta bancaria 12345-6 Ag 0001"
+            # Não detecta: "conta de luz", "levando em conta"
+            'CONTA_BANCARIA_CONTEXTUAL': (
+                r'[Cc]onta\s*(?:bancária|bancaria|corrente|poupan[çc]a)\s*[:\s]*(\d[\d\.\-/]+)(?:\s*[-,]?\s*[Aa]g(?:ência|encia|\.?)?\s*[:\s]*(\d[\d\.\-/]+))?',
                 re.IGNORECASE | re.UNICODE
             ),
             
@@ -1618,6 +1630,14 @@ class PIIDetector:
                     contexto = texto[max(0, inicio-120):fim+120]
                     texto_norm = unidecode(texto).lower()
                     contexto_norm = unidecode(contexto).lower()
+                    
+                    # NOVO: Ignorar se é referência legal (Decreto, Lei, Portaria, Resolução)
+                    ctx_antes = texto[max(0, inicio-30):inicio].lower()
+                    referencias_legais = ['decreto', 'lei ', 'lei:', 'portaria', 'resolução', 'resolucao', 
+                                         'instrução normativa', 'instrucao normativa', 'edital']
+                    if any(ref in ctx_antes for ref in referencias_legais):
+                        continue  # Não é processo SEI, é número de referência legal
+                    
                     # Protocolos LAI/OUV explícitos: sempre PII, exceto se contexto negativo
                     if tipo in ['PROTOCOLO_LAI', 'PROTOCOLO_OUV']:
                         label_explicito = any(lbl in contexto_norm for lbl in ['protocolo lai', 'protocolo ouv', 'lai-', 'ouv-'])
@@ -1846,8 +1866,18 @@ class PIIDetector:
                     ctx_depois = texto[fim:min(len(texto), fim+80)].lower()
 
                     termos_institucionais = [
-                        'institucional', 'fixo', 'ramal', 'central', 'sac', 'atendimento', 'ouvidoria', 'departamento', 'setor', 'secretaria', 'empresa', 'comercial', 'pabx', '0800', '4003', '3312', 'disque', 'contato institucional', 'serviço', 'servico', 'suporte', 'helpdesk', 'callcenter', 'ramal interno', 'ramal:', 'ramal '
+                        'institucional', 'fixo', 'ramal', 'central', 'sac', 'atendimento', 'ouvidoria', 'departamento', 'setor', 'secretaria', 'empresa', 'comercial', 'pabx', '0800', '4003', '3312', '3105', '3325', '3961', '3214', '3411', '3344', '3048', '3349', '3346', '3462', '3190', '3901', '3326', '3348', 'disque', 'contato institucional', 'serviço', 'servico', 'suporte', 'helpdesk', 'callcenter', 'ramal interno', 'ramal:', 'ramal '
                     ]
+                    
+                    # NOVO: Verificar se o telefone começa com prefixo institucional (fixo GDF)
+                    # Telefones fixos do DF começam com 61 3xxx, se o número começa com 3xxx, verificar prefixo
+                    valor_limpo = re.sub(r'[^\d]', '', valor)  # Remove tudo exceto dígitos
+                    if len(valor_limpo) >= 8:
+                        # Se tem 10-11 dígitos, pegar os 4 dígitos após o DDD
+                        prefixo = valor_limpo[2:6] if len(valor_limpo) >= 10 else valor_limpo[:4]
+                        prefixos_institucionais = {'3105', '3312', '3325', '3961', '3214', '3411', '3344', '3048', '3349', '3346', '3462', '3190', '3901', '3326', '3348'}
+                        if prefixo in prefixos_institucionais:
+                            continue  # Telefone institucional do GDF
                     # Filtro: se label anterior ao número contém termo institucional, ignora
                     from text_unidecode import unidecode
                     label_pre = unidecode(texto[max(0, inicio-40):inicio]).lower()
@@ -2108,11 +2138,20 @@ class PIIDetector:
                     # Só ignora se contexto genérico/institucional
                     if any(cg in contexto for cg in contextos_genericos):
                         continue
-                    # Tenta reconstruir valor a partir dos grupos
-                    if valor is None and match.groups():
+                    # Tenta reconstruir valor a partir dos grupos e validar idade < 18
+                    idade = None
+                    if match.groups():
                         grupos = [g for g in match.groups() if g]
+                        # Extrai idade dos grupos (números de 1-2 dígitos)
+                        for g in grupos:
+                            if g and g.isdigit() and len(g) <= 2:
+                                idade = int(g)
+                                break
                         if grupos:
                             valor = ' '.join(grupos)
+                    # Só considera se idade < 18 (é menor de idade)
+                    if idade is not None and idade >= 18:
+                        continue
                     findings.append({
                         "tipo": "MENOR_IDENTIFICADO", "valor": valor or match.group(),
                         "confianca": self._calcular_confianca("MENOR_IDENTIFICADO", texto, inicio, fim),
@@ -2158,6 +2197,24 @@ class PIIDetector:
                         "confianca": self._calcular_confianca("MENOR_IDENTIFICADO", texto, inicio, fim),
                         "peso": 5, "inicio": inicio, "fim": fim
                     })
+
+                # NOVO: Conta bancária com contexto explícito (não confundir com "conta de luz")
+                elif tipo == 'CONTA_BANCARIA_CONTEXTUAL':
+                    # Extrai conta e agência dos grupos
+                    grupos = [g for g in match.groups() if g]
+                    conta = grupos[0] if grupos else valor
+                    agencia = grupos[1] if len(grupos) > 1 else None
+                    # Valida que conta tem ao menos 4 dígitos
+                    digitos_conta = ''.join(c for c in conta if c.isdigit())
+                    if len(digitos_conta) >= 4:
+                        valor_completo = f"Conta {conta}"
+                        if agencia:
+                            valor_completo += f" Ag {agencia}"
+                        findings.append({
+                            "tipo": "CONTA_BANCARIA", "valor": valor_completo,
+                            "confianca": 0.92,
+                            "peso": 5, "inicio": inicio, "fim": fim
+                        })
 
                 elif tipo in ['NOME_TITULO', 'NOME_ASSINATURA', 'NOME_CARGO', 'NOME_CONDOMINIO']:
                     # Nomes extraídos por contexto (título, assinatura, cargo, condomínio)
