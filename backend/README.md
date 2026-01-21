@@ -494,26 +494,31 @@ backend/
 │
 ├── src/
 │   ├── __init__.py
-│   ├── detector.py           ← Motor híbrido PII v9.6.0 (2200+ linhas)
+│   ├── detector.py           ← Motor híbrido PII v9.6.0 (3300+ linhas)
 │   │                           - PIIDetector: ensemble de detectores
 │   │                           - ValidadorDocumentos: validação DV
 │   │                           - 30+ tipos de PII, XAI integrado
+│   │                           - Árbitro LLM para casos ambíguos
 │   │
-│   ├── allow_list.py         ← Lista de termos seguros (375+ termos)
+│   ├── allow_list.py         ← Lista de termos seguros (600+ termos)
 │   │
-│   ├── analyzers/            ← Analisadores específicos
-│   │   ├── ner_analyzer.py   ← BERT + NuNER + spaCy
+│   ├── analyzers/            ← Analisadores auxiliares
+│   │   ├── regex_analyzer.py ← Analisador regex standalone
 │   │   └── presidio_analyzer.py ← Recognizers customizados GDF
 │   │
 │   ├── confidence/           ← Sistema de confiança probabilística
+│   │   ├── __init__.py       ← Exports do módulo
 │   │   ├── types.py          ← PIIEntity, DocumentConfidence
 │   │   ├── config.py         ← FN/FP rates, pesos LGPD, thresholds
 │   │   ├── validators.py     ← Validação DV (CPF, CNPJ, PIS, CNS)
 │   │   ├── calibration.py    ← IsotonicCalibrator
 │   │   ├── combiners.py      ← ProbabilityCombiner, merge de spans
-│   │   └── calculator.py     ← PIIConfidenceCalculator
+│   │   ├── calculator.py     ← PIIConfidenceCalculator
+│   │   ├── training.py       ← Treinamento com feedback humano
+│   │   └── auto_recalibrate.py ← Recalibração automática
 │   │
 │   ├── gazetteer/            ← Gazetteer institucional GDF
+│   │   ├── gazetteer_gdf.py  ← Carregador de entidades GDF
 │   │   └── gazetteer_gdf.json ← Órgãos, escolas, hospitais do DF
 │   │
 │   └── patterns/             ← Padrões regex específicos GDF
@@ -522,7 +527,10 @@ backend/
 ├── scripts/
 │   ├── main_cli.py           ← CLI para processamento em lote
 │   ├── optimize_ensemble.py  ← Grid search de pesos
-│   └── feedback_to_dataset.py ← Converte feedbacks em dataset
+│   ├── feedback_to_dataset.py ← Converte feedbacks em dataset
+│   ├── auditoria_amostra.py  ← Auditoria manual da amostra e-SIC
+│   ├── auditoria_completa_lgpd.py ← Auditoria completa LGPD com gabarito
+│   └── simulacao_hackathon.py ← Simulação de avaliação hackathon
 │
 ├── tests/                    ← Testes automatizados (pytest)
 │   ├── conftest.py           ← Fixtures compartilhadas
@@ -532,13 +540,22 @@ backend/
 │   ├── test_edge_cases.py    ← Casos extremos
 │   ├── test_explicabilidade.py ← Testes de XAI
 │   ├── test_integracao.py    ← Testes de integração
+│   ├── test_diagnostico_motor.py ← Diagnóstico completo do motor
+│   ├── test_diagnostico_motor_dataset_lgpd.py ← Dataset LGPD compartilhado
+│   ├── test_placeholder.py   ← Testes básicos de sanidade
+│   ├── test_analise_confianca.py ← Testes de análise de confiança
 │   └── test_regex_gdf_*.py   ← Testes de padrões GDF
 │
 ├── data/
 │   ├── input/                ← Arquivos para processar em lote
+│   │   └── AMOSTRA_e-SIC.xlsx ← Amostra oficial de manifestações
 │   ├── output/               ← Relatórios gerados
+│   │   ├── resultado.csv     ← Resultado do processamento
+│   │   ├── resultado.xlsx    ← Resultado com formatação colorida
+│   │   └── *.json            ← Auditorias e benchmarks
 │   ├── feedback.json         ← Feedbacks humanos acumulados
-│   └── stats.json            ← Estatísticas de uso
+│   ├── stats.json            ← Estatísticas de uso
+│   └── training_status.json  ← Status do treinamento com feedback
 │
 └── models/
     └── bert_ner_onnx/        ← Modelo BERT exportado para ONNX (opcional)

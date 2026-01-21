@@ -1,3 +1,40 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * api.ts - Cliente HTTP para Backend de Detecção de PII
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Este módulo implementa a camada de comunicação com o backend FastAPI,
+ * oferecendo:
+ * 
+ * 1. DETECÇÃO AUTOMÁTICA DE BACKEND
+ *    - Tenta conectar em localhost:7860 primeiro (desenvolvimento)
+ *    - Fallback para HuggingFace Spaces em produção
+ *    - Health check assíncrono no carregamento do módulo
+ * 
+ * 2. RETRY COM BACKOFF EXPONENCIAL
+ *    - Até MAX_RETRIES tentativas em caso de falha
+ *    - Timeout configurável (padrão: 15s para modelos de IA)
+ * 
+ * 3. INTERFACES TYPESCRIPT TIPADAS
+ *    - AnalysisResult: Resposta completa de análise
+ *    - ExplicacaoXAI: Explicabilidade das detecções
+ *    - Entity: Entidade PII detectada
+ * 
+ * 4. TRATAMENTO DE ERROS SEMÂNTICOS
+ *    - ApiError para erros de rede/servidor
+ *    - Mensagens amigáveis para cold-start do Spaces
+ * 
+ * Endpoints consumidos:
+ * - POST /analyze     → Análise de texto único
+ * - POST /batch       → Processamento em lote
+ * - GET  /health      → Status do backend
+ * - GET  /stats       → Métricas agregadas
+ * - POST /feedback    → Coleta de feedback do usuário
+ * 
+ * @see Backend: backend/api/main.py
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 // ============================================
 // Motor PII - Participa DF
 // Camada de Serviços para API de Detecção
@@ -14,6 +51,10 @@ const LOCAL_DETECTION_TIMEOUT = 2000; // 2 segundos para detectar backend local
 let API_BASE_URL = PRODUCTION_API_URL;
 let detectionAttempted = false;
 
+/**
+ * Detecta se há um backend local rodando em localhost:7860.
+ * Executado automaticamente ao carregar o módulo.
+ */
 async function detectLocalBackend(): Promise<void> {
   if (detectionAttempted) return;
   detectionAttempted = true;
@@ -42,9 +83,14 @@ async function detectLocalBackend(): Promise<void> {
 // Iniciar detecção ao carregar o módulo
 detectLocalBackend();
 
-// Interface para resposta da API /analyze (conforme documentação técnica)
+// ═══════════════════════════════════════════════════════════════════════════════
+// INTERFACES DE RESPOSTA DA API
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Novo formato de resposta da API
+/**
+ * Formato de resposta da API /analyze (v2).
+ * Inclui métricas de confiança e fontes utilizadas.
+ */
 export interface AnalyzeResponseV2 {
   has_pii: boolean;
   entities: Array<{
@@ -59,6 +105,9 @@ export interface AnalyzeResponseV2 {
   sources_used: string[];
 }
 
+/**
+ * Entidade PII detectada com explicabilidade opcional.
+ */
 export interface Entity {
   type: string;
   value: string;
@@ -66,11 +115,15 @@ export interface Entity {
   explicacao?: ExplicacaoXAI;  // XAI - explicação opcional
 }
 
+/**
+ * Estrutura de explicabilidade (XAI) para uma detecção.
+ * Permite auditoria e compreensão das decisões do modelo.
+ */
 export interface ExplicacaoXAI {
-  motivos: string[];
-  fontes: string[];
-  validacoes: string[];
-  contexto: string[];
+  motivos: string[];      // Por que foi detectado
+  fontes: string[];       // Quais modelos/regras detectaram
+  validacoes: string[];   // Validações aplicadas (DV, formato)
+  contexto: string[];     // Contexto textual ao redor
   confianca_percent: string;
   peso: number;
 }
@@ -82,6 +135,10 @@ export interface AnalysisDetail {
   explicacao?: ExplicacaoXAI;
 }
 
+/**
+ * Resultado consolidado de uma análise.
+ * Suporta formato legado e novo da API.
+ */
 export interface AnalysisResult {
   // Formato legado
   classificacao: 'PÚBLICO' | 'NÃO PÚBLICO';

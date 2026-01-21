@@ -105,11 +105,6 @@ import torch
 from transformers import pipeline
 from text_unidecode import unidecode
 
-try:
-    import requests
-except ImportError:
-    requests = None
-
 # Logger padrão para debug
 logger = logging.getLogger("detector")
 

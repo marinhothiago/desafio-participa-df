@@ -397,6 +397,7 @@ frontend/
 │
 ├── public/
 │   ├── robots.txt               ← SEO
+│   ├── favicon.svg              ← Ícone do site
 │   └── 404.html                 ← Fallback para SPA routing
 │
 └── src/
@@ -414,13 +415,23 @@ frontend/
     │   └── NotFound.tsx         ← Página 404
     │
     ├── components/              ← Componentes reutilizáveis
-    │   ├── ui/                  ← Shadcn UI (30+ componentes)
-    │   │   ├── button.tsx
-    │   │   ├── card.tsx
-    │   │   ├── dialog.tsx
-    │   │   ├── table.tsx
-    │   │   ├── tooltip.tsx
-    │   │   └── ...
+    │   ├── ui/                  ← Shadcn UI (16 componentes otimizados)
+    │   │   ├── button.tsx       ← Botão com variantes
+    │   │   ├── dialog.tsx       ← Modal acessível
+    │   │   ├── dropdown-menu.tsx← Menu dropdown
+    │   │   ├── input.tsx        ← Campo de entrada
+    │   │   ├── label.tsx        ← Rótulo de formulário
+    │   │   ├── progress.tsx     ← Barra de progresso
+    │   │   ├── separator.tsx    ← Divisor visual
+    │   │   ├── sheet.tsx        ← Painel lateral
+    │   │   ├── skeleton.tsx     ← Placeholder de loading
+    │   │   ├── sonner.tsx       ← Toast notifications
+    │   │   ├── table.tsx        ← Tabela acessível
+    │   │   ├── tabs.tsx         ← Abas de navegação
+    │   │   ├── textarea.tsx     ← Área de texto
+    │   │   ├── toast.tsx        ← Toast base
+    │   │   ├── toaster.tsx      ← Container de toasts
+    │   │   └── tooltip.tsx      ← Dica flutuante
     │   │
     │   ├── Header.tsx           ← Cabeçalho DSGOV
     │   ├── KPICard.tsx          ← Card de métrica
@@ -432,10 +443,11 @@ frontend/
     │   ├── FooterWithCounters.tsx ← Rodapé com contadores
     │   ├── TrainingStatus.tsx   ← Status do modelo
     │   ├── ExportButton.tsx     ← Exportação JSON
+    │   ├── ExpandableText.tsx   ← Texto expansível
+    │   ├── FeedbackPanel.tsx    ← Painel de feedback
     │   ├── IdentifierBadge.tsx  ← Badge de PII
-    │   ├── DistributionChart.tsx← Gráfico de distribuição
     │   ├── PIITypesChart.tsx    ← Gráfico de tipos de PII
-    │   └── RiskDistributionChart.tsx ← Gráfico de risco
+    │   └── ResultsLegend.tsx    ← Legenda de resultados
     │
     ├── lib/                     ← Utilitários e serviços
     │   ├── api.ts               ← Cliente HTTP para backend (400+ linhas)

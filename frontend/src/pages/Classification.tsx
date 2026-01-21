@@ -1,3 +1,41 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Classification.tsx - Página Principal de Análise de PIIs
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Esta página implementa a interface principal do Motor PII, permitindo:
+ * 
+ * 1. ANÁLISE INDIVIDUAL
+ *    - Entrada de texto livre para análise em tempo real
+ *    - Feedback do resultado com indicadores visuais de risco
+ *    - Detalhamento de entidades encontradas (CPF, Nome, Telefone, etc.)
+ * 
+ * 2. PROCESSAMENTO EM LOTE
+ *    - Upload de arquivos CSV/XLSX via drag & drop
+ *    - Processamento paralelo com barra de progresso
+ *    - Exportação de resultados em JSON/CSV
+ * 
+ * 3. HISTÓRICO DE ANÁLISES
+ *    - Tabela paginada com todas as análises da sessão
+ *    - Filtros e busca por texto/entidade
+ *    - Modal de detalhes com explicabilidade (XAI)
+ * 
+ * 4. MÉTRICAS EM TEMPO REAL
+ *    - KPIs de volume processado
+ *    - Distribuição de riscos
+ *    - Tipos de PII mais frequentes
+ * 
+ * Componentes utilizados:
+ * - FileDropzone: Upload com drag & drop
+ * - ConfidenceBar: Barra de confiança calibrada
+ * - IdentifierList: Badges de entidades PII
+ * - FeedbackPanel: Coleta de feedback do usuário
+ * 
+ * @see /lib/api.ts para interfaces de resposta da API
+ * @see /contexts/AnalysisContext.tsx para estado global
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 import { ApiWakingUpMessage } from '@/components/ApiWakingUpMessage';
 import { ConfidenceBar } from '@/components/ConfidenceBar';
 import { ExpandableText } from '@/components/ExpandableText';
@@ -30,31 +68,48 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Download, Eye, FileText, FolderUp, HelpCircle, Info, List, Loader2, Percent, RefreshCw, Search, Shield, ShieldAlert, ShieldX, Upload } from 'lucide-react';
 import { useState } from 'react';
 
+/**
+ * Componente principal da página de classificação.
+ * Gerencia estados de análise individual, processamento em lote e histórico.
+ */
 export function Classification() {
   const { history, metrics, addAnalysisResult, addBatchResults, clearHistory, incrementClassificationRequests } = useAnalysis();
 
-  // Individual Analysis State
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ESTADOS - Análise Individual
+  // ═══════════════════════════════════════════════════════════════════════════
   const [text, setText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<{ message: string; isWaking: boolean } | null>(null);
 
-  // Batch Processing State
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ESTADOS - Processamento em Lote
+  // ═══════════════════════════════════════════════════════════════════════════
   const [isProcessing, setIsProcessing] = useState(false);
   const [batchError, setBatchError] = useState<{ message: string; isWaking: boolean } | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
-  // Pagination State
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ESTADOS - Paginação e Histórico
+  // ═══════════════════════════════════════════════════════════════════════════
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.ceil(history.length / pageSize);
   const paginatedHistory = history.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // History Dialog State
+  // Modal de detalhes do histórico
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<typeof history[0] | null>(null);
 
-  // Individual Analysis Handlers
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Análise Individual
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  /**
+   * Executa análise de texto individual via API.
+   * Atualiza métricas e histórico automaticamente.
+   */
   const handleAnalyze = async () => {
     if (!text.trim()) return;
 
