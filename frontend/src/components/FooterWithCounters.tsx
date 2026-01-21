@@ -45,7 +45,23 @@ export function FooterWithCounters() {
 
           {/* Direita: CGDF */}
           <p className="text-primary-foreground/80 order-3 text-center sm:text-right">
-            Desafio Participa DF - Controladoria-Geral do Distrito Federal
+            <a
+              href="https://www.cg.df.gov.br/w/1-hackathon-em-controle-social-desafio-participa-df"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary-foreground transition-colors"
+            >
+              Desafio Participa DF
+            </a>
+            {' - '}
+            <a
+              href="https://www.cg.df.gov.br/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary-foreground transition-colors"
+            >
+              Controladoria-Geral do Distrito Federal
+            </a>
           </p>
         </div>
       </div>
