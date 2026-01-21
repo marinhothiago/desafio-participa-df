@@ -408,13 +408,68 @@ Detectar, classificar e avaliar o risco de vazamento de dados pessoais em textos
 
 - **Principais campos:**
   - `has_pii`: se encontrou dado pessoal
-  - `entities`: lista detalhada de entidades (tipo, valor, confiança, fonte)
+  - `entities`: lista detalhada de entidades (tipo, valor, confiança, fonte, **explicacao**)
   - `risk_level`: nível de risco LGPD
   - `confidence_all_found`: confiança global
   - `total_entities`: total de entidades detectadas
   - `sources_used`: fontes usadas na detecção
 
 **Atenção:** O frontend agora deve consumir este novo formato. O formato antigo (tupla) foi descontinuado.
+
+---
+
+## 🔍 EXPLICABILIDADE (XAI) - Novo v9.6.0
+
+Cada entidade detectada agora inclui um campo `explicacao` com justificativa detalhada da detecção:
+
+### Exemplo de Resposta com XAI
+
+```json
+{
+  "tipo": "CPF",
+  "valor": "123.456.789-09",
+  "confianca": 1.0,
+  "explicacao": {
+    "motivos": [
+      "✓ Formato XXX.XXX.XXX-XX identificado",
+      "✓ Documento com validação de integridade"
+    ],
+    "fontes": ["Regex (padrão)"],
+    "validacoes": ["✓ Dígito verificador válido (mod 11)"],
+    "contexto": ["✓ Contexto pessoal: 'cpf' encontrado"],
+    "confianca_percent": "100.0%",
+    "peso": 5
+  }
+}
+```
+
+### Campos da Explicação
+
+| Campo | Descrição |
+|-------|-----------|
+| `motivos` | Lista de razões pelas quais foi detectado (formato, padrão, criticidade) |
+| `fontes` | Quais motores detectaram (Regex, BERT, NuNER, spaCy, Presidio, Gatilho) |
+| `validacoes` | Checagens adicionais (DV válido, formato correto, etc.) |
+| `contexto` | Palavras-chave encontradas no texto próximo |
+| `confianca_percent` | Confiança em formato percentual |
+| `peso` | Criticidade LGPD (1-5: baixo a crítico) |
+
+### Tipos Suportados com Explicação Detalhada
+
+- **Documentos:** CPF, CNPJ, RG, CNH, PIS, CTPS, PASSAPORTE
+- **Contato:** TELEFONE, CELULAR, EMAIL_PESSOAL
+- **Identificação:** NOME (com fonte NER)
+- **Localização:** ENDERECO, CEP
+- **Governo:** PROCESSO_SEI, MATRICULA_GDF, INSCRICAO_GDF
+- **Sensíveis:** DADO_SAUDE, MENOR_IDENTIFICADO, CONTA_BANCARIA
+
+### Benefícios para Hackathon
+
+- 📊 **Auditoria:** Juízes podem entender exatamente por que cada PII foi detectado
+- 🎯 **Transparência:** Decisões explicáveis aumentam confiança no sistema
+- 🔧 **Debug:** Facilita identificar falsos positivos/negativos
+
+---
 
 ### Funcionalidades Principais
 

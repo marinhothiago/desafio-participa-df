@@ -232,7 +232,58 @@ Consulte o backend/README.md para exemplos detalhados e documentação técnica.
 - ✅ **Validação completa de DV:** CPF e CNPJ com algoritmo oficial de dígito verificador
 - 🏛️ **Presidio com Recognizers Customizados:** 10 PatternRecognizers para padrões GDF (PROCESSO_SEI, MATRICULA_GDF, etc.)
 - 📍 **Análise de Contexto Avançada:** Distingue endereço em contexto de fiscalização vs residência
+- � **Explicabilidade (XAI):** Cada detecção inclui motivos, fontes, validações e contexto
+- 🔄 **Aprendizado Contínuo:** Feedback humano recalibra modelos automaticamente
 - 📊 **Auditoria LGPD Completa:** 153 PIIs mapeados manualmente, F1=100%
+
+---
+
+## 🔍 Explicabilidade (XAI)
+
+Cada entidade detectada agora inclui justificativa detalhada:
+
+```json
+{
+  "tipo": "CPF",
+  "valor": "123.456.789-09",
+  "confianca": 1.0,
+  "explicacao": {
+    "motivos": ["✓ Formato XXX.XXX.XXX-XX identificado"],
+    "fontes": ["Regex (padrão)"],
+    "validacoes": ["✓ Dígito verificador válido (mod 11)"],
+    "contexto": ["✓ Contexto pessoal: 'cpf' encontrado"],
+    "confianca_percent": "100.0%",
+    "peso": 5
+  }
+}
+```
+
+**Benefícios:** Auditores podem entender exatamente por que cada PII foi detectado, aumentando transparência e confiança no sistema.
+
+---
+
+## 🔄 Aprendizado Contínuo (Human-in-the-Loop)
+
+O sistema implementa um ciclo de melhoria contínua:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌────────────────────┐
+│ Usuário revisa  │────▶│ POST /feedback   │────▶│ feedback.json      │
+│ detecção no UI  │     │ CORRETO/INCORRETO│     │ (persiste dados)   │
+└─────────────────┘     └──────────────────┘     └─────────┬──────────┘
+                                                           │
+┌─────────────────┐     ┌──────────────────┐     ┌─────────▼──────────┐
+│ Próximas        │◀────│ Calibradores     │◀────│ Recalibração       │
+│ detecções       │     │ isotônicos       │     │ automática         │
+│ mais precisas   │     │ ajustados        │     │ (por fonte)        │
+└─────────────────┘     └──────────────────┘     └────────────────────┘
+```
+
+**Endpoints:** `POST /feedback`, `GET /feedback/stats`, `POST /feedback/generate-dataset`
+
+Consulte [backend/README.md](backend/README.md#-feedback-loop-como-o-motor-aprende-com-feedbacks-humanos) para documentação completa.
+
+---
 
 ### Melhorias Anteriores
 
