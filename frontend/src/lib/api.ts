@@ -63,6 +63,7 @@ export interface Entity {
   type: string;
   value: string;
   confidence: number;
+  explicacao?: ExplicacaoXAI;  // XAI - explicação opcional
 }
 
 export interface ExplicacaoXAI {
@@ -82,10 +83,16 @@ export interface AnalysisDetail {
 }
 
 export interface AnalysisResult {
+  // Formato legado
   classificacao: 'PÚBLICO' | 'NÃO PÚBLICO';
   confianca: number;
   risco: string;
   detalhes: AnalysisDetail[];
+  // Formato novo da API
+  has_pii?: boolean;
+  entities?: AnalysisDetail[];
+  risk_level?: string;
+  confidence_all_found?: number;
 }
 
 export type RiskLevel = 'critical' | 'high' | 'moderate' | 'low' | 'safe';
@@ -300,7 +307,13 @@ class ApiClient {
         tipo: d.tipo,
         valor: d.valor,
         confianca: d.confianca ?? 0.95,
+        explicacao: d.explicacao,  // XAI - preserva explicação
       })) || [],
+      // Passar também o formato novo para o AnalysisContext
+      has_pii: response.has_pii,
+      entities: response.entities,
+      risk_level: response.risk_level,
+      confidence_all_found: response.confidence_all_found,
     };
   }
 
@@ -335,6 +348,7 @@ class ApiClient {
             type: d.tipo,
             value: d.valor,
             confidence: d.confianca ?? 0.95,
+            explicacao: d.explicacao,  // XAI - preserva explicação
           })) || [],
         };
 
