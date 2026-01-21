@@ -652,6 +652,158 @@ class PIIDetector:
         
         return list(por_valor.values())
 
+    def _gerar_explicacao(self, finding: Dict, texto: str) -> Dict:
+        """
+        Gera explicação detalhada para um PII detectado (XAI - Explainable AI).
+        
+        Retorna um dicionário com:
+        - motivos: lista de razões para a detecção
+        - fontes: quais engines detectaram
+        - validacoes: validações aplicadas (DV, formato, etc.)
+        - contexto: contexto que reforçou a detecção
+        """
+        tipo = finding.get('tipo', '')
+        valor = finding.get('valor', '')
+        confianca = finding.get('confianca', 0)
+        source = finding.get('source', 'unknown')
+        peso = finding.get('peso', 0)
+        inicio = finding.get('inicio', 0)
+        fim = finding.get('fim', len(valor))
+        votacao_motivo = finding.get('votacao_motivo', '')
+        
+        motivos = []
+        validacoes = []
+        contexto_detectado = []
+        
+        # === VALIDAÇÕES POR TIPO ===
+        if tipo == 'CPF':
+            motivos.append("✓ Formato XXX.XXX.XXX-XX identificado")
+            # Verificar DV
+            digitos = ''.join(c for c in valor if c.isdigit())
+            if len(digitos) >= 11:
+                if self._validar_cpf(digitos[:11]):
+                    validacoes.append("✓ Dígito verificador válido (mod 11)")
+                else:
+                    validacoes.append("⚠ Dígito verificador inválido (possível erro de digitação)")
+        
+        elif tipo == 'CNPJ':
+            motivos.append("✓ Formato XX.XXX.XXX/XXXX-XX identificado")
+            digitos = ''.join(c for c in valor if c.isdigit())
+            if len(digitos) >= 14:
+                if self._validar_cnpj(digitos[:14]):
+                    validacoes.append("✓ Dígito verificador válido")
+                else:
+                    validacoes.append("⚠ Dígito verificador inválido")
+        
+        elif tipo in ['TELEFONE', 'CELULAR']:
+            digitos = ''.join(c for c in valor if c.isdigit())
+            if len(digitos) >= 10:
+                motivos.append("✓ Telefone com DDD identificado")
+            elif len(digitos) >= 8:
+                motivos.append("✓ Telefone sem DDD identificado")
+            if digitos.startswith('9') or (len(digitos) >= 3 and digitos[2] == '9'):
+                validacoes.append("✓ Padrão de celular (começa com 9)")
+        
+        elif tipo == 'EMAIL_PESSOAL':
+            motivos.append("✓ Formato de email identificado")
+            if not any(d in valor.lower() for d in ['.gov.br', '.org.br', '.edu.br']):
+                validacoes.append("✓ Domínio pessoal (não institucional)")
+        
+        elif tipo == 'NOME':
+            motivos.append("✓ Nome próprio identificado")
+            if source == 'bert':
+                validacoes.append("✓ Confirmado por modelo BERT NER")
+            elif source == 'nuner':
+                validacoes.append("✓ Confirmado por modelo NuNER")
+            elif source == 'spacy':
+                validacoes.append("✓ Confirmado por spaCy NER")
+        
+        elif tipo == 'ENDERECO_RESIDENCIAL':
+            motivos.append("✓ Endereço residencial identificado")
+            if any(s in valor.upper() for s in ['SQN', 'SQS', 'SHIN', 'SHIS', 'QNM', 'CLSW']):
+                validacoes.append("✓ Padrão de endereço de Brasília/DF")
+        
+        elif tipo == 'PROCESSO_SEI':
+            motivos.append("✓ Número de processo SEI/GDF identificado")
+            validacoes.append("✓ Formato XXXXX-XXXXXXXX/AAAA-XX")
+        
+        elif tipo == 'DADO_SAUDE':
+            motivos.append("✓ Dado de saúde sensível (LGPD Art. 5º, II)")
+            validacoes.append("⚠ Categoria especial - proteção reforçada")
+        
+        elif tipo == 'MENOR_IDENTIFICADO':
+            motivos.append("✓ Menor de idade identificado")
+            validacoes.append("⚠ Proteção especial (ECA + LGPD)")
+        
+        elif tipo == 'CONTA_BANCARIA':
+            motivos.append("✓ Dados bancários identificados")
+            validacoes.append("✓ Contexto bancário detectado")
+        
+        elif tipo in ['RG', 'CNH', 'PIS', 'CTPS', 'PASSAPORTE']:
+            motivos.append(f"✓ Documento {tipo} identificado")
+            validacoes.append("✓ Formato válido")
+        
+        else:
+            motivos.append(f"✓ {tipo} identificado por padrão")
+        
+        # === ANÁLISE DE CONTEXTO ===
+        if inicio > 0 or fim < len(texto):
+            ctx_antes = texto[max(0, inicio-50):inicio].lower()
+            ctx_depois = texto[fim:min(len(texto), fim+50)].lower()
+            
+            # Detectar gatilhos de contexto
+            gatilhos_pessoais = ['meu', 'minha', 'moro', 'resido', 'telefone', 'celular', 'contato', 'cpf', 'email']
+            for g in gatilhos_pessoais:
+                if g in ctx_antes or g in ctx_depois:
+                    contexto_detectado.append(f"✓ Contexto pessoal: '{g}' encontrado")
+                    break
+        
+        # === INFORMAÇÃO SOBRE FONTE ===
+        fontes_info = []
+        if source == 'regex':
+            fontes_info.append("Regex (padrão)")
+        elif source == 'bert':
+            fontes_info.append("BERT NER (monilouise/ner_news_portuguese)")
+        elif source == 'nuner':
+            fontes_info.append("NuNER (numind/NuNER_Zero)")
+        elif source == 'spacy':
+            fontes_info.append("spaCy (pt_core_news_lg)")
+        elif source == 'presidio':
+            fontes_info.append("Presidio Analyzer")
+        elif source == 'gatilho':
+            fontes_info.append("Gatilho linguístico contextual")
+        else:
+            fontes_info.append(source)
+        
+        # === MOTIVO DA VOTAÇÃO ===
+        if votacao_motivo:
+            motivo_legivel = {
+                'documento_validado': '✓ Documento com validação de integridade',
+                'dado_sensivel_lgpd': '✓ Dado sensível LGPD (proteção especial)',
+                'peso_alto': '✓ Alta relevância (peso ≥ 4)',
+                'gatilho_linguistico': '✓ Contexto linguístico confirma PII',
+                'votacao_2_fontes': '✓ Confirmado por 2+ engines',
+                'votacao_3_fontes': '✓ Confirmado por 3+ engines',
+                'alta_confianca': '✓ Alta confiança (≥ 85%)',
+                'confianca_moderada_evitar_fn': '⚠ Confiança moderada (70-85%)',
+            }.get(votacao_motivo, votacao_motivo)
+            motivos.append(motivo_legivel)
+        
+        return {
+            'motivos': motivos,
+            'fontes': fontes_info,
+            'validacoes': validacoes,
+            'contexto': contexto_detectado,
+            'confianca_percent': f"{confianca*100:.1f}%",
+            'peso': peso
+        }
+
+    def _adicionar_explicacoes(self, findings: List[Dict], texto: str) -> List[Dict]:
+        """Adiciona explicações a todos os findings."""
+        for f in findings:
+            f['explicacao'] = self._gerar_explicacao(f, texto)
+        return findings
+
     def __init__(
         self,
         usar_gpu: bool = True,
@@ -2978,10 +3130,15 @@ class PIIDetector:
         max_confianca = max(f.get('confianca', 0) for f in pii_relevantes)
         risco_map = {5: "CRITICO", 4: "ALTO", 3: "MODERADO", 2: "BAIXO", 1: "BAIXO", 0: "SEGURO"}
         nivel_risco = risco_map.get(max_peso, "MODERADO")
+        
+        # === EXPLICABILIDADE (XAI) ===
+        pii_relevantes = self._adicionar_explicacoes(pii_relevantes, text)
+        
         findings_output = [{
             "tipo": f.get("tipo"),
             "valor": f.get("valor"),
             "confianca": f.get("confianca"),
+            "explicacao": f.get("explicacao"),  # XAI: motivos da detecção
         } for f in pii_relevantes]
         return True, findings_output, nivel_risco, max_confianca
     
