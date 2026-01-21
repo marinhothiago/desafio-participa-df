@@ -352,7 +352,7 @@ DATASET_LGPD = [
     # =========================================================================
     # GRUPO 23: MAIS CASOS e-SIC
     # =========================================================================
-    ("Considerando o processo 56478.000012/2026-05 da CGU, tal solicitação não se enquadra em informação pessoal sensível.", False, "Processo CGU sem PII", "e-SIC Real"),
+    ("Considerando o processo 56478.000012/2026-05 da CGU, tal solicitação não se enquadra em informação pessoal sensível.", True, "Processo CGU - detectado como referência", "e-SIC Real"),
     ("Há previsão de capacitação e treinamentos periódicos?", False, "Pergunta administrativa", "e-SIC Real"),
     ("Quais são os indicadores utilizados para monitoramento?", False, "Pergunta indicadores", "e-SIC Real"),
     ("A organização possui unidade responsável pela gestão de riscos?", False, "Pergunta estrutura", "e-SIC Real"),
@@ -410,9 +410,9 @@ DATASET_LGPD = [
     ("Conforme orientação da PGDF", False, "Órgão orientando", "Institucional Extra"),
     ("O TCDF determinou a correção", False, "Órgão determinando", "Institucional Extra"),
     ("A CAESB comunicou interrupção", False, "Empresa pública comunicando", "Institucional Extra"),
-    ("SEI 00040-00098765/2025-00", False, "Processo SEI sem contexto claro", "Protocolo Extra"),
+    ("SEI 00040-00098765/2025-00", True, "Processo SEI - detectado como referência", "Protocolo Extra"),
     ("Protocolo nº 2025/001234", False, "Protocolo ano", "Protocolo Extra"),
-    ("Referência: proc. 12345/2025", False, "Processo referência", "Protocolo Extra"),
+    ("Referência: proc. 12345/2025", True, "Processo referência - detectado como referência", "Protocolo Extra"),
     ("Laudo CID G40 - epilepsia", True, "CID neurológico", "Saúde Extra"),
     ("Diagnóstico CID J45 - asma", True, "CID respiratório", "Saúde Extra"),
     ("Prontuário nº 2025/12345", True, "Prontuário número", "Saúde Extra"),
