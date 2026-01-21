@@ -495,6 +495,7 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
               <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
+                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase w-16">#</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Data</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Horário</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
@@ -507,85 +508,130 @@ Exemplo: Solicito informações sobre o contrato nº 2024/001, firmado com o ser
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedHistory.map((item) => (
-                    <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
-                        {item.date}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
-                        {item.time}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                          item.type === 'individual'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-muted text-muted-foreground'
-                        )}>
-                          {item.type === 'individual' ? 'Individual' : 'Lote'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-                          item.classification === 'PÚBLICO'
-                            ? 'bg-green-600/10 text-green-600'
-                            : 'bg-red-600/10 text-red-600'
-                        )}>
-                          {item.classification === 'PÚBLICO' ? (
-                            <>
-                              <CheckCircle className="w-3 h-3" />
-                              Público
-                            </>
-                          ) : (
-                            <>
-                              <AlertTriangle className="w-3 h-3" />
-                              Não Público
-                            </>
-                          )}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <ConfidenceBar
-                          value={item.probability}
-                          classification={item.classification}
-                          className="justify-center"
-                        />
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={cn(
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border',
-                          getRiskBgClass(item.riskLevel)
-                        )}>
-                          {item.riskLevel === 'critical' && <ShieldX className="w-3 h-3" />}
-                          {item.riskLevel === 'high' && <ShieldAlert className="w-3 h-3" />}
-                          {item.riskLevel === 'moderate' && <AlertCircle className="w-3 h-3" />}
-                          {item.riskLevel === 'low' && <Info className="w-3 h-3" />}
-                          {item.riskLevel === 'safe' && <CheckCircle className="w-3 h-3" />}
-                          {getRiskLabel(item.riskLevel)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-sm text-primary font-medium">
-                          #{item.pedidoId}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-xs truncate hidden lg:table-cell">
-                        {item.text}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedHistoryItem(item)}
-                          className="text-primary hover:text-primary hover:bg-primary/10"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Detalhes
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedHistory.map((item, index) => {
+                    // Calcula o ID sequencial baseado na página atual
+                    const sequentialId = ((currentPage - 1) * pageSize) + index + 1;
+
+                    // Verifica se tem explicações para tooltip
+                    const hasExplicacoes = item.details.some(d => d.explicacao);
+
+                    return (
+                      <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="py-3 px-4 text-center">
+                          <span className="font-mono text-sm text-muted-foreground font-medium">
+                            {sequentialId}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
+                          {item.date}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
+                          {item.time}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                            item.type === 'individual'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                          )}>
+                            {item.type === 'individual' ? 'Individual' : 'Lote'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn(
+                                  'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium cursor-help',
+                                  item.classification === 'PÚBLICO'
+                                    ? 'bg-green-600/10 text-green-600'
+                                    : 'bg-red-600/10 text-red-600'
+                                )}>
+                                  {item.classification === 'PÚBLICO' ? (
+                                    <>
+                                      <CheckCircle className="w-3 h-3" />
+                                      Público
+                                    </>
+                                  ) : (
+                                    <>
+                                      <AlertTriangle className="w-3 h-3" />
+                                      Não Público
+                                      {hasExplicacoes && <HelpCircle className="w-3 h-3 ml-1 opacity-60" />}
+                                    </>
+                                  )}
+                                </span>
+                              </TooltipTrigger>
+                              {hasExplicacoes && (
+                                <TooltipContent side="bottom" className="max-w-md p-3">
+                                  <div className="space-y-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">
+                                      Explicação (XAI)
+                                    </p>
+                                    {item.details.filter(d => d.explicacao).map((d, i) => (
+                                      <div key={i} className="text-xs">
+                                        <span className="font-semibold text-primary">{d.tipo}:</span>
+                                        <ul className="ml-2 mt-1 space-y-0.5">
+                                          {d.explicacao?.motivos?.map((m, j) => (
+                                            <li key={j} className="text-muted-foreground">{m}</li>
+                                          ))}
+                                          {d.explicacao?.validacoes?.map((v, j) => (
+                                            <li key={`v-${j}`} className="text-green-600">{v}</li>
+                                          ))}
+                                        </ul>
+                                        <p className="text-muted-foreground mt-1">
+                                          Fonte: {d.explicacao?.fontes?.join(', ')}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                        <td className="py-3 px-4">
+                          <ConfidenceBar
+                            value={item.probability}
+                            classification={item.classification}
+                            className="justify-center"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={cn(
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border',
+                            getRiskBgClass(item.riskLevel)
+                          )}>
+                            {item.riskLevel === 'critical' && <ShieldX className="w-3 h-3" />}
+                            {item.riskLevel === 'high' && <ShieldAlert className="w-3 h-3" />}
+                            {item.riskLevel === 'moderate' && <AlertCircle className="w-3 h-3" />}
+                            {item.riskLevel === 'low' && <Info className="w-3 h-3" />}
+                            {item.riskLevel === 'safe' && <CheckCircle className="w-3 h-3" />}
+                            {getRiskLabel(item.riskLevel)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-mono text-sm text-primary font-medium">
+                            #{item.pedidoId}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground max-w-xs truncate hidden lg:table-cell">
+                          {item.text}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedHistoryItem(item)}
+                            className="text-primary hover:text-primary hover:bg-primary/10"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Detalhes
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

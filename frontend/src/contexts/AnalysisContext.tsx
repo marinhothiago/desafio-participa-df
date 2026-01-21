@@ -1,4 +1,4 @@
-import { type AnalysisResult, type BatchResult, api } from '@/lib/api';
+import { type AnalysisResult, type BatchResult, type ExplicacaoXAI, api } from '@/lib/api';
 import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export interface AnalysisHistoryItem {
@@ -14,7 +14,7 @@ export interface AnalysisHistoryItem {
   probability: number;
   riskLevel: 'critical' | 'high' | 'moderate' | 'low' | 'safe';
   risco: string; // Risco original da API
-  details: { tipo: string; valor: string }[];
+  details: { tipo: string; valor: string; confianca?: number; explicacao?: ExplicacaoXAI }[];
 }
 
 export interface RiskDistribution {

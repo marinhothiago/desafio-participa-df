@@ -65,10 +65,20 @@ export interface Entity {
   confidence: number;
 }
 
+export interface ExplicacaoXAI {
+  motivos: string[];
+  fontes: string[];
+  validacoes: string[];
+  contexto: string[];
+  confianca_percent: string;
+  peso: number;
+}
+
 export interface AnalysisDetail {
   tipo: string;
   valor: string;
-  confianca?: number; // ✅ Campo corrigido
+  confianca?: number;
+  explicacao?: ExplicacaoXAI;
 }
 
 export interface AnalysisResult {
