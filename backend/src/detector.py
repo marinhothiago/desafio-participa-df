@@ -35,11 +35,11 @@ ARQUITETURA COMPLETA DO PIPELINE DE DETECÇÃO
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ ETAPA 4: PRESIDIO ANALYZER (Complementar)                                   │
+│ ETAPA 4: PRESIDIO ANALYZER (Recognizers GDF)                                │
 │ ─────────────────────────────────────────────────────────────────────────── │
-│ • Recognizers customizados para GDF (PROCESSO_SEI, MATRICULA_GDF, etc.)    │
-│ • Entidades complementares: IP_ADDRESS, IBAN_CODE, CREDIT_CARD             │
-│ • NÃO duplica detecção de PERSON/PHONE (já cobertos pelo NER)              │
+│ • Recognizers customizados GDF: PROCESSO_SEI, MATRICULA_GDF, CEP_BR, etc.  │
+│ • Modelo spaCy pt_core_news_lg para NLP em português                        │
+│ • NÃO usa recognizers built-in (não existem para pt)                        │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -916,7 +916,6 @@ class PIIDetector:
             "DADO_SAUDE": 0.90,
             "DADO_BIOMETRICO": 0.90,
             "MENOR_IDENTIFICADO": 0.90,
-            "IP_ADDRESS": 0.75,
             "COORDENADAS_GEO": 0.80,
             "PIX": 0.90,
             "CEP": 0.70,
@@ -1478,15 +1477,15 @@ class PIIDetector:
             logger.warning(f"⚠️ spaCy indisponível: {e}")
     
     def _inicializar_presidio(self) -> None:
-        """Inicializa o Presidio Analyzer para entidades complementares.
+        """Inicializa o Presidio Analyzer com recognizers customizados GDF.
         
-        Presidio é usado APENAS para detectar entidades que nosso sistema
-        não cobre bem: IP_ADDRESS, IBAN_CODE, CREDIT_CARD, URL.
+        Presidio é configurado APENAS com recognizers customizados para
+        padrões brasileiros/GDF: PROCESSO_SEI, MATRICULA_GDF, CEP_BR, etc.
         
-        NÃO registramos nossos patterns aqui pois já temos:
+        NÃO usamos recognizers built-in do Presidio pois não existem para
+        português (apenas inglês). Nosso sistema já cobre via:
         - Regex próprio (53 patterns pt-BR)
         - NER BERT (monilouise/ner_news_portuguese)
-        - NER NuNER (pt-BR)
         - NER spaCy (pt_core_news_lg)
         """
         try:
@@ -2953,49 +2952,31 @@ class PIIDetector:
         return findings
     
     def _detectar_presidio(self, texto: str) -> List[Dict]:
-        """Detecta PII complementar usando Presidio (apenas tipos que não cobrimos bem).
+        """Detecta PII usando Presidio com recognizers customizados GDF.
         
-        Presidio é usado APENAS para:
-        - IP_ADDRESS: Endereços IP (nosso regex é básico)
-        - IBAN_CODE: Códigos bancários internacionais
-        - CREDIT_CARD: Cartões de crédito internacionais
-        - URL: URLs (complementar ao nosso)
+        Presidio detecta apenas entidades dos nossos recognizers customizados:
+        - PROCESSO_SEI, PROCESSO_CNJ, PROTOCOLO_LAI
+        - MATRICULA_GDF, INSCRICAO_CAESB, OAB_REGISTRO
+        - TELEFONE_BR, CEP_BR, CPF_BR, CNPJ_BR, DATA_NASCIMENTO
         
-        NÃO usamos Presidio para PERSON, PHONE, EMAIL, LOCATION pois já temos:
-        - BERT NER (melhor para pt-BR)
-        - NuNER (melhor para pt-BR)  
-        - spaCy NER (pt_core_news_lg)
-        - Regex customizado (53 patterns)
+        Recognizers built-in (CREDIT_CARD, IBAN_CODE, IP_ADDRESS) NÃO estão
+        disponíveis em português, apenas inglês.
         """
         findings = []
         if not self.presidio_analyzer:
             return findings
         
         try:
-            # Apenas entidades que COMPLEMENTAM nosso sistema
-            entidades_complementares = [
-                'IP_ADDRESS',      # Nosso regex é básico
-                'IBAN_CODE',       # Não temos pattern
-                'CREDIT_CARD',     # Presidio tem validação de Luhn
-            ]
-            
-            # Mapeamento para nossos tipos
-            entity_map = {
-                'IP_ADDRESS': 'IP',
-                'IBAN_CODE': 'CONTA_BANCARIA_INTERNACIONAL',
-                'CREDIT_CARD': 'CARTAO_CREDITO',
-            }
-            
-            # Analisa em português (consistente com o resto do sistema)
+            # Analisa com todos os recognizers customizados disponíveis
             results = self.presidio_analyzer.analyze(
                 text=texto,
                 language="pt",
-                entities=entidades_complementares,
                 score_threshold=0.5
             )
             
             for result in results:
-                tipo = entity_map.get(result.entity_type, result.entity_type)
+                # Usa o tipo diretamente (já são nossos tipos customizados GDF)
+                tipo = result.entity_type
                 valor = texto[result.start:result.end]
                 
                 # Ignora se já detectamos pelo nosso regex
@@ -3016,7 +2997,7 @@ class PIIDetector:
                 })
             
             if findings:
-                logger.debug(f"[Presidio] Detectou {len(findings)} entidades complementares")
+                logger.debug(f"[Presidio] Detectou {len(findings)} entidades GDF")
                 
         except Exception as e:
             logger.debug(f"[Presidio] Erro na análise: {e}")

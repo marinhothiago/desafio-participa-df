@@ -416,7 +416,6 @@ CONFIANCA_BASE: Dict[str, float] = {
     "NOME": 0.82,
     
     # Dados de identificação indireta (Risco BAIXO)
-    "IP_ADDRESS": 0.75,
     "COORDENADAS_GEO": 0.80,
     "USER_AGENT": 0.70,
 }
