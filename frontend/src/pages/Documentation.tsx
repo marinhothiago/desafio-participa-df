@@ -1243,7 +1243,7 @@ npm run dev
             description="Monorepo completo: Backend (FastAPI) + Frontend (React) com Docker."
           />
           <DocLink
-            href="https://huggingface.co/spaces/thiagomarinho/participa-df"
+            href="https://huggingface.co/spaces/marinhothiago/desafio-participa-df"
             icon={<Layout className="w-5 h-5" />}
             title="Hugging Face Spaces"
             description="Backend hospedado com Swagger UI para testes da API."
