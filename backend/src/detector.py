@@ -28,8 +28,8 @@ ARQUITETURA COMPLETA DO PIPELINE DE DETECÇÃO
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ ETAPA 3: NER (Named Entity Recognition) - ENSEMBLE DE 3 MODELOS            │
 │ ─────────────────────────────────────────────────────────────────────────── │
-│ • BERT: monilouise/ner_news_portuguese (especializado pt-BR, peso 1.0)     │
-│ • NuNER: numind/NuNER_Zero (multilíngue, peso 0.95)                        │
+│ • BERT Davlan: Davlan/bert-base-multilingual-cased-ner-hrl (peso 1.0)      │
+│ • BERT pt-BR: monilouise/ner_news_portuguese (peso 1.0)                    │
 │ • spaCy: pt_core_news_lg (backup, peso 0.85)                               │
 │ • Estratégia: Votação permissiva (OR) - qualquer modelo = aceita           │
 └─────────────────────────────────────────────────────────────────────────────┘

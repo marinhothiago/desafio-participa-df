@@ -268,7 +268,7 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 │  │ │ Pipeline Híbrido Original   │   │ Presidio (MSFT) │ │ │
 │  │ │ 1. REGEX + Validação DV     │   │ • AnalyzerEngine│ │ │
 │  │ │ 2. BERT Davlan NER          │   │ • Recognizers   │ │ │
-│  │ │ 3. NuNER pt-BR              │   │   Customizados  │ │ │
+│  │ │ 3. BERT monilouise pt-BR    │   │   Customizados  │ │ │
 │  │ │ 4. spaCy pt_core_news_lg    │   │   GDF (10+)     │ │ │
 │  │ │ 5. Gazetteer GDF            │   └─────────────────┘ │ │
 │  │ │ 6. Regras de Negócio        │           │           │ │
@@ -323,8 +323,7 @@ Consulte [backend/README.md](backend/README.md#-feedback-loop-como-o-motor-apren
 | **Python** | 3.10+ | Linguagem principal |
 | **FastAPI** | 0.110.0 | Framework web assíncrono |
 | **spaCy** | 3.8.0 | NLP para português (`pt_core_news_lg`) |
-| **Transformers** | 4.41.2 | BERT NER (`monilouise/ner_news_portuguese`) |
-| **NuNER** | - | NER multilíngue (`numind/NuNER_Zero`) |
+| **Transformers** | 4.41.2 | BERT NER Davlan + monilouise pt-BR |
 | **PyTorch** | 2.1.0 | Deep learning (CPU) |
 | **Presidio Analyzer** | 2.2.360+ | Framework Microsoft para detecção de PII |
 | **Llama 3.2** | 3B-Instruct | Árbitro LLM via HuggingFace Inference API |
@@ -338,8 +337,8 @@ Consulte [backend/README.md](backend/README.md#-feedback-loop-como-o-motor-apren
 
 | Modelo | Tipo | Função |
 |--------|------|--------|
+| `Davlan/bert-base-multilingual-cased-ner-hrl` | BERT NER | Detecção de nomes (multilíngue) |
 | `monilouise/ner_news_portuguese` | BERT NER | Detecção de nomes (pt-BR especializado) |
-| `numind/NuNER_Zero` | NER Zero-shot | Detecção multilíngue (backup) |
 | `pt_core_news_lg` | spaCy | NER português (fallback) |
 | `meta-llama/Llama-3.2-3B-Instruct` | LLM | Árbitro para casos ambíguos |
 

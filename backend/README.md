@@ -64,8 +64,8 @@ pinned: false
 | Detector | Função | Tecnologia |
 |----------|--------|------------|
 | **Regex + DV** | Documentos (CPF, CNPJ, RG, CNH, PIS, etc.) | Expressões regulares + validação matemática |
-| **BERT NER** | Nomes e entidades | Davlan/bert-base-multilingual-cased-ner-hrl |
-| **NuNER** | Nomes em português | NuNER pt-BR especializado |
+| **BERT Davlan** | Nomes e entidades | Davlan/bert-base-multilingual-cased-ner-hrl |
+| **BERT pt-BR** | Nomes em português | monilouise/ner_news_portuguese |
 | **spaCy** | Complementar para nomes | pt_core_news_lg |
 | **Presidio** | Framework unificado | Microsoft Presidio Analyzer |
 | **Gatilhos** | "falar com", "ligar para" | Regras linguísticas |
@@ -253,7 +253,7 @@ Texto de Entrada
        │
        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  CAMADA 2: NER (BERT + NuNER + spaCy)                       │
+│  CAMADA 2: NER (BERT Davlan + BERT pt-BR + spaCy)           │
 │  Nomes pessoais com threshold de confiança                   │
 └──────────────────────────────────────────────────────────────┘
        │
@@ -482,8 +482,8 @@ O feedback treina calibradores isotônicos separados para cada fonte de detecç�
 | Fonte | Arquivo | Uso |
 |-------|---------|-----|
 | Regex | `regex_calibrator.pkl` | Documentos (CPF, CNPJ, etc.) |
-| BERT NER | `bert_calibrator.pkl` | Nomes e entidades |
-| NuNER | `nuner_calibrator.pkl` | Nomes pt-BR |
+| BERT Davlan | `bert_calibrator.pkl` | Nomes (multilíngue) |
+| BERT pt-BR | `nuner_calibrator.pkl` | Nomes (monilouise) |
 | spaCy | `spacy_calibrator.pkl` | Backup NER |
 
 ### Persistência
