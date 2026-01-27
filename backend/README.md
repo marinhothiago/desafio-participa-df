@@ -432,6 +432,68 @@ Se o LLM não responder (timeout, erro de API):
 
 ---
 
+## 7.1 Aprendizado Contínuo (Human-in-the-Loop)
+
+O sistema implementa um ciclo de melhoria contínua baseado em feedback humano:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌────────────────────┐
+│ 👤 Revisor      │────▶│ POST /feedback   │────▶│ feedback.json      │
+│ valida detecção │     │ CORRETO/INCORRETO│     │ (HF Dataset)       │
+└─────────────────┘     └──────────────────┘     └─────────┬──────────┘
+                                                           │
+┌─────────────────┐     ┌──────────────────┐     ┌─────────▼──────────┐
+│ Próximas        │◀────│ Calibradores     │◀────│ Recalibração       │
+│ detecções       │     │ isotônicos       │     │ automática         │
+│ mais precisas   │     │ ajustados        │     │ (por fonte)        │
+└─────────────────┘     └──────────────────┘     └────────────────────┘
+```
+
+### Endpoints de Feedback
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/feedback` | POST | Submete validação humana de entidades |
+| `/feedback/stats` | GET | Estatísticas de feedbacks coletados |
+| `/feedback/generate-dataset` | POST | Gera dataset para fine-tuning |
+| `/admin/reset-stats` | POST | Zera contadores (requer `X-Admin-Key`) |
+
+### Formato do Feedback
+
+```json
+{
+  "text_id": "manifestacao_001",
+  "original_text": "Meu CPF é 529.982.247-25",
+  "entities": [
+    {
+      "tipo": "CPF",
+      "valor": "529.982.247-25",
+      "is_correct": true,
+      "human_label": "CORRETO"
+    }
+  ]
+}
+```
+
+### Calibradores por Fonte
+
+O feedback treina calibradores isotônicos separados para cada fonte de detecção:
+
+| Fonte | Arquivo | Uso |
+|-------|---------|-----|
+| Regex | `regex_calibrator.pkl` | Documentos (CPF, CNPJ, etc.) |
+| BERT NER | `bert_calibrator.pkl` | Nomes e entidades |
+| NuNER | `nuner_calibrator.pkl` | Nomes pt-BR |
+| spaCy | `spacy_calibrator.pkl` | Backup NER |
+
+### Persistência
+
+Os dados de feedback são salvos em:
+- **Local:** `data/feedback.json`
+- **HuggingFace Dataset:** `marinhothiago/desafio-participa-df` (persistente entre rebuilds)
+
+---
+
 ## 8️⃣ Testes e Benchmark
 
 ### Executar Testes

@@ -29,6 +29,7 @@ import {
   ShieldCheck, Sparkles,
   Target,
   Terminal,
+  User,
   Zap
 } from 'lucide-react';
 import { useState } from 'react';
@@ -371,7 +372,7 @@ export function Documentation() {
               </div>
 
               {/* Fluxo Visual Frontend-Backend */}
-              <div className="flex flex-col md:flex-row items-center justify-center gap-3 p-4 bg-muted/30 rounded-lg">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-3 p-4 bg-muted/30 rounded-lg mb-4">
                 <div className="text-center p-3 bg-background rounded-lg border border-blue-500/30">
                   <Layout className="w-5 h-5 text-blue-500 mx-auto mb-1" />
                   <p className="font-medium text-foreground text-sm">Frontend</p>
@@ -396,6 +397,32 @@ export function Documentation() {
                   <p className="text-[10px] text-muted-foreground">Spaces + LLM API</p>
                 </div>
               </div>
+
+              {/* Ciclo de Feedback HITL */}
+              <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-blue-500" />
+                Ciclo de Aprendizado Contínuo (Human-in-the-Loop)
+              </h5>
+              <div className="grid md:grid-cols-3 gap-3 p-4 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                <div className="text-center p-3 bg-background rounded-lg border border-blue-500/30">
+                  <User className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+                  <p className="font-medium text-foreground text-sm">1. Revisor Valida</p>
+                  <p className="text-[10px] text-muted-foreground">FeedbackPanel no Frontend</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg border border-success/30">
+                  <Database className="w-5 h-5 text-success mx-auto mb-1" />
+                  <p className="font-medium text-foreground text-sm">2. POST /feedback</p>
+                  <p className="text-[10px] text-muted-foreground">Persiste no HF Dataset</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg border border-warning/30">
+                  <Target className="w-5 h-5 text-warning mx-auto mb-1" />
+                  <p className="font-medium text-foreground text-sm">3. Recalibração</p>
+                  <p className="text-[10px] text-muted-foreground">Calibradores Isotônicos</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                O feedback humano treina calibradores por fonte (regex, BERT, NuNER, spaCy), melhorando continuamente a precisão.
+              </p>
             </div>
 
             {/* Arquivos Principais */}
