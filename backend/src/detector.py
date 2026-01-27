@@ -1492,27 +1492,25 @@ class PIIDetector:
         try:
             from presidio_analyzer.nlp_engine import NlpEngineProvider
             
-            # Configura Presidio SEM modelo spaCy (evita download de 400MB)
-            # Só precisamos dos recognizers baseados em regex (IP, IBAN, Credit Card)
-            # que não dependem de NLP
+            # Configura Presidio com modelo pt-BR (já instalado no Dockerfile)
+            # Reutiliza o pt_core_news_lg que já temos
             configuration = {
                 "nlp_engine_name": "spacy",
-                "models": []  # Sem modelos = sem download
+                "models": [{"lang_code": "pt", "model_name": "pt_core_news_lg"}]
             }
             
             provider = NlpEngineProvider(nlp_configuration=configuration)
             nlp_engine = provider.create_engine()
             
-            # Inicializa sem supported_languages para evitar validação de modelo
             self.presidio_analyzer = AnalyzerEngine(
                 nlp_engine=nlp_engine,
-                supported_languages=["en"]
+                supported_languages=["pt"]
             )
             
             # NÃO registra nossos patterns - evita duplicação
             # Presidio serve apenas como complemento para tipos específicos
             
-            logger.info("✅ Presidio Analyzer inicializado (modo complementar, sem modelo spaCy)")
+            logger.info("✅ Presidio Analyzer inicializado (pt-BR, modo complementar)")
         except Exception as e:
             self.presidio_analyzer = None
             logger.warning(f"⚠️ Presidio indisponível: {e}")
@@ -2988,10 +2986,10 @@ class PIIDetector:
                 'CREDIT_CARD': 'CARTAO_CREDITO',
             }
             
-            # Analisa em inglês (suficiente para esses tipos)
+            # Analisa em português (consistente com o resto do sistema)
             results = self.presidio_analyzer.analyze(
                 text=texto,
-                language="en",
+                language="pt",
                 entities=entidades_complementares,
                 score_threshold=0.5
             )
