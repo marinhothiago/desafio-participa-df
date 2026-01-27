@@ -1,1079 +1,391 @@
-# 🛡️ Participa DF - Detector Inteligente de Dados Pessoais
+﻿# 🔐 Detector de PII - Participa DF
 
-[![Status](https://img.shields.io/badge/Status-Produção-brightgreen)](https://marinhothiago.github.io/desafio-participa-df/)
-[![Versão](https://img.shields.io/badge/Versão-9.6.0-blue)](./backend/README.md)
-[![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python)](https://www.python.org/)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)
-[![Licença](https://img.shields.io/badge/Licença-LGPD%2FLAI-green)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![F1--Score](https://img.shields.io/badge/F1--Score-1.0000-success)](./backend/benchmark.py)
-[![CI](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/ci.yml/badge.svg)](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/ci.yml)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
-[![GitHub last commit](https://img.shields.io/github/last-commit/marinhothiago/desafio-participa-df)](https://github.com/marinhothiago/desafio-participa-df/commits/main)
+> **Motor de IA para Detecção de Informações Pessoais em Textos Públicos**  
+> Hackathon Participa DF 2026 CGDF | F1-Score: 1.0000 | 452 Testes | 156 PIIs detectados
 
-> **Motor híbrido de detecção de Informações Pessoais Identificáveis (PII)** para conformidade com LGPD e LAI em manifestações do Participa DF.
-> 
-> 🎉 Sistema com **F1-Score = 1.0000** (100% precisão e recall) em auditoria LGPD completa (156 PIIs mapeados) + 452 testes unitários.
-
-| 🌐 **Links de Produção**                                               |  URL |
-|------------------------------------------------------------------------|-------|
-| Frontend (Dashboard) | https://marinhothiago.github.io/desafio-participa-df/   |
-| Backend (API) | https://marinhothiago-desafio-participa-df.hf.space/           |
-| Documentação da API | https://marinhothiago-desafio-participa-df.hf.space/docs |
-| Health Check | https://marinhothiago-desafio-participa-df.hf.space/health      |
+[![Build Status](https://github.com/marinhothiago/desafio-participa-df/actions/workflows/test.yml/badge.svg)](https://github.com/marinhothiago/desafio-participa-df/actions)
+[![Frontend](https://img.shields.io/badge/Demo-GitHub%20Pages-blue)](https://marinhothiago.github.io/desafio-participa-df/)
+[![API](https://img.shields.io/badge/API-HuggingFace-yellow)](https://marinhothiago-desafio-participa-df.hf.space/docs)
 
 ---
 
-## 📑 Sumário Rápido (Avaliação do Edital)
+## 📋 Sumário Rápido (Critérios do Edital)
 
-> **Para avaliadores:** As seções abaixo cobrem todos os critérios de avaliação do edital.
-
-| Critério do Edital | Seção | Link |
-|-------------------|-------|------|
-| **1a) Pré-requisitos** (Python, Node.js, etc) | 1.1 | [Ir para Pré-requisitos](#11-pré-requisitos) |
-| **1b) Arquivo de dependências** (requirements.txt, package.json) | 1.2 | [Ir para Dependências](#12-gerenciamento-de-dependências) |
-| **1c) Comandos de instalação** | 1.3 | [Ir para Instalação](#13-instalação-passo-a-passo) |
-| **2a) Comandos de execução** | 2.1, 2.2 | [Ir para Execução](#2️⃣-execução-benchmark-e-testes) |
-| **2b) Formato de entrada/saída** | 2.3 | [Ir para Formato de Dados](#23-formato-de-dados-api-analyze) |
-| **3a) Descrição da solução e arquivos** | Objetivo, Estrutura | [Ir para Objetivo](#-objetivo-da-solução), [Ir para Estrutura](#-estrutura-do-projeto-e-função-de-cada-arquivo) |
-| **3b) Código com comentários** | 3.4 | [Ir para Comentários no Código](#34-comentários-no-código-fonte) |
-| **3c) Estrutura lógica** | Estrutura | [Ir para Estrutura](#32-estrutura-lógica-do-projeto) |
+| Critério | Pontos | Seção |
+|----------|--------|-------|
+| 1a) Pré-requisitos com versões | 1 | [1. Pré-requisitos](#1-pré-requisitos) |
+| 1b) Arquivo de dependências | 2 | [2. Dependências](#2-dependências) |
+| 1c) Comandos de instalação | 1 | [3. Instalação](#3-instalação-via-docker-recomendado) |
+| 2a) Comandos de execução | 2 | [4. Execução](#4-execução) |
+| 2b) Formato entrada/saída | 1 | [5. Formato de Entrada/Saída](#5-formato-de-entradasaída) |
+| 3a) Objetivo e arquivos | 1 | [6. Descrição da Solução](#6-descrição-da-solução) |
+| 3b) Comentários no código | 1 | [7. Comentários no Código](#7-comentários-no-código) |
+| 3c) Estrutura lógica | 1 | [8. Estrutura de Arquivos](#8-estrutura-de-arquivos) |
 
 ---
 
-## 📋 Objetivo da Solução
+## 1. Pré-requisitos
 
-O **Participa DF - PII Detector** é um sistema completo para **detectar, classificar e avaliar o risco de vazamento de dados pessoais** em textos de pedidos de acesso a informação recebidos pelo GDF.
+| Ferramenta | Versão Mínima | Verificar Instalação |
+|------------|---------------|----------------------|
+| **Docker** | 24.0+ | `docker --version` |
+| **Docker Compose** | 2.20+ | `docker compose version` |
+| Git | 2.40+ | `git --version` |
 
-### Problema Resolvido
+> **⚡ Para avaliadores:** Apenas Docker é necessário para rodar o projeto completo.
 
-O GDF precisa publicar manifestações de cidadãos em transparência ativa (LAI) sem violar a privacidade garantida pela LGPD. Este sistema automatiza a detecção de:
+<details>
+<summary>📌 Pré-requisitos para desenvolvimento local (opcional)</summary>
 
-- **CPF, RG, CNH, Passaporte, PIS, CNS, Título Eleitor, CTPS** (documentos de identificação)
-- **Email, Telefone, Celular, Telefones Internacionais** (dados de contato)
-- **Endereços residenciais, CEP, Endereços Brasília (SQS, SQN, etc)** (localização)
-- **Nomes pessoais** (com análise de contexto via BERT + spaCy + NuNER)
-- **Dados bancários, PIX, Cartão de Crédito, Conta Bancária** (informações financeiras)
-- **Placas de veículos, Processos CNJ, Matrículas** (outros identificadores)
-- **Dados de Saúde (CID), Dados Biométricos, Menores Identificados** (dados sensíveis LGPD)
-- **IP Address, Coordenadas GPS, User-Agent** (identificação indireta - risco baixo)
+| Ferramenta | Versão | Verificar |
+|------------|--------|-----------|
+| Python | 3.10+ | `python --version` |
+| Node.js | 18+ | `node --version` |
+| npm | 9+ | `npm --version` |
 
-### Resultado
-
-Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBLICO"** (contém PII), com nível de risco (CRÍTICO, ALTO, MODERADO, BAIXO, SEGURO) e score de confiança normalizado (0-1).
-
----
-
-## 🏗️ Arquitetura do Sistema
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  FRONTEND (React + Vite)                    │
-│              GitHub Pages / Docker (nginx)                  │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ • Dashboard com métricas em tempo real                 │ │
-│  │ • Análise individual de textos                         │ │
-│  │ • Processamento em lote (CSV/XLSX)                     │ │
-│  │ • Design System DSGOV (Gov.br)                         │ │
-│  └────────────────────────────────────────────────────────┘ │
-└────────────────────────┬────────────────────────────────────┘
-                         │ HTTP POST /analyze
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                 BACKEND (FastAPI + Python)                  │
-│           HuggingFace Spaces / Docker                       │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ Motor Híbrido de Detecção PII (v9.6.0)                 │ │
-│  │                                                      │ │
-│  │ ┌─────────────────────────────┐   ┌─────────────────┐ │ │
-│  │ │ Pipeline Híbrido Original   │   │ Presidio (MSFT) │ │ │
-│  │ │ 1. REGEX + Validação DV     │   │ • AnalyzerEngine│ │ │
-│  │ │ 2. BERT Davlan NER          │   │ • Recognizers   │ │ │
-│  │ │ 3. NuNER pt-BR              │   │   Customizados  │ │ │
-│  │ │ 4. spaCy pt_core_news_lg    │   │   GDF (10+)     │ │ │
-│  │ │ 5. Gazetteer GDF            │   └─────────────────┘ │ │
-│  │ │ 6. Regras de Negócio        │           │           │ │
-│  │ │ 7. Confiança Probabilística │           │           │ │
-│  │ │ 8. Thresholds Dinâmicos     │           │           │ │
-│  │ │ 9. Deduplicação Avançada    │           │           │ │
-│  │ └─────────────┬───────────────┘           │           │ │
-│  │               │                           │           │ │
-│  │         ┌─────▼─────────────┐             │           │ │
-│  │         │   Ensemble/Fusão  │◄────────────┘           │ │
-│  │         └─────────┬─────────┘                         │ │
-│  │                   │                                   │ │
-│  │         ┌─────────▼─────────┐                         │ │
-│  │         │ Árbitro LLM       │                         │ │
-│  │         │ Llama-3.2-3B (HF) │  ← ✅ ATIVADO PADRÃO    │ │
-│  │         │ • Reidentificação │                         │ │
-│  │         │ • Decisão ambígua │                         │ │
-│  │         └────────────────────┘                        │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
----
-
-### Tecnologias Utilizadas
-
-#### Backend (Motor de IA)
-
-| Tecnologia | Versão | Função |
-|------------|--------|--------|
-| **Python** | 3.10+ | Linguagem principal |
-| **FastAPI** | 0.110.0 | Framework web assíncrono |
-| **spaCy** | 3.8.0 | NLP para português (`pt_core_news_lg`) |
-| **Transformers** | 4.41.2 | BERT NER (`monilouise/ner_news_portuguese`) |
-| **NuNER** | - | NER multilíngue (`numind/NuNER_Zero`) |
-| **PyTorch** | 2.1.0 | Deep learning (CPU) |
-| **Presidio Analyzer** | 2.2.360+ | Framework Microsoft para detecção de PII |
-| **Llama 3.2** | 3B-Instruct | Árbitro LLM via HuggingFace Inference API |
-| **huggingface_hub** | latest | InferenceClient para chamadas LLM |
-| **scikit-learn** | 1.3.0+ | Calibração isotônica de confiança |
-| **Pandas** | 2.2.1 | Processamento de dados tabulares |
-| **Celery** | 5.3.0+ | Processamento assíncrono de lotes |
-| **Redis** | - | Broker para filas Celery |
-
-#### Modelos de IA
-
-| Modelo | Tipo | Função |
-|--------|------|--------|
-| `monilouise/ner_news_portuguese` | BERT NER | Detecção de nomes (pt-BR especializado) |
-| `numind/NuNER_Zero` | NER Zero-shot | Detecção multilíngue (backup) |
-| `pt_core_news_lg` | spaCy | NER português (fallback) |
-| `meta-llama/Llama-3.2-3B-Instruct` | LLM | Árbitro para casos ambíguos |
-
-#### Frontend (Interface)
-
-| Tecnologia | Versão | Função |
-|------------|--------|--------|
-| React | 18.3.1 | Biblioteca UI |
-| TypeScript | 5.8.3 | Tipagem estática |
-| Vite | 5.4.19 | Build tool ultra-rápido |
-| TailwindCSS | 3.4.17 | Estilização (Design DSGOV) |
-| Shadcn/UI | latest | Componentes acessíveis |
-| Recharts | 2.15.4 | Gráficos e visualizações |
-| React Query | 5.83.0 | Cache e estado de requisições |
-| XLSX | 0.18.5 | Parser de arquivos Excel |
+</details>
 
 ---
 
-### Recursos do Backend
+## 2. Dependências
 
-- **Pipeline híbrido avançado**: Regex, validação DV completa (CPF/CNPJ), BERT NER, NuNER, spaCy, gazetteer institucional, regras de negócio, deduplicação avançada, ensemble/fusão, calibradores probabilísticos e thresholds dinâmicos.
-- **Presidio Framework (Microsoft)**: 10 PatternRecognizers customizados para GDF (PROCESSO_SEI, MATRICULA_GDF, OAB, TELEFONE_BR, CEP_BR, etc.).
-- **🤖 Árbitro LLM (Llama-3.2-3B-Instruct)**: **ATIVADO por padrão** - avalia risco de reidentificação (número isolado vs número + nome/CPF). Via `huggingface_hub` InferenceClient.
-- **Análise de contexto avançada**: Distingue endereço em contexto de fiscalização/urbanismo vs residência pessoal.
-- **Gazetteer institucional GDF**: Filtro de falsos positivos para nomes de órgãos, escolas, hospitais e aliases do DF.
-- **Sistema de confiança probabilística**: Calibração isotônica, combinação log-odds, thresholds dinâmicos por tipo, explicabilidade total.
-- **Formato de resposta da API**: Dicionário estruturado, pronto para integrações modernas.
-- **Testes robustos**: 452 testes unitários, edge cases, benchmark LGPD, auditoria completa (156 PIIs).
+Os arquivos de gerenciamento de pacotes estão em:
 
-> 📚 Consulte o [backend/README.md](backend/README.md) para exemplos de uso, formato de resposta e detalhes técnicos.
+| Componente | Arquivo | Descrição |
+|------------|---------|-----------|
+| **Backend** | [backend/requirements.txt](backend/requirements.txt) | Dependências Python (FastAPI, spaCy, Transformers, etc.) |
+| **Frontend** | [frontend/package.json](frontend/package.json) | Dependências Node.js (React, TypeScript, Vite, etc.) |
+| **Docker** | [docker-compose.yml](docker-compose.yml) | Orquestração dos containers |
 
 ---
 
-## 🤖 Árbitro LLM: Llama-3.2-3B-Instruct
+## 3. Instalação via Docker (Recomendado)
 
-O sistema utiliza o **Llama-3.2-3B-Instruct** como árbitro inteligente para casos ambíguos de detecção de PII.
-
-### Status: ✅ ATIVADO POR PADRÃO 
-
-| Aspecto | Detalhe |
-|---------|---------|
-| **Modelo** | `meta-llama/Llama-3.2-3B-Instruct` (configurável via `HF_MODEL`) |
-| **Biblioteca** | `huggingface_hub` (InferenceClient) |
-| **Ativação** | **Ativado por padrão** (`use_llm_arbitration=True`) |
-| **Requisito** | `HF_TOKEN` no arquivo `.env` |
-| **Latência** | ~1-2 segundos (apenas quando acionado) |
-| **Desativar** | `PII_USE_LLM_ARBITRATION=false` (env var) |
-
-### Quando é Acionado
-
-1. **Itens com baixa confiança** → LLAMA decide se é PII
-2. **Zero PIIs encontrados** → LLAMA faz análise final do texto
-3. **Via API** → `POST /analyze?use_llm=true`
-
-### Regras do System Prompt (v9.6.0)
-
-O árbitro LLM agora avalia **risco de reidentificação**:
-
-| Cenário | Criticidade | Exemplo |
-|---------|-------------|---------|
-| Número isolado | BAIXA | "Processo 00001-123456/2024" sozinho |
-| Número + Nome/CPF | ALTA | "Maria Silva, CPF 123.456.789-00, processo 00001" |
-| Servidor em ato funcional | PÚBLICO | "Assinado por João Silva, Diretor" |
-| Cidadão em manifestação | PII | "Me chamo Maria e moro na SQN 302" |
-| Dados sensíveis LGPD | CRÍTICO | Saúde, biométricos, menores |
-
-
-> 📚 **Documentação completa**: Consulte [backend/README.md](backend/README.md#-árbitro-llm-llama-32-3b-instruct-v950) ou [LLAMA_ARBITRAGE_LOGIC.md](LLAMA_ARBITRAGE_LOGIC.md)
-
-
-## 🔍 Explicabilidade (XAI)
-
-Cada entidade detectada inclui justificativa detalhada:
-
-```json
-{
-  "tipo": "CPF",
-  "valor": "123.456.789-09",
-  "confianca": 1.0,
-  "explicacao": {
-    "motivos": ["✓ Formato XXX.XXX.XXX-XX identificado"],
-    "fontes": ["Regex (padrão)"],
-    "validacoes": ["✓ Dígito verificador válido (mod 11)"],
-    "contexto": ["✓ Contexto pessoal: 'cpf' encontrado"],
-    "confianca_percent": "100.0%",
-    "peso": 5
-  }
-}
-```
-
-**Benefícios:** Auditores podem entender exatamente por que cada PII foi detectado, aumentando transparência e confiança no sistema.
-
----
-
-## 🔄 Aprendizado Contínuo (Human-in-the-Loop)
-
-O sistema implementa um ciclo de melhoria contínua:
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌────────────────────┐
-│ Usuário revisa  │────▶│ POST /feedback   │────▶│ feedback.json      │
-│ detecção no UI  │     │ CORRETO/INCORRETO│     │ (persiste dados)   │
-└─────────────────┘     └──────────────────┘     └─────────┬──────────┘
-                                                           │
-┌─────────────────┐     ┌──────────────────┐     ┌─────────▼──────────┐
-│ Próximas        │◀────│ Calibradores     │◀────│ Recalibração       │
-│ detecções       │     │ isotônicos       │     │ automática         │
-│ mais precisas   │     │ ajustados        │     │ (por fonte)        │
-└─────────────────┘     └──────────────────┘     └────────────────────┘
-```
-
-**Endpoints:** `POST /feedback`, `GET /feedback/stats`, `POST /feedback/generate-dataset`
-
-Consulte [backend/README.md](backend/README.md#-feedback-loop-como-o-motor-aprende-com-feedbacks-humanos) para documentação completa.
-
----
-
-## 📁 Estrutura do Projeto e Função de Cada Arquivo
-
-> **Critério 3a do Edital:** README descrevendo objetivo e função de cada arquivo ✅  
-> **Critério 3c do Edital:** Estrutura lógica e organizada dos arquivos ✅
-
-```
-desafio-participa-df/
-│
-├── README.md                     ← ESTE ARQUIVO: Visão geral do projeto
-├── docker-compose.yml            ← Orquestração: backend + frontend
-├── app.py                        ← Entry point para HuggingFace Spaces
-├── deploy-hf.sh                  ← Script de deploy para HuggingFace
-│
-├── backend/                      ← 🐍 MOTOR DE IA (Python + FastAPI)
-│   ├── README.md                 ← Documentação técnica do backend
-│   ├── requirements.txt          ← Dependências Python (pip install)
-│   ├── Dockerfile                ← Container para deploy
-│   │
-│   ├── api/
-│   │   ├── main.py               ← FastAPI: endpoints /analyze e /health
-│   │   ├── celery_config.py      ← Configuração Celery + Redis
-│   │   └── tasks.py              ← Tasks assíncronas para lotes
-│   │
-│   ├── src/
-│   │   ├── detector.py           ← Motor híbrido PII v9.6 (3300+ linhas, 30+ tipos, thresholds dinâmicos, pós-processamento, gazetteer)
-│   │   ├── allow_list.py         ← Lista de termos seguros (blocklist, cargos, contextos, 375+ termos)
-│   │   └── confidence/           ← Módulo de confiança probabilística (isotônico, log-odds, thresholds dinâmicos)
-│   │       ├── types.py          ← Dataclasses: PIIEntity, DocumentConfidence
-│   │       ├── config.py         ← FN/FP rates, pesos LGPD, thresholds
-│   │       ├── validators.py     ← Validação DV (CPF, CNPJ, PIS, CNS)
-│   │       ├── calibration.py    ← Calibrador isotônico (sklearn)
-│   │       ├── combiners.py      ← Combinação log-odds (Naive Bayes)
-│   │       └── calculator.py     ← Orquestrador de confiança
-│   │
-│   ├── scripts/
-│   │   ├── main_cli.py           ← CLI: processamento em lote via terminal
-│   │   ├── optimize_ensemble.py  ← Grid search de pesos do ensemble
-│   │   ├── clean_backend.ps1     ← Limpeza de cache do backend
-│   │   └── clean_frontend.ps1    ← Limpeza de cache do frontend
-│   │
-│   ├── tests/                    ← Testes automatizados (pytest, 410+ casos)
-│   │   ├── test_benchmark.py     ← 🏆 Benchmark LGPD: 308+ casos, F1=1.0000 + 5 casos LLM
-│   │   ├── test_amostra.py       ← Testes com amostra e-SIC
-│   │   ├── test_confianca.py     ← Testes do sistema de confiança
-│   │   ├── test_edge_cases.py    ← Casos extremos e edge cases
-│   │   ├── test_regex_gdf.py     ← Testes de padrões regex GDF
-│   │   └── ...                   ← Outros testes especializados
-│   │
-│   └── data/
-│       ├── input/                ← Arquivos CSV/XLSX para processar
-│       └── output/               ← Relatórios gerados (JSON, CSV, XLSX, resultados benchmark)
-│
-└── frontend/                     ← ⚛️ INTERFACE WEB (React + TypeScript)
-    ├── README.md                 ← Documentação técnica do frontend
-    ├── package.json              ← Dependências Node.js (npm install)
-    ├── Dockerfile                ← Container com nginx
-    ├── vite.config.ts            ← Configuração de build (Vite)
-    ├── tailwind.config.ts        ← Design System DSGOV
-    │
-    ├── src/
-    │   ├── main.tsx              ← Entry point React
-    │   ├── App.tsx               ← Roteamento e layout
-    │   │
-    │   ├── pages/
-    │   │   ├── Dashboard.tsx     ← Página inicial com KPIs
-    │   │   ├── Classification.tsx← Análise individual + lote
-    │   │   ├── Documentation.tsx ← Guia de uso integrado
-    │   │   └── NotFound.tsx      ← Página 404
-    │   │
-    │   ├── components/           ← Componentes reutilizáveis (15+)
-    │   │   ├── ui/               ← Shadcn UI (16 componentes otimizados)
-    │   │   ├── Header.tsx        ← Cabeçalho DSGOV
-    │   │   ├── KPICard.tsx       ← Cards de métricas
-    │   │   ├── ResultsTable.tsx  ← Tabela de resultados
-    │   │   ├── FileDropzone.tsx  ← Upload drag & drop
-    │   │   ├── ConfidenceBar.tsx ← Barra visual de confiança
-    │   │   ├── RiskThermometer.tsx ← Termômetro de risco
-    │   │   └── ...
-    │   │
-    │   ├── lib/
-    │   │   ├── api.ts            ← Cliente HTTP para backend (detecção automática do backend local, retry, tratamento de erros, integração com contadores globais)
-    │   │   ├── fileParser.ts     ← Parser de CSV/XLSX
-    │   │   └── utils.ts          ← Funções utilitárias
-    │   │
-    │   ├── contexts/
-    │   │   └── AnalysisContext.tsx ← Estado global (histórico, métricas, funções de update)
-    │   │
-    │   └── hooks/
-    │       └── use-toast.ts      ← Notificações
-    │
-    └── public/
-      ├── robots.txt            ← SEO
-      └── 404.html              ← Fallback SPA
-```
-
----
-
-## 1️⃣ INSTRUÇÕES DE INSTALAÇÃO E USO RÁPIDO
-
-### 1.1 Pré-requisitos
-
-> **Critério 1a do Edital:** Lista de pré-requisitos com versões ✅
-
-| Software | Versão Mínima | Verificar Instalação | Como Instalar |
-|----------|---------------|---------------------|---------------|
-| **Python** | 3.10+ | `python --version` | [python.org](https://www.python.org/downloads/) |
-| **Node.js** | 18.0+ | `node --version` | [nodejs.org](https://nodejs.org/) |
-| **npm** | 9.0+ | `npm --version` | Incluído com Node.js |
-| **Git** | 2.0+ | `git --version` | [git-scm.com](https://git-scm.com/) |
-| **Docker** (opcional) | 20.0+ | `docker --version` | [docker.com](https://www.docker.com/) |
-
-### 1.2 Gerenciamento de Dependências
-
-O projeto utiliza **dois** sistemas de dependências:
-
-#### Backend: `backend/requirements.txt` (pip)
-
-> **Critério 1b do Edital:** Arquivo de gerenciamento de pacotes ✅
-
-```txt
-# Framework Web
-fastapi==0.110.0
-uvicorn==0.27.1
-python-multipart==0.0.9
-
-# NLP Core
-spacy==3.8.0
-transformers==4.36.2
-sentencepiece==0.1.99
-accelerate>=0.21.0
-
-# Processamento de Dados
-pandas==2.2.1
-openpyxl==3.1.2
-text-unidecode==1.3
-scikit-learn>=1.3.0
-
-# Presidio (PII Detection)
-presidio-analyzer>=2.2.360
-
-# PyTorch CPU (instalado separadamente via Dockerfile)
-# torch==2.1.0+cpu
-```
-
-📂 **Arquivo completo:** [`backend/requirements.txt`](backend/requirements.txt)
-
-#### Frontend: `frontend/package.json` (npm)
-
-```json
-{
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.1",
-    "typescript": "^5.8.3",
-    "vite": "^5.4.19",
-    "tailwindcss": "^3.4.17",
-    "@tanstack/react-query": "^5.83.0",
-    "recharts": "^2.15.4",
-    "lucide-react": "^0.462.0",
-    "xlsx": "^0.18.5",
-    "zod": "^3.25.76"
-  }
-}
-```
-
-📂 **Arquivo completo:** [`frontend/package.json`](frontend/package.json)
-
-### 1.3 Instalação Passo a Passo
-
-> **Critério 1c do Edital:** Comandos exatos e sequenciais para configuração ✅
-
-#### Opção A: Instalação Manual (Desenvolvimento)
-
-**Passos sequenciais para configurar o ambiente de desenvolvimento:**
+### Passo a passo
 
 ```bash
-# ========================================
-# PASSO 1: Clone o repositório
-# ========================================
+# 1. Clonar o repositório
 git clone https://github.com/marinhothiago/desafio-participa-df.git
 cd desafio-participa-df
 
-# ========================================
-# PASSO 2: Configurar BACKEND (Python)
-# ========================================
-cd backend
+# 2. Subir os containers (backend + frontend)
+docker compose up --build
+```
 
-# 2.1 Crie o ambiente virtual Python
+Aguarde o download das imagens (~2-5 minutos na primeira vez).
+
+### Verificar se está funcionando
+
+| Serviço | URL | Status |
+|---------|-----|--------|
+| **Frontend** | http://localhost:5173 | Interface web |
+| **Backend API** | http://localhost:7860 | API REST |
+| **Documentação** | http://localhost:7860/docs | Swagger UI |
+
+---
+
+## 4. Execução
+
+### 4.1 Via Docker (Recomendado)
+
+```bash
+# Iniciar todos os serviços
+docker compose up
+
+# Parar os serviços
+docker compose down
+```
+
+### 4.2 Testar a API
+
+```bash
+# Exemplo: detectar PII em texto
+curl -X POST "http://localhost:7860/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Meu CPF é 529.982.247-25 e meu email é joao@email.com"}'
+```
+
+### 4.3 Usar a Interface Web
+
+1. Acesse http://localhost:5173
+2. Cole um texto ou faça upload de arquivo (CSV/XLSX)
+3. Clique em "Analisar"
+4. Visualize os PIIs detectados e exporte os resultados
+
+### 4.4 Processar Arquivo em Lote (CLI)
+
+```bash
+# Entrar no container do backend
+docker compose exec backend bash
+
+# Processar arquivo XLSX
+python scripts/main_cli.py \
+  --input data/input/AMOSTRA_e-SIC.xlsx \
+  --output data/output/resultado
+```
+
+<details>
+<summary>📌 Execução local sem Docker (desenvolvimento)</summary>
+
+```bash
+# Backend
+cd backend
 python -m venv venv
-
-# 2.2 Ative o ambiente virtual
-# Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-# Windows (CMD):
-venv\Scripts\activate.bat
-# Linux/Mac:
-source venv/bin/activate
-
-# 2.3 Instale todas as dependências do backend
+.\venv\Scripts\activate  # Windows
 pip install -r requirements.txt
+python -m uvicorn api.main:app --host 0.0.0.0 --port 7860 --reload
 
-# 2.4 Baixe o modelo spaCy para português (obrigatório)
-python -m spacy download pt_core_news_lg
-
-# 2.5 (Opcional) Configure o token Hugging Face para o árbitro LLM
-# Crie um arquivo .env na pasta backend com:
-echo "HF_TOKEN=seu_token_aqui" > .env
-
-# ========================================
-# PASSO 3: Configurar FRONTEND (Node.js)
-# ========================================
-cd ../frontend
-
-# 3.1 Instale as dependências do frontend
-npm install
-
-# ========================================
-# INSTALAÇÃO COMPLETA! Veja seção 2.1 para executar
-# ========================================
-```
-
-#### Opção B: Docker Compose (Produção - Recomendado)
-
-```bash
-# Clone e entre no diretório
-git clone https://github.com/marinhothiago/desafio-participa-df.git
-cd desafio-participa-df
-
-# Suba todos os serviços (backend + frontend)
-docker-compose up -d
-```
-
----
-
-## 2️⃣ EXECUÇÃO, BENCHMARK E TESTES
-
-> **Critério 2a do Edital:** Comandos exatos para executar com exemplos ✅
-
-### 2.1 Execução Local (Desenvolvimento)
-Abra **dois terminais** side-by-side:
-
-#### Terminal 1: Backend (Motor de IA)
-
-```bash
-cd backend
-
-# Ative o ambiente virtual (se não estiver ativo)
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Inicie o servidor FastAPI
-uvicorn api.main:app --host 0.0.0.0 --port 7860 --reload
-```
-
-**Endpoints disponíveis:**
-- API: http://localhost:7860
-- Documentação Swagger: http://localhost:7860/docs
-- Health Check: http://localhost:7860/health
-
-#### Terminal 2: Frontend (Interface)
-
-```bash
+# Frontend (outro terminal)
 cd frontend
-
-# Inicie o servidor de desenvolvimento
+npm install
 npm run dev
 ```
 
-**Acesse:** http://localhost:8080
-
-#### CLI: Processamento em Lote
-
-```bash
-cd backend
-
-# Ative o ambiente virtual
-# Windows: venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
-
-# Processe um arquivo CSV ou XLSX
-python scripts/main_cli.py --input data/input/manifestacoes.xlsx --output data/output/resultado
-```
-
-**Saídas geradas (mesma estrutura de colunas nos 3 formatos):**
-| Arquivo | Formato | Uso |
-|---------|---------|-----|
-| `resultado.json` | JSON | Integração com sistemas |
-| `resultado.csv` | CSV | Importação em ferramentas |
-| `resultado.xlsx` | Excel | Análise visual com cores |
-
-**Colunas:** ID → Texto Mascarado → Classificação → Confiança → Nível de Risco → Identificadores
-
-### 2.2 Execução com Docker
-
-```bash
-# Suba os serviços
-docker-compose up -d
-
-# Acompanhe os logs
-docker-compose logs -f
-
-# Pare os serviços
-docker-compose down
-```
-
-**Portas:**
-- Backend: http://localhost:7860
-- Frontend: http://localhost:3000
+</details>
 
 ---
 
-## 🧪 ESTRATÉGIA DE TESTES
+## 5. Formato de Entrada/Saída
 
-- **Cobertura total:** edge cases, benchmark LGPD, análise de confiança, integração, regressão.
-- **Testes unitários:** funções isoladas (regex, validadores, calibradores).
-- **Testes de integração:** fluxo completo (detector + confiança + API).
-- **Testes de benchmark:** performance, recall, precisão, F1-score.
-- **Testes de filtragem:** robustez contra falsos positivos/negativos.
-
-**Executar todos os testes:**
-
-```bash
-cd backend
-
-# Ativar ambiente virtual (se necessário)
-# Windows: venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
-
-# Rodar todos os testes
-pytest --disable-warnings -q
-
-# Rodar com detalhes
-pytest -v
-
-# Rodar teste específico
-pytest tests/test_benchmark.py -v
-```
-
----
-
-### 2.3 Formato de Dados (API /analyze)
-
-> **Critério 2b do Edital:** Formato de entrada e saída esperado ✅
-
-#### Entrada (POST /analyze)
+### Entrada (POST /analyze)
 
 ```json
 {
-  "text": "Meu CPF é 123.456.789-09 e preciso de ajuda.",
-  "id": "manifestacao_001"
+  "text": "Texto para análise de PII"
 }
 ```
 
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `text` | string | ✅ Sim | Texto a ser analisado |
-| `id` | string | ❌ Não | ID para rastreabilidade (preservado na saída) |
-
-#### Saída
+### Saída
 
 ```json
 {
-  "id": "manifestacao_001",
-  "classificacao": "NÃO PÚBLICO",
-  "risco": "CRÍTICO",
-  "confianca": 0.98,
-  "detalhes": [
+  "contem_pii": true,
+  "nivel_risco": "CRÍTICO",
+  "peso_risco": 5,
+  "tipos_pii": ["CPF", "EMAIL"],
+  "quantidade_pii": 2,
+  "texto_anonimizado": "Meu CPF é [CPF_1] e meu email é [EMAIL_1]",
+  "findings": [
     {
       "tipo": "CPF",
-      "valor": "123.456.789-09",
-      "confianca": 1.0
+      "valor": "529.982.247-25",
+      "inicio": 11,
+      "fim": 25,
+      "confidence": 0.9999,
+      "contexto": "Meu CPF é ..."
     }
-  ]
-}
-```
-
-| Campo | Tipo | Valores Possíveis | Descrição |
-|-------|------|-------------------|-----------|
-| `id` | string | qualquer | ID da requisição (preservado) |
-| `classificacao` | string | "PÚBLICO", "NÃO PÚBLICO" | Se pode ou não publicar |
-| `risco` | string | SEGURO, BAIXO, MODERADO, ALTO, CRÍTICO | Nível de severidade |
-| `confianca` | float | 0.0 a 1.0 | Score de certeza do modelo |
-| `detalhes` | array | lista de objetos | PIIs encontrados com tipo e valor |
-
-#### Formato de Arquivo em Lote (CSV/XLSX)
-
-O arquivo deve conter uma coluna chamada `Texto Mascarado` (ou `text`) e opcionalmente `ID`:
-
-```csv
-ID,Texto Mascarado
-man_001,"Solicito informações sobre minha situação cadastral."
-man_002,"Meu CPF é 123.456.789-09 e preciso de ajuda urgente."
-man_003,"Email para contato: joao.silva@gmail.com"
-```
-
----
-## 🆕 FORMATO DE RESPOSTA DA API
-
-O endpoint principal retorna um dicionário estruturado, exemplo:
-
-```json
-{
-  "has_pii": true,
-  "entities": [
-    {"tipo": "CPF", "valor": "123.456.789-09", "confianca": 0.98, "fonte": "regex"}
   ],
-  "risk_level": "ALTO",
-  "confidence_all_found": 0.97,
-  "total_entities": 1,
-  "sources_used": ["regex", "bert_ner"]
+  "confianca": {
+    "min_entity": 0.95,
+    "all_found": 0.98,
+    "no_pii": 0.001
+  }
 }
 ```
 
-**Principais campos:**
-- `has_pii`: se encontrou dado pessoal
-- `entities`: lista detalhada de entidades (tipo, valor, confiança, fonte)
-- `risk_level`: nível de risco LGPD
-- `confidence_all_found`: confiança global
-- `total_entities`: total de entidades detectadas
-- `sources_used`: fontes usadas na detecção
+### Níveis de Risco
 
-**Atenção:** O frontend deve consumir este formato.
-
----
-
-## 3️⃣ ARQUITETURA, SEGURANÇA E MELHORES PRÁTICAS
-
-### 3.1 Segurança do Token Hugging Face (HF_TOKEN)
-
-> O token Hugging Face **NUNCA** deve ser colocado no código-fonte nem em arquivos versionados. Use sempre o arquivo `.env` (NÃO versionado) para armazenar o token localmente ou no deploy. O backend já lê automaticamente o `.env` e injeta o token no pipeline do transformers. No deploy Hugging Face Spaces, configure o token como variável de ambiente ou suba um `.env` manualmente (NÃO envie para o repositório).
-
-**Resumo:**
-- O token é lido em tempo de execução, nunca aparece no log nem no código.
-- O projeto está seguro para uso público e privado, desde que siga essas orientações.
-
-### 3.2 Benchmark, Pós-processamento e Ensemble
-
-- **Benchmark oficial:** 318+ casos reais, F1-score 0.9763, todos FPs/FNs conhecidos e documentados.
-- **Pós-processamento de spans:** Normalização, merge/split, deduplicação de entidades.
-- **Ensemble:** Regex + BERT Davlan + NuNER + spaCy + Gazetteer + Regras + Thresholds dinâmicos.
-- **Otimizador de pesos:** `backend/scripts/optimize_ensemble.py` para grid search de pesos do ensemble.
-
-### 3.3 Limpeza, Deploy e Checklist
-
-- `.gitignore` e `.dockerignore` revisados e comentados.
-- Scripts de limpeza e automação para ambiente local.
-- Deploy seguro: Docker Compose, Hugging Face Spaces, GitHub Pages.
-- Documentação detalhada em `backend/README.md` e `frontend/README.md`.
+| Nível | Peso | Tipos de PII |
+|-------|------|--------------|
+| 🔴 CRÍTICO | 5 | CPF, RG, CNH, Passaporte, PIS, CNS |
+| 🟠 ALTO | 4 | Email, Telefone, Endereço, Nome |
+| 🟡 MODERADO | 3 | Placa, Data nascimento, Processo |
+| 🟢 SEGURO | 0 | Nenhum PII detectado |
 
 ---
 
-### 3.4 Comentários no Código-Fonte
+## 6. Descrição da Solução
 
-O código-fonte possui **comentários detalhados em trechos complexos**, seguindo boas práticas de documentação.
+### Objetivo
 
-> **Critério 3b do Edital:** Código com comentários em trechos complexos ✅
+Sistema de IA para **detectar e classificar informações pessoais (PII)** em textos do portal Participa DF, garantindo conformidade com **LGPD** e **LAI** antes da publicação de dados abertos.
 
-**Exemplos de documentação no código:**
+### Arquitetura
 
-#### Motor Principal (`backend/src/detector.py` - 1016 linhas)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      ENTRADA DE TEXTO                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              ENSEMBLE DE DETECTORES (OR)                    │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────┐ │
+│  │  Regex    │  │  BERT     │  │  Presidio │  │  spaCy   │ │
+│  │  + DV     │  │  NER      │  │  + Custom │  │  NER     │ │
+│  └───────────┘  └───────────┘  └───────────┘  └──────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              ÁRBITRO LLM (Llama-3.2-3B)                     │
+│  • Resolve conflitos entre detectores                       │
+│  • Analisa contexto semântico profundo                      │
+│  • Decide: PII real vs falso positivo                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     RESULTADO                               │
+│  • PIIs detectados com confiança probabilística             │
+│  • Classificação de risco (5 níveis LGPD)                   │
+│  • Explicabilidade (XAI) de cada decisão                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Tecnologias Principais
+
+| Componente | Tecnologia | Função |
+|------------|------------|--------|
+| Backend | FastAPI + Python 3.10 | API REST de análise |
+| NLP | spaCy + BERT NER (ONNX) | Reconhecimento de entidades |
+| Validação | Regex + Dígitos Verificadores | CPF, CNPJ, PIS, CNH |
+| LLM | Llama-3.2-3B | Árbitro de conflitos |
+| Presidio | Microsoft Presidio | 10 recognizers customizados |
+| Frontend | React + TypeScript + Vite | Interface de usuário |
+
+---
+
+## 7. Comentários no Código
+
+O código está documentado com comentários explicativos em trechos complexos. Exemplos:
+
+### Detector Principal (backend/src/detector.py)
 
 ```python
-class PIIDetector:
-    """Detector híbrido de PII com ensemble de alta recall.
+def detect(self, text: str) -> List[PIIFinding]:
+    """Detecção de PII usando estratégia Ensemble OR.
     
-    Estratégia: Ensemble OR - qualquer detector positivo classifica como PII.
-    Isso maximiza recall (não deixar escapar nenhum PII) às custas de alguns
-    falsos positivos, que é a estratégia correta para LAI/LGPD.
+    Pipeline:
+    1. Regex: Detecta padrões estruturados (CPF, Email, Telefone)
+    2. NER: spaCy + BERT detectam nomes e entidades
+    3. Merge: Combina resultados eliminando duplicatas
+    4. LLM: Árbitro resolve conflitos e valida contexto
+    
+    Estratégia OR: Se QUALQUER detector encontra PII, considera encontrado.
+    Isso maximiza recall, essencial para conformidade LGPD.
     """
-
-    def detect(self, text: str) -> Tuple[bool, List[Dict], str, float]:
-        """Detecta PII no texto usando ensemble de alta recall.
-        
-        Args:
-            text: Texto a ser analisado
-            
-        Returns:
-            Tuple contendo:
-            - is_pii (bool): True se contém PII
-            - findings (List[Dict]): Lista de PIIs encontrados
-            - nivel_risco (str): CRITICO, ALTO, MODERADO, BAIXO ou SEGURO
-            - confianca (float): Score de confiança 0-1
-        """
-        # 1. Regex com validação de DV (mais preciso para documentos)
-        regex_findings = self._detectar_regex(text)
-        
-        # 2. Nomes após gatilhos de contato (sempre PII)
-        gatilho_findings = self._extrair_nomes_gatilho(text)
-        
-        # 3. NER com BERT (primário) + spaCy (complementar)
-        ner_findings = self._detectar_ner(text)
-        
-        # Ensemble OR: combina todos os achados com deduplicação
-        # ...
 ```
 
----
-
-## 🚀 Detecção PII com Microsoft Presidio
-
-O backend  suporta integração nativa com o [Presidio Analyzer](https://microsoft.github.io/presidio/), framework open-source da Microsoft para detecção e anonimização de dados sensíveis (PII).
-
-- Detectores customizáveis, manutenção facilitada
-- Suporte a múltiplos idiomas e entidades
-- Usado em conjunto com outros detectores (ensemble)
-
-Veja detalhes e exemplos em [backend/README.md](backend/README.md)
-
----
-
-#### Arquitetura NER Dual (BERT + spaCy)
-
-O sistema utiliza **dois modelos NER em paralelo** para maximizar recall:
-
-| Modelo | Função | Threshold | Justificativa |
-|--------|--------|-----------|---------------|
-| **BERT NER** (Davlan/bert-base-multilingual-cased-ner-hrl) | Detector **primário** | score > 0.75 | Multilíngue, mais preciso, usa confiança própria do modelo |
-| **spaCy** (pt_core_news_lg) | Detector **complementar** | confiança fixa 0.80 | Nativo PT-BR, captura nomes que o BERT pode perder |
+### Sistema de Confiança (backend/src/confidence/calculator.py)
 
 ```python
-def _detectar_ner(self, texto: str) -> List[PIIFinding]:
-    findings = []
+def calculate_confidence(self, findings: List[PIIFinding]) -> float:
+    """Calcula confiança usando Calibração Isotônica + Log-Odds.
     
-    # BERT NER (primário) - roda primeiro
-    if self.nlp_bert:
-        entidades = self.nlp_bert(texto)
-        for ent in entidades:
-            if ent['entity_group'] == 'PER' and ent['score'] > 0.75:
-                findings.append(PIIFinding(tipo="NOME", valor=ent['word'], ...))
-    
-    # spaCy NER (complementar) - adiciona nomes NÃO detectados pelo BERT
-    if self.nlp_spacy:
-        doc = self.nlp_spacy(texto)
-        for ent in doc.ents:
-            if ent.label_ == 'PER':
-                # Evita duplicatas: só adiciona se BERT não encontrou
-                if not any(f.valor.lower() == ent.text.lower() for f in findings):
-                    findings.append(PIIFinding(tipo="NOME", valor=ent.text, ...))
-    
-    return findings
+    Combina scores de múltiplas fontes usando Naive Bayes:
+    - BERT NER: score do modelo (0.75-0.99)
+    - Regex: 0.98 se DV válido, 0.85 se estrutural
+    - Contexto: boost/penalidade por padrões linguísticos
+    """
 ```
 
-**Por que dois modelos?** A estratégia Ensemble OR garante que se o BERT perder um nome (ex: grafia incomum), o spaCy pode capturá-lo, e vice-versa. Isso maximiza recall, essencial para conformidade LGPD/LAI.
-
-#### Sistema de Confiança Probabilística (v9.4)
-
-O sistema calcula confiança usando **Calibração Isotônica** + **Log-Odds (Naive Bayes)**:
-
-```
-P(PII|evidências) = calibração_isotônica(score_raw) → combinação_log_odds(fontes)
-```
-
-**Pipeline de Confiança:**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. COLETA: Detecções de múltiplas fontes                   │
-│     • BERT NER → score 0.92, tipo="NOME"                   │
-│     • spaCy → score 0.85, tipo="NOME"                      │
-│     • Regex → match, tipo="CPF"                            │
-│     • DV Validation → válido (0.9999)                      │
-└─────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  2. CALIBRAÇÃO: Isotônica (sklearn) ou conservadora         │
-│     • BERT 0.92 → calibrado 0.87 (ajuste por FN/FP rate)   │
-│     • spaCy 0.85 → calibrado 0.75                          │
-│     • Regex → probabilidade baseada em FP rate             │
-└─────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  3. COMBINAÇÃO: Log-Odds (Naive Bayes)                      │
-│     log_odds = Σ log(P/(1-P)) por fonte                    │
-│     → Múltiplas fontes concordando = confiança maior       │
-│     → CPF (regex) + DV válido = confiança ~0.9999          │
-└─────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  4. MÉTRICAS DE DOCUMENTO                                   │
-│     • confidence_min_entity: menor confiança individual    │
-│     • confidence_all_found: P(encontramos todos os PIIs)   │
-│     • confidence_no_pii: P(texto não contém PII)           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Taxas FN/FP Calibradas por Fonte:**
-
-| Fonte | FN Rate | FP Rate | Justificativa |
-|-------|---------|---------|---------------|
-| BERT NER | 0.008 | 0.02 | Modelo multilíngue robusto |
-| spaCy | 0.015 | 0.03 | Modelo nativo PT complementar |
-| Regex | 0.003 | 0.0002 | Padrões determinísticos precisos |
-| DV Validation | 0.0001 | 0.00001 | Validação matemática (quase perfeita) |
-
-**Exemplos de Confiança Combinada:**
-
-| Cenário | Fontes | Confiança Final |
-|---------|--------|-----------------|
-| CPF válido (regex + DV) | regex + dv_validation | 0.9999 |
-| Nome detectado (BERT + spaCy) | bert_ner + spacy | 0.94 |
-| Telefone (apenas regex) | regex | 0.85 |
-| CPF inválido (falhou DV) | - | Descartado |
-
-**Confiança Base por Método (fallback):**
-
-| Categoria | Tipos | Base | Justificativa |
-|-----------|-------|------|---------------|
-| Regex + DV | CPF, PIS, CNS, CNH, Título | 0.98 | Validação matemática (Módulo 11) |
-| Regex + Luhn | Cartão Crédito | 0.95 | Algoritmo Luhn válido |
-| Regex Estrutural | Email, Telefone, Placa | 0.85-0.95 | Padrão claro, sem validação |
-| BERT NER | Nomes | score modelo | Retorna confiança própria (0.75-0.99) |
-| spaCy NER | Nomes | 0.70 | Modelo menor, complementar |
-| Gatilho | Nomes após "falar com" | 0.85 | Padrão linguístico forte |
-
-**Fatores de Contexto (Boost/Penalidade):**
-
-| Fator | Ajuste | Exemplo |
-|-------|--------|---------|
-| Possessivo ("meu", "minha") | +15% | "Meu CPF é..." → boost |
-| Label explícito ("CPF:") | +10% | "CPF: 529..." → boost |
-| Gatilho de contato | +10% | "falar com João" → boost |
-| Contexto de teste | -25% | "exemplo: 000..." → penalidade |
-| Declarado fictício | -30% | "CPF fictício..." → ignora |
-| Negação antes | -20% | "não é meu CPF" → penalidade |
-
-**Exemplos Práticos:**
-
-| Texto | Base | Fator | Final |
-|-------|------|-------|-------|
-| "Meu CPF: 529.982.247-25" | 0.98 | 1.25 | **1.00** |
-| "CPF 529.982.247-25" | 0.98 | 1.00 | **0.98** |
-| "exemplo CPF: 529..." | 0.98 | 0.75 | **ignorado** |
-| "falar com João Silva" | 0.85 | 1.10 | **0.94** |
-
-#### API (`backend/api/main.py`)
+### API Principal (backend/api/main.py)
 
 ```python
 @app.post("/analyze")
 async def analyze(data: Dict[str, Optional[str]]) -> Dict:
-    """Analisa texto para detecção de PII com contexto Brasília/GDF.
+    """Endpoint principal de análise de PII.
     
-    Realiza detecção híbrida usando:
-    - Regex: Padrões estruturados (CPF, Email, Telefone, RG, CNH)
-    - NLP: Reconhecimento de entidades com spaCy + BERT
-    - Regras de Negócio: Contexto de Brasília, imunidade funcional (LAI)
-    
-    Classificações de Risco:
-        - CRÍTICO (5): CPF, RG, CNH (identificação direta)
-        - ALTO (4): Email privado, Telefone, Nome, Endereço
-        - MODERADO (3): Entidade nomeada genérica
-        - SEGURO (0): Sem PII detectado
+    Classificações de Risco LGPD:
+    - CRÍTICO (5): CPF, RG, CNH (identificação direta)
+    - ALTO (4): Email, Telefone, Nome, Endereço
+    - MODERADO (3): Placa, Data nascimento, Processo
+    - SEGURO (0): Sem PII detectado
     """
 ```
 
+---
 
+## 8. Estrutura de Arquivos
 
-## 🧪 Testes Automatizados & CI/CD (Novidades 2026)
-
-- **Testes de Regex GDF agora divididos em múltiplos arquivos** (`test_regex_gdf.py`, `test_regex_gdf_processo.py`, `test_regex_gdf_matricula.py`, `test_regex_gdf_inscricao.py`) para garantir performance e granularidade no CI.
-- **Timeout automático em todos os testes** usando `pytest-timeout` (10s por teste), evitando travamentos por regex pesada ou loops acidentais.
-- **Validação explícita da inicialização do modelo spaCy** nos testes, garantindo que falhas de dependência sejam detectadas rapidamente.
-- **Workflows GitHub Actions robustos**: qualquer push no branch `main` dispara todos os testes, e commits forçados podem ser usados para garantir execução do pipeline.
-- **Dica:** Se o CI travar ou for cancelado, divida ainda mais os testes ou aumente o timeout conforme necessário.
-
-### Exemplo de uso do timeout nos testes
-```python
-import pytest
-pytestmark = pytest.mark.timeout(10)  # 10 segundos por teste
+```
+desafio-participa-df/
+├── docker-compose.yml       # ⭐ Orquestração Docker (ponto de entrada)
+├── README.md                # Documentação principal
+│
+├── backend/                 # 🔧 Motor de IA (Python/FastAPI)
+│   ├── requirements.txt     # Dependências Python
+│   ├── Dockerfile           # Container do backend
+│   ├── api/
+│   │   └── main.py          # ⭐ API REST FastAPI
+│   ├── src/
+│   │   ├── detector.py      # ⭐ Classe principal PIIDetector
+│   │   ├── allow_list.py    # Lista de termos permitidos
+│   │   ├── analyzers/       # Analisadores (Presidio, Regex)
+│   │   ├── confidence/      # Sistema de confiança probabilística
+│   │   ├── gazetteer/       # Dicionário de entidades GDF
+│   │   └── patterns/        # Padrões regex específicos
+│   ├── scripts/
+│   │   └── main_cli.py      # ⭐ Processamento em lote (CLI)
+│   ├── models/              # Modelo BERT NER (ONNX)
+│   ├── tests/               # 452 testes automatizados
+│   └── data/                # Dados de entrada/saída
+│
+└── frontend/                # 🎨 Interface Web (React/TypeScript)
+    ├── package.json         # Dependências Node.js
+    ├── Dockerfile           # Container do frontend
+    └── src/
+        ├── App.tsx          # Componente principal
+        ├── pages/           # Páginas da aplicação
+        └── components/      # Componentes reutilizáveis
 ```
 
-### Exemplo de divisão de arquivos de teste
-- `test_regex_gdf.py` (casos gerais)
-- `test_regex_gdf_processo.py` (apenas PROCESSO_SEI)
-- `test_regex_gdf_matricula.py` (apenas MATRICULA_SERVIDOR)
-- `test_regex_gdf_inscricao.py` (apenas INSCRICAO_IMOVEL)
-
-### Troubleshooting CI travado
-- Se o workflow for cancelado ou travar, rode localmente com `pytest --maxfail=1 -v` para identificar o teste problemático.
-- Use commits forçados (ex: adicionar comentário) para disparar o workflow manualmente.
-- Consulte o badge de build e o log do Actions para rastrear falhas.
+**Legenda:** ⭐ = Arquivos principais para avaliação
 
 ---
 
-## 📊 Níveis de Risco
-
-| Nível | Peso | Tipos de PII | Ação Recomendada |
-|-------|------|--------------|------------------|
-| 🔴 **CRÍTICO** | 5 | CPF, RG, CNH, Passaporte, PIS, CNS, Título Eleitor, CTPS | ❌ Não publicar |
-| 🟠 **ALTO** | 4 | Email, Telefone, Endereço, Nome completo, Dados Bancários, PIX | ❌ Não publicar |
-| 🟡 **MODERADO** | 3 | Placa de veículo, Data de nascimento, CEP (com contexto), Processo CNJ | ⚠️ Revisar manualmente |
-| 🔵 **BAIXO** | 2 | IP Address, Coordenadas GPS, User-Agent (identificação indireta) | ⚠️ Revisar contexto |
-| 🟢 **SEGURO** | 0 | Nenhum PII detectado | ✅ Pode publicar |
-
----
-
-## 🚀 Deploy
-
-### Backend → HuggingFace Spaces
-
-O backend é deployado automaticamente em HuggingFace Spaces via Docker.
+## 🧪 Executar Testes
 
 ```bash
-# Deploy manual
-./deploy-hf.sh
+# Via Docker
+docker compose exec backend pytest --maxfail=1 -q
+
+# Local
+cd backend
+pytest --maxfail=1 -q
 ```
 
-### Frontend → GitHub Pages
-
-```bash
-cd frontend
-
-# Build de produção
-npm run build
-
-# Deploy (via GitHub Actions automático)
-git push origin main
-```
+**Resultado esperado:** `452 passed`
 
 ---
 
 ## 📚 Documentação Detalhada
+
+Para informações técnicas aprofundadas, consulte:
 
 - **Backend (Motor de IA):** [backend/README.md](backend/README.md)
 - **Frontend (Interface):** [frontend/README.md](frontend/README.md)
 
 ---
 
-## 👥 Equipe & Contato
+## 🔗 Links do Projeto
 
-- **Thiago Marinho**  
-  Email: [thiago.marinho@email.com](mailto:thiago.marinho@email.com)  
-  [LinkedIn](https://www.linkedin.com/feed/) | [GitHub](https://github.com/marinhothiago/)
+| Recurso | URL |
+|---------|-----|
+| **Frontend (Demo)** | https://marinhothiago.github.io/desafio-participa-df/ |
+| **Backend (API)** | https://marinhothiago-desafio-participa-df.hf.space/ |
+| **Documentação API** | https://marinhothiago-desafio-participa-df.hf.space/docs |
+| **Repositório** | https://github.com/marinhothiago/desafio-participa-df |
+
+---
+
+## 👥 Equipe
+
+**Thiago Marinho**  
+[LinkedIn](https://www.linkedin.com/feed/) | [GitHub](https://github.com/marinhothiago/)
 
 ---
 
 ## 📄 Licença
 
-MIT. Consulte o arquivo [LICENSE](LICENSE) para detalhes. Uso livre para fins públicos, educacionais e governamentais. Para uso comercial, entre em contato.
+MIT - Uso livre para fins públicos, educacionais e governamentais.
 
 ---
 
-## 🔗 Links Úteis
+<div align="center">
 
-- [Repositório no GitHub](https://github.com/marinhothiago/desafio-participa-df)
-- [Frontend (Dashboard)](https://marinhothiago.github.io/desafio-participa-df/)
-- [Backend (API)](https://marinhothiago-desafio-participa-df.hf.space/)
-- [Documentação da API](https://marinhothiago-desafio-participa-df.hf.space/docs)
-- [Benchmark LGPD](backend/benchmark.py)
-- [Design System DSGOV](https://govbr.github.io/ds)
-- [LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
-- [LAI](https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12527.htm)
+**Hackathon Participa DF 2026 CGDF**  
+Projeto em conformidade com LGPD e LAI
 
----
-
-## 💡 Exemplos de Uso
-
-### API (FastAPI)
-```bash
-curl -X POST "https://marinhothiago-desafio-participa-df.hf.space/analyze" -H "Content-Type: application/json" -d '{"text": "Meu CPF é 123.456.789-09"}'
-```
-
-### CLI (Processamento em lote)
-```bash
-python backend/scripts/main_cli.py --input backend/data/input/AMOSTRA_e-SIC.xlsx --output backend/data/output/resultado
-```
-
-### Frontend
-1. Acesse: https://marinhothiago.github.io/desafio-participa-df/
-2. Cole um texto ou faça upload de CSV/XLSX
-3. Veja classificação, risco, PIIs e exporte resultados
-
----
-
-## 🛡️ Segurança & LGPD
-
-- Checklist LGPD/LAI seguido em todo o fluxo
-- Nenhum dado sensível é armazenado ou compartilhado
-- Tokens e segredos nunca vão para o código ou repositório
-- Para reportar vulnerabilidades, envie email para participa.df@protonmail.com
-
----
-
-## ❓ FAQ
-
-- **Quais dados são detectados?** CPF, RG, CNH, Email, Telefone, Endereço, Nome, Dados bancários, etc.
-- **Posso usar para outros contextos?** Sim, adaptável para outros órgãos públicos.
-- **Como rodar localmente?** Veja instruções acima.
-- **Como reportar bugs?** Abra uma issue ou envie email.
-- **Amostra oficial:** Apenas `AMOSTRA_e-SIC.xlsx` é permitida no build de produção.
-- **Limitações:** Não detecta PII em imagens ou PDFs escaneados.
-- **Roadmap:** Suporte a outros idiomas, OCR, integração com bancos de dados.
-
----
-
-## 📝 Changelog Resumido
-
-- **v9.6.0**: Árbitro LLM ATIVADO por padrão, Presidio com 10 recognizers customizados GDF, validação completa de DV (CPF/CNPJ), análise de contexto avançada (reidentificação), auditoria LGPD completa (156 PIIs), 452 testes passando, código auditado e otimizado
-- v9.5.0: Reorganização completa do projeto, Celery integrado à API, scripts organizados, CI/CD otimizado
-- v9.4.3: Telefones internacionais, 5 níveis de risco LGPD, IP/Coordenadas/User-Agent, allow_list ampliada, F1-score 1.0000
-- v9.4.2: Benchmark LGPD ampliado, integração NuNER
-- v9.4.1: Sistema de confiança probabilística, thresholds dinâmicos
-- v9.4.0: Arquitetura modular, deploy Docker/HF
-
----
-
-## 🏆 Hackathon Participa DF
-
-Projeto desenvolvido para o **Hackathon Participa DF 2026 CGDF**. Este projeto cumpre todas as normas LGPD/LAI para transparência pública.
-
-## 📄 Licença
-
-Este projeto está em conformidade com as diretrizes de transparência pública do Governo do Distrito Federal.
+</div>
