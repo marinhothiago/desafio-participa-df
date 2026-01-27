@@ -108,6 +108,10 @@ from text_unidecode import unidecode
 # Logger padrão para debug
 logger = logging.getLogger("detector")
 
+# Silenciar warnings do Presidio sobre entidades que não suportam português
+# (CREDIT_CARD, IBAN_CODE, etc. são built-ins que só funcionam em en/es/it/pl)
+logging.getLogger("presidio-analyzer").setLevel(logging.ERROR)
+
 # Device para pipelines transformers (GPU se disponível, senão CPU)
 DEVICE = 0 if torch.cuda.is_available() else -1
 
