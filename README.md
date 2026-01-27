@@ -23,16 +23,16 @@
 
 ## 📋 Sumário Rápido (Critérios do Edital)
 
-| Critério | Pontos | Seção |
-|----------|--------|-------|
-| 1a) Pré-requisitos com versões | 1 | [1. Pré-requisitos](#1-pré-requisitos) |
-| 1b) Arquivo de dependências | 2 | [2. Dependências](#2-dependências) |
-| 1c) Comandos de instalação | 1 | [3. Instalação](#3-instalação-via-docker-recomendado) |
-| 2a) Comandos de execução | 2 | [4. Execução](#4-execução) |
-| 2b) Formato entrada/saída | 1 | [5. Formato de Entrada/Saída](#5-formato-de-entradasaída) |
-| 3a) Objetivo e arquivos | 1 | [6. Descrição da Solução](#6-descrição-da-solução) |
-| 3b) Comentários no código | 1 | [7. Comentários no Código](#7-comentários-no-código) |
-| 3c) Estrutura lógica | 1 | [8. Estrutura de Arquivos](#8-estrutura-de-arquivos) |
+| Critério | Seção |
+|----------|-------|
+| 1a) Pré-requisitos com versões | [1. Pré-requisitos](#1-pré-requisitos) |
+| 1b) Arquivo de dependências | [2. Dependências](#2-dependências) |
+| 1c) Comandos de instalação | [3. Instalação](#3-instalação-via-docker-recomendado) |
+| 2a) Comandos de execução | [4. Execução](#4-execução) |
+| 2b) Formato entrada/saída | [5. Formato de Entrada/Saída](#5-formato-de-entradasaída) |
+| 3a) Objetivo e arquivos | [6. Descrição da Solução](#6-descrição-da-solução) |
+| 3b) Comentários no código | [7. Comentários no Código](#7-comentários-no-código) |
+| 3c) Estrutura lógica | [8. Estrutura de Arquivos](#8-estrutura-de-arquivos) |
 
 ---
 
