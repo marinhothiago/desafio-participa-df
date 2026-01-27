@@ -106,8 +106,9 @@ STATS_CACHE_TTL = 60  # segundos
 FEEDBACK_CACHE_TTL = 30  # segundos
 
 # === SISTEMA DE BATCH PARA HF (evita rate limit de 128 commits/hora) ===
+import time as _time_module
 _pending_hf_sync: Dict[str, bool] = {"stats.json": False, "feedback.json": False}
-_last_hf_sync: float = 0
+_last_hf_sync: float = _time_module.time()  # ← Inicia com tempo atual para esperar 5min antes do 1º sync
 HF_SYNC_INTERVAL = 300  # 5 minutos entre commits (máx 12/hora)
 _sync_lock = threading.Lock()
 

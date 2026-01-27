@@ -246,12 +246,12 @@ export function FeedbackPanel({
 
     // Verificar se já enviou feedback para este texto
     const textHash = hashText(originalText);
-    
+
     useEffect(() => {
         const previousFeedback = hasSentFeedback(textHash);
         if (previousFeedback.sent && !isEditing) {
             setStatus('already_sent');
-            const date = previousFeedback.timestamp 
+            const date = previousFeedback.timestamp
                 ? new Date(previousFeedback.timestamp).toLocaleString('pt-BR')
                 : '';
             setStatusMessage(`Enviado em ${date} (${previousFeedback.entityCount} entidades)`);
