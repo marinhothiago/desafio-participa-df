@@ -1490,14 +1490,29 @@ class PIIDetector:
         - NER spaCy (pt_core_news_lg)
         """
         try:
-            # Usa engine padrão (inglês) - suficiente para IP, IBAN, Credit Card
-            # Não precisa de spaCy pt pois não usamos para NER (já temos)
-            self.presidio_analyzer = AnalyzerEngine(supported_languages=["en"])
+            from presidio_analyzer.nlp_engine import NlpEngineProvider
+            
+            # Configura Presidio SEM modelo spaCy (evita download de 400MB)
+            # Só precisamos dos recognizers baseados em regex (IP, IBAN, Credit Card)
+            # que não dependem de NLP
+            configuration = {
+                "nlp_engine_name": "spacy",
+                "models": []  # Sem modelos = sem download
+            }
+            
+            provider = NlpEngineProvider(nlp_configuration=configuration)
+            nlp_engine = provider.create_engine()
+            
+            # Inicializa sem supported_languages para evitar validação de modelo
+            self.presidio_analyzer = AnalyzerEngine(
+                nlp_engine=nlp_engine,
+                supported_languages=["en"]
+            )
             
             # NÃO registra nossos patterns - evita duplicação
             # Presidio serve apenas como complemento para tipos específicos
             
-            logger.info("✅ Presidio Analyzer inicializado (modo complementar)")
+            logger.info("✅ Presidio Analyzer inicializado (modo complementar, sem modelo spaCy)")
         except Exception as e:
             self.presidio_analyzer = None
             logger.warning(f"⚠️ Presidio indisponível: {e}")
