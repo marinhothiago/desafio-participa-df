@@ -542,19 +542,14 @@ export function Documentation() {
         </TabsContent>
 
         {/* ============================================ */}
-        {/* Tab 3: INSTALAÇÃO (Critério 8.1.5.3.1) */}
+        {/* Tab 3: INSTALAÇÃO */}
         {/* ============================================ */}
         <TabsContent value="installation" className="space-y-6 mt-6">
           <div className="gov-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                3. Guia de Instalação
-              </h3>
-              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                Critério 8.1.5.3.1
-              </span>
-            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              3. Guia de Instalação
+            </h3>
 
             {/* Pré-requisitos */}
             <div className="mb-6">
