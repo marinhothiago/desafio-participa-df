@@ -21,6 +21,17 @@
 
 ---
 
+## 🔗 Links do Projeto Publicado
+
+| Recurso | URL |
+|---------|-----|
+| **Frontend (Demo)** | https://marinhothiago.github.io/desafio-participa-df/ |
+| **Backend (API)** | https://marinhothiago-desafio-participa-df.hf.space/ |
+| **Documentação API** | https://marinhothiago-desafio-participa-df.hf.space/docs |
+| **Repositório** | https://github.com/marinhothiago/desafio-participa-df |
+
+---
+
 ## 📋 Sumário Rápido (Critérios do Edital)
 
 | Critério | Seção |
@@ -90,7 +101,7 @@ Aguarde o download das imagens (~2-5 minutos na primeira vez).
 
 | Serviço | URL | Status |
 |---------|-----|--------|
-| **Frontend** | http://localhost:5173 | Interface web |
+| **Frontend** | http://localhost:80 | Interface web |
 | **Backend API** | http://localhost:7860 | API REST |
 | **Documentação** | http://localhost:7860/docs | Swagger UI |
 
@@ -119,7 +130,7 @@ curl -X POST "http://localhost:7860/analyze" \
 
 ### 4.3 Usar a Interface Web
 
-1. Acesse http://localhost:5173
+1. Acesse http://localhost (porta 80) ou http://localhost:8080 (dev local)
 2. Cole um texto ou faça upload de arquivo (CSV/XLSX)
 3. Clique em "Analisar"
 4. Visualize os PIIs detectados e exporte os resultados
@@ -434,17 +445,6 @@ Para informações técnicas aprofundadas, consulte:
 
 - **Backend (Motor de IA):** [backend/README.md](backend/README.md)
 - **Frontend (Interface):** [frontend/README.md](frontend/README.md)
-
----
-
-## 🔗 Links do Projeto
-
-| Recurso | URL |
-|---------|-----|
-| **Frontend (Demo)** | https://marinhothiago.github.io/desafio-participa-df/ |
-| **Backend (API)** | https://marinhothiago-desafio-participa-df.hf.space/ |
-| **Documentação API** | https://marinhothiago-desafio-participa-df.hf.space/docs |
-| **Repositório** | https://github.com/marinhothiago/desafio-participa-df |
 
 ---
 
