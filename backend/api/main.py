@@ -70,6 +70,20 @@ import threading
 from datetime import datetime
 import shutil
 import atexit
+from collections import defaultdict
+import time
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RATE LIMITING POR IP
+# ═══════════════════════════════════════════════════════════════════════════════
+# Configuração: máximo de requisições por IP por janela de tempo
+RATE_LIMIT_REQUESTS = 60  # Máximo de requisições
+RATE_LIMIT_WINDOW = 60    # Janela de tempo em segundos (1 minuto)
+MIN_TEXT_LENGTH = 10      # Comprimento mínimo do texto para análise válida
+
+# Armazena contagem de requisições por IP: {ip: [(timestamp, count), ...]}
+rate_limit_store: Dict[str, list] = defaultdict(list)
+rate_limit_lock = threading.Lock()
 
 # === HUGGINGFACE HUB PARA PERSISTÊNCIA ===
 try:
@@ -464,6 +478,41 @@ detector = PIIDetector(
 
 from src.confidence.combiners import merge_spans_custom
 
+
+def check_rate_limit(ip: str) -> tuple[bool, int]:
+    """
+    Verifica se o IP excedeu o rate limit.
+    
+    Args:
+        ip: Endereço IP do cliente
+        
+    Returns:
+        Tuple (is_allowed, remaining_requests)
+        - is_allowed: True se a requisição é permitida
+        - remaining_requests: Quantas requisições restam na janela
+    """
+    current_time = time.time()
+    window_start = current_time - RATE_LIMIT_WINDOW
+    
+    with rate_limit_lock:
+        # Remove timestamps antigos fora da janela
+        rate_limit_store[ip] = [
+            ts for ts in rate_limit_store[ip] 
+            if ts > window_start
+        ]
+        
+        # Conta requisições na janela atual
+        request_count = len(rate_limit_store[ip])
+        remaining = max(0, RATE_LIMIT_REQUESTS - request_count)
+        
+        if request_count >= RATE_LIMIT_REQUESTS:
+            return False, 0
+        
+        # Adiciona timestamp da requisição atual
+        rate_limit_store[ip].append(current_time)
+        return True, remaining - 1
+
+
 @app.post("/analyze")
 async def analyze(
     request: Request,
@@ -487,8 +536,49 @@ async def analyze(
     text_preview = data.get("text", "")[:50].replace("\n", " ") if data.get("text") else ""
     logging.info(f"📊 POST /analyze | IP: {client_ip} | UA: {user_agent[:60]} | Text: '{text_preview}...'")
     
+    # ═══════════════════════════════════════════════════════════════════════════
+    # RATE LIMITING: Verifica se IP excedeu limite de requisições
+    # ═══════════════════════════════════════════════════════════════════════════
+    is_allowed, remaining = check_rate_limit(client_ip)
+    if not is_allowed:
+        logging.warning(f"⚠️ Rate limit excedido para IP: {client_ip}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "rate_limit_exceeded",
+                "message": f"Limite de {RATE_LIMIT_REQUESTS} requisições por minuto excedido. Tente novamente em breve.",
+                "retry_after": RATE_LIMIT_WINDOW
+            },
+            headers={"Retry-After": str(RATE_LIMIT_WINDOW)}
+        )
+    
     text = data.get("text", "")
     request_id = data.get("id", None)
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # VALIDAÇÃO: Texto mínimo para análise válida
+    # ═══════════════════════════════════════════════════════════════════════════
+    text_length = len(text.strip()) if text else 0
+    is_valid_text = text_length >= MIN_TEXT_LENGTH
+    
+    if not is_valid_text:
+        logging.info(f"📝 Texto muito curto ({text_length} chars) - análise simplificada, sem contar estatísticas")
+        # Retorna resposta válida mas não conta nas estatísticas
+        return {
+            "id": request_id,
+            "has_pii": False,
+            "entities": [],
+            "risk_level": "BAIXO",
+            "confidence_all_found": 1.0,
+            "total_entities": 0,
+            "sources_used": [],
+            "classificacao": "PÚBLICO",
+            "risco": "BAIXO",
+            "confianca": 1.0,
+            "detalhes": [],
+            "_warning": f"Texto muito curto ({text_length} caracteres). Mínimo: {MIN_TEXT_LENGTH} caracteres."
+        }
 
     # Executa detecção usando detector híbrido
     has_pii, findings, risco, confianca = detector.detect(text, force_llm=use_llm)
@@ -512,7 +602,10 @@ async def analyze(
             tie_breaker = "leftmost"
         # TODO: aplicar merge_spans_custom se necessário
 
-    # Incrementa contador de requisições (global)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ESTATÍSTICAS: Só conta requisições com texto válido (>= MIN_TEXT_LENGTH chars)
+    # Isso evita que bots/crawlers/testes inflem as estatísticas
+    # ═══════════════════════════════════════════════════════════════════════════
     increment_stat("classification_requests")
 
     # Retorna resultado no formato documentado (compatível com frontend)
@@ -940,7 +1033,7 @@ async def health() -> Dict[str, str]:
     Returns:
         Dict com:
             - status (str): "healthy" se tudo funcionando
-            - version (str): Versão do detector (v9.4)
+            - version (str): Versão do detector (v9.6)
     
     HTTP Status Codes:
         - 200: API operacional
@@ -949,7 +1042,41 @@ async def health() -> Dict[str, str]:
     # Health check NÃO incrementa contadores - apenas retorna status
     return {
         "status": "healthy",
-        "version": "9.4"
+        "version": "9.6"
+    }
+
+
+@app.get("/rate-limit/status")
+async def rate_limit_status(request: Request) -> Dict:
+    """Verifica status do rate limit para o IP do cliente.
+    
+    Returns:
+        Dict com:
+            - ip (str): IP do cliente
+            - requests_in_window (int): Requisições feitas na janela atual
+            - limit (int): Limite máximo de requisições
+            - remaining (int): Requisições restantes
+            - window_seconds (int): Tamanho da janela em segundos
+            - min_text_length (int): Comprimento mínimo de texto aceito
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    current_time = time.time()
+    window_start = current_time - RATE_LIMIT_WINDOW
+    
+    with rate_limit_lock:
+        # Conta requisições na janela atual
+        requests_in_window = len([
+            ts for ts in rate_limit_store.get(client_ip, [])
+            if ts > window_start
+        ])
+    
+    return {
+        "ip": client_ip,
+        "requests_in_window": requests_in_window,
+        "limit": RATE_LIMIT_REQUESTS,
+        "remaining": max(0, RATE_LIMIT_REQUESTS - requests_in_window),
+        "window_seconds": RATE_LIMIT_WINDOW,
+        "min_text_length": MIN_TEXT_LENGTH
     }
 
 @app.post('/api/lote')
