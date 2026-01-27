@@ -70,31 +70,127 @@ import threading
 from datetime import datetime
 import shutil
 
+# === HUGGINGFACE HUB PARA PERSISTÊNCIA ===
+try:
+    from huggingface_hub import hf_hub_download, HfApi
+    HF_HUB_AVAILABLE = True
+except ImportError:
+    HF_HUB_AVAILABLE = False
+    print("⚠️ huggingface_hub não disponível - usando storage local")
+
+# Configuração do HF Dataset para persistência
+HF_TOKEN = os.environ.get("HF_TOKEN")
+HF_STATS_REPO = os.environ.get("HF_STATS_REPO", "marinhothiago/participa-df-data")
+USE_HF_STORAGE = HF_HUB_AVAILABLE and HF_TOKEN is not None
+
+if USE_HF_STORAGE:
+    print(f"✅ Persistência HuggingFace ativada: {HF_STATS_REPO}")
+else:
+    print("📁 Usando storage local (HF_TOKEN não configurado)")
+
 # === SISTEMA DE CONTADORES GLOBAIS ===
 STATS_FILE = os.path.join(backend_dir, "data", "stats.json")
 FEEDBACK_FILE = os.path.join(backend_dir, "data", "feedback.json")
 stats_lock = threading.Lock()
 feedback_lock = threading.Lock()
 
-def load_stats() -> Dict:
-    """Carrega estatísticas do arquivo JSON."""
+# Cache local para reduzir chamadas ao HF
+_stats_cache: Dict = None
+_stats_cache_time: float = 0
+STATS_CACHE_TTL = 60  # segundos
+
+def _load_stats_from_hf() -> Dict:
+    """Carrega stats do HuggingFace Dataset."""
     try:
-        if os.path.exists(STATS_FILE):
-            with open(STATS_FILE, 'r') as f:
-                return json.load(f)
+        path = hf_hub_download(
+            repo_id=HF_STATS_REPO,
+            filename="stats.json",
+            repo_type="dataset",
+            token=HF_TOKEN
+        )
+        with open(path, 'r') as f:
+            return json.load(f)
     except Exception as e:
-        print(f"Erro ao carregar stats: {e}")
-    return {"site_visits": 0, "classification_requests": 0, "last_updated": None}
+        print(f"⚠️ Erro ao carregar stats do HF: {e}")
+        return None
+
+def _save_stats_to_hf(stats: Dict) -> bool:
+    """Salva stats no HuggingFace Dataset."""
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(stats, f, indent=2)
+            temp_path = f.name
+        
+        api = HfApi(token=HF_TOKEN)
+        api.upload_file(
+            path_or_fileobj=temp_path,
+            path_in_repo="stats.json",
+            repo_id=HF_STATS_REPO,
+            repo_type="dataset",
+            commit_message=f"Update stats: {stats.get('site_visits', 0)} visits, {stats.get('classification_requests', 0)} requests"
+        )
+        os.unlink(temp_path)  # Limpa arquivo temporário
+        return True
+    except Exception as e:
+        print(f"⚠️ Erro ao salvar stats no HF: {e}")
+        return False
+
+def load_stats() -> Dict:
+    """Carrega estatísticas (HF Dataset ou arquivo local)."""
+    global _stats_cache, _stats_cache_time
+    import time
+    
+    # Verifica cache primeiro
+    if _stats_cache is not None and (time.time() - _stats_cache_time) < STATS_CACHE_TTL:
+        return _stats_cache.copy()
+    
+    stats = None
+    
+    # Tenta carregar do HF primeiro
+    if USE_HF_STORAGE:
+        stats = _load_stats_from_hf()
+    
+    # Fallback para arquivo local
+    if stats is None:
+        try:
+            if os.path.exists(STATS_FILE):
+                with open(STATS_FILE, 'r') as f:
+                    stats = json.load(f)
+        except Exception as e:
+            print(f"Erro ao carregar stats local: {e}")
+    
+    if stats is None:
+        stats = {"site_visits": 0, "classification_requests": 0, "last_updated": None}
+    
+    # Atualiza cache
+    _stats_cache = stats.copy()
+    _stats_cache_time = time.time()
+    
+    return stats
 
 def save_stats(stats: Dict) -> None:
-    """Salva estatísticas no arquivo JSON com lock para concorrência."""
+    """Salva estatísticas (HF Dataset e arquivo local)."""
+    global _stats_cache, _stats_cache_time
+    import time
+    
+    stats["last_updated"] = datetime.now().isoformat()
+    
+    # Sempre salva localmente (backup)
     try:
-        stats["last_updated"] = datetime.now().isoformat()
         os.makedirs(os.path.dirname(STATS_FILE), exist_ok=True)
         with open(STATS_FILE, 'w') as f:
             json.dump(stats, f, indent=2)
     except Exception as e:
-        print(f"Erro ao salvar stats: {e}")
+        print(f"Erro ao salvar stats local: {e}")
+    
+    # Salva no HF Dataset se disponível
+    if USE_HF_STORAGE:
+        _save_stats_to_hf(stats)
+    
+    # Atualiza cache
+    _stats_cache = stats.copy()
+    _stats_cache_time = time.time()
 
 def increment_stat(key: str, amount: int = 1) -> Dict:
     """Incrementa uma estatística de forma thread-safe."""
