@@ -935,6 +935,7 @@ async def health() -> Dict[str, str]:
     """Verifica o status da API e disponibilidade dos modelos NLP.
     
     Endpoint de health check para monitoramento e orquestração de container.
+    NÃO incrementa contadores de estatísticas.
     
     Returns:
         Dict com:
@@ -945,6 +946,7 @@ async def health() -> Dict[str, str]:
         - 200: API operacional
         - 503: Algum modelo NLP não carregado (degraded mode)
     """
+    # Health check NÃO incrementa contadores - apenas retorna status
     return {
         "status": "healthy",
         "version": "9.4"
