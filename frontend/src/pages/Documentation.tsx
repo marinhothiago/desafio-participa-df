@@ -23,6 +23,7 @@ import {
   Layout,
   Lock,
   Package, Play,
+  RefreshCw,
   Server,
   Shield,
   ShieldCheck, Sparkles,
@@ -255,6 +256,13 @@ export function Documentation() {
                 </div>
                 <p className="text-sm text-muted-foreground">Algoritmos de dígito verificador (Módulo 11) para CPF e CNPJ com 100% de precisão.</p>
               </div>
+              <div className="p-4 border border-border rounded-lg hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-3 text-warning mb-2">
+                  <RefreshCw className="w-5 h-5" />
+                  <h4 className="font-semibold text-foreground">Aprendizado Automático</h4>
+                </div>
+                <p className="text-sm text-muted-foreground">Recalibração contínua via feedback humano com IsotonicRegression para melhoria constante.</p>
+              </div>
             </div>
 
             {/* Documentação Markdown */}
@@ -332,7 +340,7 @@ export function Documentation() {
               </p>
 
               {/* Pipeline Visual */}
-              <div className="grid md:grid-cols-3 gap-3 p-4 bg-muted/30 rounded-lg mb-4">
+              <div className="grid md:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg mb-4">
                 <div className="text-center p-3 bg-background rounded-lg border border-primary/30">
                   <Code className="w-5 h-5 text-primary mx-auto mb-1" />
                   <p className="font-medium text-foreground text-sm">1-5: Detecção</p>
@@ -347,6 +355,11 @@ export function Documentation() {
                   <Cpu className="w-5 h-5 text-success mx-auto mb-1" />
                   <p className="font-medium text-foreground text-sm">9: Árbitro LLM</p>
                   <p className="text-[10px] text-muted-foreground">Llama-3.2-3B (HF)</p>
+                </div>
+                <div className="text-center p-3 bg-background rounded-lg border border-blue-500/30">
+                  <RefreshCw className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+                  <p className="font-medium text-foreground text-sm">10: Feedback Loop</p>
+                  <p className="text-[10px] text-muted-foreground">Recalibração Isotônica</p>
                 </div>
               </div>
 
@@ -997,6 +1010,41 @@ npm run dev
               </div>
             </div>
 
+            {/* Destaque: Aprendizado Automático */}
+            <div className="p-5 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-2 border-blue-500/30 rounded-xl mb-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-blue-500/20">
+                  <RefreshCw className="w-7 h-7 text-blue-500" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground text-lg flex items-center gap-2">
+                    Aprendizado Automático (Feedback Loop)
+                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-500 rounded text-xs font-medium">HUMAN-IN-THE-LOOP</span>
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                    Sistema de <strong className="text-foreground">recalibração contínua</strong> baseado em feedback humano.
+                    Cada correção do usuário (CORRETO/INCORRETO/PARCIAL) é armazenada e, a cada
+                    <strong className="text-blue-500"> 10+ feedbacks</strong>, o sistema treina calibradores
+                    <strong className="text-foreground"> IsotonicRegression</strong> por tipo de entidade, melhorando a precisão dos scores de confiança.
+                  </p>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div className="p-2 bg-background/50 rounded text-center">
+                      <span className="font-semibold text-foreground">POST /feedback</span>
+                      <p className="text-muted-foreground">Envia correções</p>
+                    </div>
+                    <div className="p-2 bg-background/50 rounded text-center">
+                      <span className="font-semibold text-foreground">Recalibração</span>
+                      <p className="text-muted-foreground">A cada feedback</p>
+                    </div>
+                    <div className="p-2 bg-background/50 rounded text-center">
+                      <span className="font-semibold text-foreground">GET /feedback/stats</span>
+                      <p className="text-muted-foreground">Métricas de acurácia</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Destaque: Validação Matemática */}
             <div className="p-5 bg-gradient-to-br from-success/10 via-success/5 to-transparent border-2 border-success/30 rounded-xl mb-6">
               <div className="flex items-start gap-4">
@@ -1302,21 +1350,38 @@ npm run dev
               </div>
             </div>
 
-            {/* Outros Endpoints */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
-              <div className="p-4 border border-border rounded-lg">
+            {/* Endpoints de Feedback e Aprendizado */}
+            <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-blue-500" /> Endpoints de Aprendizado Automático
+            </h4>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 border border-blue-500/30 rounded-lg bg-blue-500/5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2 py-0.5 bg-success text-white rounded text-xs font-bold">POST</span>
                   <code className="font-mono text-foreground text-sm">/feedback</code>
                 </div>
-                <p className="text-xs text-muted-foreground">Envia correção do usuário (CORRETO/INCORRETO) para aprendizado contínuo.</p>
+                <p className="text-xs text-muted-foreground">Envia validação humana (CORRETO/INCORRETO/PARCIAL). Dispara recalibração automática.</p>
               </div>
-              <div className="p-4 border border-border rounded-lg">
+              <div className="p-4 border border-blue-500/30 rounded-lg bg-blue-500/5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2 py-0.5 bg-primary text-white rounded text-xs font-bold">GET</span>
                   <code className="font-mono text-foreground text-sm">/feedback/stats</code>
                 </div>
-                <p className="text-xs text-muted-foreground">Retorna estatísticas de feedbacks e taxa de acurácia percebida.</p>
+                <p className="text-xs text-muted-foreground">Estatísticas de acurácia por tipo de entidade e taxa de falso positivo.</p>
+              </div>
+              <div className="p-4 border border-blue-500/30 rounded-lg bg-blue-500/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-primary text-white rounded text-xs font-bold">GET</span>
+                  <code className="font-mono text-foreground text-sm">/feedback/export</code>
+                </div>
+                <p className="text-xs text-muted-foreground">Exporta todos os feedbacks para dataset de treinamento.</p>
+              </div>
+              <div className="p-4 border border-blue-500/30 rounded-lg bg-blue-500/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-success text-white rounded text-xs font-bold">POST</span>
+                  <code className="font-mono text-foreground text-sm">/feedback/generate-dataset</code>
+                </div>
+                <p className="text-xs text-muted-foreground">Gera dataset JSONL/CSV a partir dos feedbacks coletados.</p>
               </div>
             </div>
 
