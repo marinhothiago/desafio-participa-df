@@ -290,6 +290,28 @@ Classificação automática como **"PÚBLICO"** (pode publicar) ou **"NÃO PÚBL
 └─────────────────────────────────────────────────────────────┘
 ```
 ---
+## 🔄 Aprendizado Contínuo (Human-in-the-Loop)
+
+O sistema implementa um ciclo de melhoria contínua:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌────────────────────┐
+│ Usuário revisa  │────▶│ POST /feedback   │────▶│ feedback.json      │
+│ detecção no UI  │     │ CORRETO/INCORRETO│     │ (persiste dados)   │
+└─────────────────┘     └──────────────────┘     └─────────┬──────────┘
+                                                           │
+┌─────────────────┐     ┌──────────────────┐     ┌─────────▼──────────┐
+│ Próximas        │◀────│ Calibradores     │◀────│ Recalibração       │
+│ detecções       │     │ isotônicos       │     │ automática         │
+│ mais precisas   │     │ ajustados        │     │ (por fonte)        │
+└─────────────────┘     └──────────────────┘     └────────────────────┘
+```
+
+**Endpoints:** `POST /feedback`, `GET /feedback/stats`, `POST /feedback/generate-dataset`
+
+Consulte [backend/README.md](backend/README.md#-feedback-loop-como-o-motor-aprende-com-feedbacks-humanos) para documentação completa.
+
+---
 
 ### Tecnologias Utilizadas
 
@@ -390,37 +412,93 @@ async def analyze(data: Dict[str, Optional[str]]) -> Dict:
 
 ```
 desafio-participa-df/
-├── docker-compose.yml       # ⭐ Orquestração Docker (ponto de entrada)
-├── README.md                # Documentação principal
 │
-├── backend/                 # 🔧 Motor de IA (Python/FastAPI)
-│   ├── requirements.txt     # Dependências Python
-│   ├── Dockerfile           # Container do backend
+├── README.md                     ← ESTE ARQUIVO: Visão geral do projeto
+├── docker-compose.yml            ← Orquestração: backend + frontend
+├── app.py                        ← Entry point para HuggingFace Spaces
+├── deploy-hf.sh                  ← Script de deploy para HuggingFace
+│
+├── backend/                      ← MOTOR DE IA (Python + FastAPI)
+│   ├── README.md                 ← Documentação técnica do backend
+│   ├── requirements.txt          ← Dependências Python (pip install)
+│   ├── Dockerfile                ← Container para deploy
+│   │
 │   ├── api/
-│   │   └── main.py          # ⭐ API REST FastAPI
+│   │   ├── main.py               ← FastAPI: endpoints /analyze e /health
+│   │   ├── celery_config.py      ← Configuração Celery + Redis
+│   │   └── tasks.py              ← Tasks assíncronas para lotes
+│   │
 │   ├── src/
-│   │   ├── detector.py      # ⭐ Classe principal PIIDetector
-│   │   ├── allow_list.py    # Lista de termos permitidos
-│   │   ├── analyzers/       # Analisadores (Presidio, Regex)
-│   │   ├── confidence/      # Sistema de confiança probabilística
-│   │   ├── gazetteer/       # Dicionário de entidades GDF
-│   │   └── patterns/        # Padrões regex específicos
+│   │   ├── detector.py           ← Motor híbrido PII v9.6 (3300+ linhas, 30+ tipos, thresholds dinâmicos, pós-processamento, gazetteer)
+│   │   ├── allow_list.py         ← Lista de termos seguros (blocklist, cargos, contextos, 375+ termos)
+│   │   └── confidence/           ← Módulo de confiança probabilística (isotônico, log-odds, thresholds dinâmicos)
+│   │       ├── types.py          ← Dataclasses: PIIEntity, DocumentConfidence
+│   │       ├── config.py         ← FN/FP rates, pesos LGPD, thresholds
+│   │       ├── validators.py     ← Validação DV (CPF, CNPJ, PIS, CNS)
+│   │       ├── calibration.py    ← Calibrador isotônico (sklearn)
+│   │       ├── combiners.py      ← Combinação log-odds (Naive Bayes)
+│   │       └── calculator.py     ← Orquestrador de confiança
+│   │
 │   ├── scripts/
-│   │   └── main_cli.py      # ⭐ Processamento em lote (CLI)
-│   ├── models/              # Modelo BERT NER (ONNX)
-│   ├── tests/               # 452 testes automatizados
-│   └── data/                # Dados de entrada/saída
+│   │   ├── main_cli.py           ← CLI: processamento em lote via terminal
+│   │   ├── optimize_ensemble.py  ← Grid search de pesos do ensemble
+│   │   ├── clean_backend.ps1     ← Limpeza de cache do backend
+│   │   └── clean_frontend.ps1    ← Limpeza de cache do frontend
+│   │
+│   ├── tests/                    ← Testes automatizados (pytest, 410+ casos)
+│   │   ├── test_benchmark.py     ← Benchmark LGPD: 452+ casos, F1=1.0000 + 5 casos LLM
+│   │   ├── test_amostra.py       ← Testes com amostra e-SIC
+│   │   ├── test_confianca.py     ← Testes do sistema de confiança
+│   │   ├── test_edge_cases.py    ← Casos extremos e edge cases
+│   │   ├── test_regex_gdf.py     ← Testes de padrões regex GDF
+│   │   └── ...                   ← Outros testes especializados
+│   │
+│   └── data/
+│       ├── input/                ← Arquivos CSV/XLSX para processar
+│       └── output/               ← Relatórios gerados (JSON, CSV, XLSX, resultados benchmark)
 │
-└── frontend/                # 🎨 Interface Web (React/TypeScript)
-    ├── package.json         # Dependências Node.js
-    ├── Dockerfile           # Container do frontend
-    └── src/
-        ├── App.tsx          # Componente principal
-        ├── pages/           # Páginas da aplicação
-        └── components/      # Componentes reutilizáveis
+└── frontend/                     ← INTERFACE WEB (React + TypeScript)
+    ├── README.md                 ← Documentação técnica do frontend
+    ├── package.json              ← Dependências Node.js (npm install)
+    ├── Dockerfile                ← Container com nginx
+    ├── vite.config.ts            ← Configuração de build (Vite)
+    ├── tailwind.config.ts        ← Design System DSGOV
+    │
+    ├── src/
+    │   ├── main.tsx              ← Entry point React
+    │   ├── App.tsx               ← Roteamento e layout
+    │   │
+    │   ├── pages/
+    │   │   ├── Dashboard.tsx     ← Página inicial com KPIs
+    │   │   ├── Classification.tsx← Análise individual + lote
+    │   │   ├── Documentation.tsx ← Guia de uso integrado
+    │   │   └── NotFound.tsx      ← Página 404
+    │   │
+    │   ├── components/           ← Componentes reutilizáveis (15+)
+    │   │   ├── ui/               ← Shadcn UI (16 componentes otimizados)
+    │   │   ├── Header.tsx        ← Cabeçalho DSGOV
+    │   │   ├── KPICard.tsx       ← Cards de métricas
+    │   │   ├── ResultsTable.tsx  ← Tabela de resultados
+    │   │   ├── FileDropzone.tsx  ← Upload drag & drop
+    │   │   ├── ConfidenceBar.tsx ← Barra visual de confiança
+    │   │   ├── RiskThermometer.tsx ← Termômetro de risco
+    │   │   └── ...
+    │   │
+    │   ├── lib/
+    │   │   ├── api.ts            ← Cliente HTTP para backend (detecção automática do backend local, retry, tratamento de erros, integração com contadores globais)
+    │   │   ├── fileParser.ts     ← Parser de CSV/XLSX
+    │   │   └── utils.ts          ← Funções utilitárias
+    │   │
+    │   ├── contexts/
+    │   │   └── AnalysisContext.tsx ← Estado global (histórico, métricas, funções de update)
+    │   │
+    │   └── hooks/
+    │       └── use-toast.ts      ← Notificações
+    │
+    └── public/
+      ├── robots.txt            ← SEO
+      └── 404.html              ← Fallback SPA
 ```
-
-**Legenda:** ⭐ = Arquivos principais para avaliação
 
 ---
 
