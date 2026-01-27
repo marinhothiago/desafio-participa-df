@@ -210,9 +210,10 @@ npm run dev
 
 | Nível | Peso | Tipos de PII |
 |-------|------|--------------|
-| 🔴 CRÍTICO | 5 | CPF, RG, CNH, Passaporte, PIS, CNS |
-| 🟠 ALTO | 4 | Email, Telefone, Endereço, Nome |
-| 🟡 MODERADO | 3 | Placa, Data nascimento, Processo |
+| 🔴 CRÍTICO | 5 | CPF, RG, CNH, Passaporte, PIS, CNS, Dados Sensíveis LGPD |
+| 🟠 ALTO | 4 | Email, Telefone, Endereço, Nome Pessoal |
+| 🟡 MODERADO | 3 | Placa, Data de Nascimento, Processo CNJ |
+| 🔵 BAIXO | 1-2 | IP, GPS, User-Agent, Identificadores Indiretos |
 | 🟢 SEGURO | 0 | Nenhum PII detectado |
 
 ---

@@ -1205,12 +1205,12 @@ npm run dev
                   <tr className="border-t border-border">
                     <td className="py-3 px-4"><code className="bg-success/10 text-success px-2 py-0.5 rounded text-xs">nivel_risco</code></td>
                     <td className="py-3 px-4 text-muted-foreground">string</td>
-                    <td className="py-3 px-4 text-muted-foreground">"SEGURO", "MODERADO", "ALTO" ou "CRÍTICO"</td>
+                    <td className="py-3 px-4 text-muted-foreground">"SEGURO", "BAIXO", "MODERADO", "ALTO" ou "CRÍTICO"</td>
                   </tr>
                   <tr className="border-t border-border">
                     <td className="py-3 px-4"><code className="bg-success/10 text-success px-2 py-0.5 rounded text-xs">peso_risco</code></td>
                     <td className="py-3 px-4 text-muted-foreground">number</td>
-                    <td className="py-3 px-4 text-muted-foreground">0 (seguro), 3 (moderado), 4 (alto), 5 (crítico)</td>
+                    <td className="py-3 px-4 text-muted-foreground">0 (seguro), 1-2 (baixo), 3 (moderado), 4 (alto), 5 (crítico)</td>
                   </tr>
                   <tr className="border-t border-border">
                     <td className="py-3 px-4"><code className="bg-success/10 text-success px-2 py-0.5 rounded text-xs">tipos_pii</code></td>
@@ -1254,17 +1254,22 @@ npm run dev
                   <tr className="border-t border-border bg-red-50 dark:bg-red-950/20">
                     <td className="py-3 px-4"><span className="text-red-600 font-bold">🔴 CRÍTICO</span></td>
                     <td className="py-3 px-4 font-bold">5</td>
-                    <td className="py-3 px-4 text-muted-foreground">CPF, RG, CNH, Passaporte, PIS, CNS</td>
+                    <td className="py-3 px-4 text-muted-foreground">CPF, RG, CNH, Passaporte, PIS, CNS, Dados Sensíveis LGPD</td>
                   </tr>
                   <tr className="border-t border-border bg-orange-50 dark:bg-orange-950/20">
                     <td className="py-3 px-4"><span className="text-orange-600 font-bold">🟠 ALTO</span></td>
                     <td className="py-3 px-4 font-bold">4</td>
-                    <td className="py-3 px-4 text-muted-foreground">Email, Telefone, Endereço, Nome</td>
+                    <td className="py-3 px-4 text-muted-foreground">Email, Telefone, Endereço, Nome Pessoal</td>
                   </tr>
                   <tr className="border-t border-border bg-yellow-50 dark:bg-yellow-950/20">
                     <td className="py-3 px-4"><span className="text-yellow-600 font-bold">🟡 MODERADO</span></td>
                     <td className="py-3 px-4 font-bold">3</td>
-                    <td className="py-3 px-4 text-muted-foreground">Placa, Data de Nascimento, Processo</td>
+                    <td className="py-3 px-4 text-muted-foreground">Placa, Data de Nascimento, Processo CNJ</td>
+                  </tr>
+                  <tr className="border-t border-border bg-blue-50 dark:bg-blue-950/20">
+                    <td className="py-3 px-4"><span className="text-blue-600 font-bold">🔵 BAIXO</span></td>
+                    <td className="py-3 px-4 font-bold">1-2</td>
+                    <td className="py-3 px-4 text-muted-foreground">IP, GPS, User-Agent, Identificadores Indiretos</td>
                   </tr>
                   <tr className="border-t border-border bg-green-50 dark:bg-green-950/20">
                     <td className="py-3 px-4"><span className="text-green-600 font-bold">🟢 SEGURO</span></td>
