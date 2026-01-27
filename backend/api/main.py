@@ -80,7 +80,7 @@ except ImportError:
 
 # Configuração do HF Dataset para persistência
 HF_TOKEN = os.environ.get("HF_TOKEN")
-HF_STATS_REPO = os.environ.get("HF_STATS_REPO", "marinhothiago/participa-df-data")
+HF_STATS_REPO = os.environ.get("HF_STATS_REPO", "marinhothiago/desafio-participa-df")
 USE_HF_STORAGE = HF_HUB_AVAILABLE and HF_TOKEN is not None
 
 if USE_HF_STORAGE:
