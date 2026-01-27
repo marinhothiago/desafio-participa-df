@@ -255,6 +255,55 @@ export function Documentation() {
                 <p className="text-sm text-muted-foreground">Algoritmos de dígito verificador (Módulo 11) para CPF e CNPJ com 100% de precisão.</p>
               </div>
             </div>
+
+            {/* Documentação Markdown */}
+            <div className="mt-6">
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <FileInput className="w-4 h-4 text-primary" />
+                Documentação Completa (Markdown)
+              </h4>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <a
+                  href="https://github.com/marinhothiago/desafio-participa-df/blob/main/README.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-4 border border-border rounded-lg hover:border-primary/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-2 text-primary mb-2">
+                    <Github className="w-5 h-5" />
+                    <span className="font-semibold text-foreground group-hover:text-primary">README.md (Raiz)</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Documentação geral do projeto, instalação e arquitetura.</p>
+                </a>
+                <a
+                  href="https://github.com/marinhothiago/desafio-participa-df/blob/main/backend/README.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-4 border border-border rounded-lg hover:border-success/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-2 text-success mb-2">
+                    <Server className="w-5 h-5" />
+                    <span className="font-semibold text-foreground group-hover:text-success">README.md (Backend)</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">API FastAPI, motor de detecção e endpoints.</p>
+                </a>
+                <a
+                  href="https://github.com/marinhothiago/desafio-participa-df/blob/main/frontend/README.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-4 border border-border rounded-lg hover:border-warning/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-2 text-warning mb-2">
+                    <Layout className="w-5 h-5" />
+                    <span className="font-semibold text-foreground group-hover:text-warning">README.md (Frontend)</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Interface React, componentes e DSGOV.</p>
+                </a>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
