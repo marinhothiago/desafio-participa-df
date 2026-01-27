@@ -553,8 +553,8 @@ backend/
 │   │   ├── resultado.csv     ← Resultado do processamento
 │   │   ├── resultado.xlsx    ← Resultado com formatação colorida
 │   │   └── *.json            ← Auditorias e benchmarks
-│   ├── feedback.json         ← Feedbacks humanos acumulados
-│   ├── stats.json            ← Estatísticas de uso
+│   ├── feedback.json         ← Feedbacks humanos (🔄 persistido no HF Dataset)
+│   ├── stats.json            ← Estatísticas de uso (🔄 persistido no HF Dataset)
 │   └── training_status.json  ← Status do treinamento com feedback
 │
 └── models/
@@ -583,9 +583,56 @@ docker run -p 7860:7860 -e HF_TOKEN=seu_token participa-df-backend
 
 | Variável | Obrigatória | Descrição |
 |----------|-------------|-----------|
-| `HF_TOKEN` | Para LLM | Token Hugging Face |
-| `HF_MODEL` | Não | Modelo LLM (padrão: Llama-3.2-3B) |
-| `PII_USE_LLM_ARBITRATION` | Não | Forçar LLM em todas análises |
+| `HF_TOKEN` | **Sim (produção)** | Token Hugging Face (Write) - para persistência e LLM |
+| `HF_STATS_REPO` | Não | Dataset HF para persistência (padrão: `marinhothiago/desafio-participa-df`) |
+| `HF_MODEL` | Não | Modelo LLM (padrão: Llama-3.2-3B-Instruct) |
+| `PII_USE_LLM_ARBITRATION` | Não | Forçar LLM em todas análises (padrão: False) |
+| `PII_USAR_GPU` | Não | Usar GPU se disponível (padrão: True) |
+
+---
+
+## 💾 Persistência de Dados (HuggingFace Datasets)
+
+O sistema usa **HuggingFace Datasets** para persistir dados entre reinícios do container.
+
+### Arquivos Persistidos
+
+| Arquivo | Descrição | Impacto se perdido |
+|---------|-----------|-------------------|
+| `stats.json` | Contadores de visitas e requisições | Contadores resetam para 0 |
+| `feedback.json` | Feedbacks humanos + calibração | ⚠️ Perde todo treinamento! |
+
+### Como Funciona
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BACKEND (main.py)                                              │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Verifica HF_TOKEN no ambiente                               │
+│  2. Se disponível: carrega/salva no HF Dataset                  │
+│  3. Cache local (60s stats, 30s feedback) para performance      │
+│  4. Fallback para arquivo local se HF indisponível              │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  HUGGINGFACE DATASET: marinhothiago/desafio-participa-df        │
+├─────────────────────────────────────────────────────────────────┤
+│  📁 stats.json     - {"site_visits": N, "classification_requests": M}
+│  📁 feedback.json  - {"feedbacks": [...], "stats": {...}}       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Configuração no HuggingFace Space
+
+1. **Criar Token** em https://huggingface.co/settings/tokens (permissão: **Write**)
+2. **Adicionar Secret** no Space:
+   - Settings → Repository secrets → New secret
+   - Name: `HF_TOKEN`
+   - Value: `hf_xxxxxxxxxxxxxxxxxxxx`
+3. **Verificar logs** após reinício:
+   ```
+   ✅ Persistência HuggingFace ativada: marinhothiago/desafio-participa-df
+   ```
 
 ---
 
@@ -618,7 +665,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## 🔄 Feedback Loop (Aprendizado Contínuo)
 
-O sistema implementa coleta de feedbacks humanos para melhoria contínua:
+O sistema implementa coleta de feedbacks humanos para melhoria contínua, com **persistência automática** no HuggingFace Dataset.
 
 ### Endpoints de Feedback
 
@@ -626,16 +673,56 @@ O sistema implementa coleta de feedbacks humanos para melhoria contínua:
 |----------|--------|-----------|
 | `/feedback` | POST | Submete validação humana |
 | `/feedback/stats` | GET | Estatísticas acumuladas |
+| `/feedback/training-status` | GET | Status de calibração e recomendações |
 | `/feedback/generate-dataset` | POST | Gera dataset para treinamento |
+| `/feedback/export` | GET | Exporta todos feedbacks |
+
+### Endpoints de Estatísticas
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/stats` | GET | Contadores globais (visitas, requisições) |
+| `/stats/visit` | POST | Registra nova visita (1x por sessão) |
 
 ### Fluxo de Melhoria
 
 ```
 1. COLETA: Frontend coleta validação (CORRETO/INCORRETO/PARCIAL)
-2. ARMAZENAMENTO: Salvo em backend/data/feedback.json
-3. GERAÇÃO: Converte feedbacks em dataset JSONL/CSV
-4. RECALIBRAÇÃO: IsotonicCalibrator treina com dados históricos
+2. PERSISTÊNCIA: Salvo em HuggingFace Dataset (feedback.json)
+   └── Fallback: backend/data/feedback.json (local)
+3. CACHE: 30 segundos para reduzir chamadas ao HF
+4. RECALIBRAÇÃO: Automática a cada feedback (IsotonicCalibrator)
 5. MELHORIA: Próximas detecções mais precisas
+```
+
+### Estrutura do feedback.json
+
+```json
+{
+  "feedbacks": [
+    {
+      "feedback_id": "uuid",
+      "timestamp": "2026-01-27T15:00:00",
+      "original_text": "texto analisado",
+      "entity_feedbacks": [
+        {
+          "tipo": "CPF",
+          "valor": "123.456.789-09",
+          "validacao_humana": "CORRETO"
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "total_feedbacks": 10,
+    "total_entities_reviewed": 25,
+    "correct": 20,
+    "incorrect": 3,
+    "partial": 2,
+    "by_type": {"CPF": {"correct": 5, "incorrect": 1, "total": 6}}
+  },
+  "last_updated": "2026-01-27T15:30:00"
+}
 ```
 
 ---

@@ -50,9 +50,9 @@ except ImportError:
     pass
 
 from typing import Dict, Optional, List
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Request
+from fastapi import FastAPI, UploadFile, File, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uuid
 
@@ -371,7 +371,6 @@ detector = PIIDetector(
 
 
 
-from fastapi import Query
 from src.confidence.combiners import merge_spans_custom
 
 @app.post("/analyze")
@@ -840,5 +839,4 @@ def download_lote_result(job_id: str):
     path = res.result
     if not os.path.exists(path):
         return {"erro": "Arquivo não encontrado"}
-    from fastapi.responses import FileResponse
     return FileResponse(path, filename=os.path.basename(path))
