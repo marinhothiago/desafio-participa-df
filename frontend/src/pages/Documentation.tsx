@@ -710,6 +710,7 @@ cd desafio-participa-df`}</CodeBlock>
                         <div>
                           <span className="font-medium text-foreground text-sm">Linux/macOS/WSL: Instale dependências de build primeiro</span>
                           <CodeBlock>{`# Ubuntu/Debian/WSL (Windows Subsystem for Linux)
+sudo apt-get update
 sudo apt-get install -y build-essential cmake pkg-config
 
 # macOS (Homebrew)

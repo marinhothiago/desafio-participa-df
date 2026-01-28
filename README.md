@@ -155,7 +155,7 @@ python scripts/main_cli.py \
 Antes de instalar as dependências Python, instale as ferramentas de compilação:
 
 ```bash
-# Ubuntu/Debian/WSL
+# Ubuntu/Debian/WSL (Windows Subsystem for Linux)
 sudo apt-get update
 sudo apt-get install -y build-essential cmake pkg-config
 
