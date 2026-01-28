@@ -415,10 +415,10 @@ desafio-participa-df/
 │
 ├── README.md                     ← ESTE ARQUIVO: Visão geral do projeto
 ├── docker-compose.yml            ← Orquestração: backend + frontend
-├── app.py                        ← Entry point para HuggingFace Spaces
 ├── deploy-hf.sh                  ← Script de deploy para HuggingFace
 │
 ├── backend/                      ← MOTOR DE IA (Python + FastAPI)
+│   ├── app.py                    ← Entry point para HuggingFace Spaces
 │   ├── README.md                 ← Documentação técnica do backend
 │   ├── requirements.txt          ← Dependências Python (pip install)
 │   ├── Dockerfile                ← Container para deploy

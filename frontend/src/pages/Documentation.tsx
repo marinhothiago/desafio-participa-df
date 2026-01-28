@@ -1423,6 +1423,77 @@ npm run dev
               </div>
             </div>
 
+            {/* Proteção contra Abusos */}
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              {/* Rate Limiting */}
+              <div className="p-5 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent border-2 border-destructive/30 rounded-xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-xl bg-destructive/20">
+                    <ShieldCheck className="w-6 h-6 text-destructive" />
+                  </div>
+                  <h4 className="font-bold text-foreground">Rate Limiting</h4>
+                </div>
+
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Limite de Requisições:</strong> Máximo de 300 requisições por minuto
+                      por IP para prevenir sobrecarga e ataques de negação de serviço (DoS).
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Limite de Lote:</strong> Endpoint /analyze/batch aceita no máximo
+                      200 textos por requisição para garantir tempo de resposta adequado.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Validação de Entrada:</strong> Textos com menos de 10 caracteres
+                      são rejeitados para evitar requisições vazias ou maliciosas.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Bot Detection */}
+              <div className="p-5 bg-gradient-to-br from-info/10 via-info/5 to-transparent border-2 border-info/30 rounded-xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-xl bg-info/20">
+                    <Eye className="w-6 h-6 text-info" />
+                  </div>
+                  <h4 className="font-bold text-foreground">Detecção de Bots</h4>
+                </div>
+
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-info mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Análise de User-Agent:</strong> Sistema detecta e bloqueia 30+
+                      padrões de bots conhecidos, crawlers e ferramentas de scraping automatizado.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-info mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Proteção contra Scraping:</strong> Requisições de bibliotecas como
+                      curl, wget, python-requests e scrapy são identificadas e tratadas.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-info mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="text-foreground">Resposta HTTP 403:</strong> Tentativas de acesso automatizado
+                      recebem erro "Forbidden" com mensagem clara sobre uso indevido.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* Padrão DSGOV */}
             <div className="p-5 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent border-2 border-warning/30 rounded-xl mt-6">
               <div className="flex items-center gap-3 mb-4">
